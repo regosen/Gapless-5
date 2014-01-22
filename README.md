@@ -2,7 +2,6 @@ Gapless 5 &nbsp; <img src="https://ccrma.stanford.edu/~regosen/gapless5.gif" wid
 =========
 
 Gapless JavaScript/CSS audio player for HTML5
-(requires jQuery 1.x or greater)
 
 **PROBLEM**: There are 2 modern API's for playing audio through the web, and both of them have problems:
 
@@ -11,10 +10,8 @@ Gapless JavaScript/CSS audio player for HTML5
 
 **SOLUTION**: Use both!
 
-- If WebAudio hasn't fully loaded yet, start playback with HTML5 Audio.  Then seamlessly switch to WebAudio once it's loaded.
+- If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once it's loaded.
 - NOTE: Mobile browsers don't fully support Audio objects in js, so we're stuck with only WebAudio in that case.
-
-
 
 
 Features
@@ -50,7 +47,7 @@ Setup
 -----
 
 1. HTML head: reference the following...
-  - jQuery (must come before Gapless5.js)
+  - jQuery (1.0 or greater, must be referenced before Gapless5.js)
   - Gapless5.js
   - Gapless5.css
 2. HTML body
