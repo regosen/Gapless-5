@@ -123,7 +123,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 			state = Gapless5State.Stop;
 		}
 		// once we have WebAudio data loaded, we don't need the HTML5 audio stream anymore
-		audio.src = null;
+		audio = null;
 		that.uiDirty = true;
 	}
 
@@ -158,9 +158,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 					source.stop(0);
 			}
 		}
-		if (parent.useHTML5Audio)
+		if (audio)
 		{
-			if (!audio) return;
 			audio.pause();
 		}
 
