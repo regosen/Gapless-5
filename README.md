@@ -1,7 +1,7 @@
 Gapless 5 &nbsp; <img src="https://ccrma.stanford.edu/~regosen/gapless5.gif" width="123" height="51">
 =========
 
-Gapless JavaScript/CSS audio player for HTML5
+A gapless JavaScript/CSS audio player for HTML5
 
 **PROBLEM**: There are 2 modern API's for playing audio through the web, and both of them have problems:
 
@@ -36,12 +36,16 @@ Browser Support
 - *unsupported on IE*
   - can't seem to programmatically create audio objects
 
+*NOTE for Boostrap users: Bootstrap's css will mess up the player's look.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
 Demos
 -----
 
-- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page: http://www.zenfingerpainting.com
+Music Players:
+- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page.<br/>http://www.zenfingerpainting.com
 
+DJ Demos:
+- Gapless 5 Demonstration Page.  It utilizes key mappings for cueing and other transport bar features.<br/>https://ccrma.stanford.edu/~regosen/gapless5/
 
 Setup
 -----
@@ -56,6 +60,7 @@ Setup
   - create a Gapless5 object, passing the above id as a parameter
   - add tracks using addTrack() or via options (see below)
     - you can also register callbacks (see below)
+  - link keys to actions using mapKeys() or via options (see below)
 
 Example:
 ```
@@ -71,6 +76,7 @@ Example:
     var player = new Gapless5("gapless5-block");
     player.addTrack("audio/song1.mp3");
     player.addTrack("audio/song2.mp3");
+    player.mapKeys({cue: "7", stop: "8", next: "9"});
 
   --></script>
 </body>
@@ -81,6 +87,7 @@ Options
 -------
 
 - **tracks**
+  - path to audio file(s)
   - can be an array, or a single track as a string
 - **loop** (loops playlist)
   - default = false
@@ -91,6 +98,18 @@ Options
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
+- **mapKeys**
+  - pressing specified key (case-insensitive) will trigger specified action.
+  - Actions that behave like the buttons:
+    - **prev**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
+    - **playpause**: matches behavior of "play/pause" button
+    - **stop**: matches behavior of "stop" button
+    - **next**: matches behavior of "next" button
+  - Actions that differ from the buttons:
+    - **prevtrack**: unlike "prev" button, this will always jump to the previous track
+    - **cue**: play from start
+    - **play**: non-togglable "play"
+    - **pause**: non-togglable "pause"
 
 Example:
 
@@ -98,7 +117,8 @@ Example:
 var player = new Gapless5("gapless5-block", {
   tracks: ["loop1.mp3", "loop2.mp3"], 
   loop: true, 
-  playOnLoad: true
+  playOnLoad: true,
+  mapKeys: {prev: "a", playpause: "s", stop: "d", next: "f"}
 });
 ```
 

@@ -35,9 +35,8 @@
     overflow: hidden;
 }
 
-input, button { outline: none; }
-
 input[type='range'].transportbar, input[type='range'].volume {
+    outline: none;
     vertical-align:middle;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
@@ -151,6 +150,7 @@ input[type='range'].volume::-moz-range-thumb {
 }
 
 .g5button {
+    outline: none;
     float: left;
     border: 0px;
     width: 15px;
