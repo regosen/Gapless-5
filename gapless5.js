@@ -514,6 +514,10 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	if (trackDiff == 0)
 	{
 		resetPosition();
+		if ((bForcePlay == true) || sources[trackIndex].isPlayActive())
+		{
+			sources[newIndex].play();
+		}
 	}
 	else
 	{
