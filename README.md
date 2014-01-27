@@ -10,8 +10,16 @@ A gapless JavaScript/CSS audio player for HTML5
 
 **SOLUTION**: Use both!
 
-- If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once it's loaded.
-- NOTE: Mobile browsers don't fully support Audio objects in js, so we're stuck with only WebAudio in that case.
+- If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once loaded.
+- *NOTE: Most mobile browsers don't fully support HTML5 Audio objects in js, so we're stuck with only WebAudio in that case.*
+
+
+Demos
+-----
+
+- Gapless 5 demonstration page.  It utilizes key mappings for cueing and other transport bar features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
+
+- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page. <br/>http://www.zenfingerpainting.com
 
 
 Features
@@ -38,29 +46,21 @@ Browser Support
 
 *NOTE for Boostrap users: Bootstrap's css will mess up the player's look.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
-Demos
------
-
-Music Players:
-- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page.<br/>http://www.zenfingerpainting.com
-
-DJ Demos:
-- Gapless 5 Demonstration Page.  It utilizes key mappings for cueing and other transport bar features.<br/>https://ccrma.stanford.edu/~regosen/gapless5/
-
 Setup
 -----
 
-1. HTML head: reference the following...
+1. **HTML head**: reference the following
   - jQuery (1.0 or greater, must be referenced before Gapless5.js)
   - Gapless5.js
   - Gapless5.css
-2. HTML body
-  - create an element with a particular id
-3. JavaScript
+2. **HTML body**
+  - create any element with a particular id
+3. **JavaScript**
   - create a Gapless5 object, passing the above id as a parameter
   - add tracks using addTrack() or via options (see below)
-    - you can also register callbacks (see below)
-  - link keys to actions using mapKeys() or via options (see below)
+  - optional stuff:
+    - register callbacks (see below)
+    - link keys to actions using mapKeys() or via options (see below)
 
 Example:
 ```
