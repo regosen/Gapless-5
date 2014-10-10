@@ -511,8 +511,11 @@ this.dequeueNextLoad = function() {
 	{
 		var entry = that.loadQueue.shift();
 		loadingTrack = entry[0];
-		//console.log("loading track " + loadingTrack + ": " + entry[1]);
-		sources[loadingTrack].load(entry[1]);
+		if (loadingTrack < sources.length)
+		{
+			//console.log("loading track " + loadingTrack + ": " + entry[1]);
+			sources[loadingTrack].load(entry[1]);
+		}
 	}
 	else
 	{
@@ -539,7 +542,7 @@ this.onFinishedScrubbing = function () {
 
 this.loadQueue = [];
 
-this.addTrack = function (audioPath, displayUpdate) {
+this.addTrack = function (audioPath) {
 	var index = numTracks();
 	that.tracks.push(audioPath);
 	sources[index] = new Gapless5Source(this, context, gainNode);
@@ -548,6 +551,99 @@ this.addTrack = function (audioPath, displayUpdate) {
 	{
 		that.dequeueNextLoad();
 	}
+	if (initialized)
+	{
+		updateDisplay();
+	}
+};
+
+this.insertTrack = function (index, audioPath) {
+	var trackCount = numTracks();
+	index = Math.min(Math.max(index, 0), trackCount);
+	if (index == trackCount)
+	{
+		that.addTrack(audioPath);
+	}
+	else
+	{
+		var oldIndex = index+1;
+		that.tracks.splice(index,0,audioPath);
+		sources.splice(index, 0, new Gapless5Source(this, context, gainNode));
+
+		//re-enumerate queue
+		for (var i in that.loadQueue)
+		{
+			var entry = that.loadQueue[i];
+			if (entry[0] >= index)
+			{
+				entry[0] += 1;
+			}
+		}
+		that.loadQueue.splice(0,0,[index,audioPath]);
+		updateDisplay();
+	}
+};
+
+this.removeTrack = function (index) {
+	if (index < 0 || index >= sources.length) return;
+
+	var curSource = sources[index];
+	if (curSource.getState() == Gapless5State.Loading)
+	{
+		curSource.cancelRequest();
+	}
+	else if (curSource.getState() == Gapless5State.Play)
+	{
+		curSource.stop();
+	}
+	
+	var removeIndex = -1;
+	for (var i in that.loadQueue)
+	{
+		var entry = that.loadQueue[i];
+		if (entry[0] == index)
+		{
+			removeIndex = i;
+		}
+		else if (entry[0] > index)
+		{
+			entry[0] -= 1;
+		}
+	}
+	if (removeIndex >= 0)
+	{
+		that.loadQueue.splice(removeIndex,1);
+	}
+	that.tracks.splice(index,1);
+	sources.splice(index,1);
+	if (loadingTrack == index)
+	{
+		that.dequeueNextLoad();
+	}
+	if (initialized)
+	{
+		updateDisplay();
+	}
+};
+
+this.replaceTrack = function (index, audioPath) {
+	that.removeTrack(index);
+	that.insertTrack(index, audioPath);
+}
+
+this.removeAllTracks = function () {
+	for (var i in sources)
+	{
+		if (sources[i].getState() == Gapless5State.Loading)
+		{
+			sources[i].cancelRequest();
+		}
+	}
+	trackIndex = 0;
+	loadingTrack = -1;
+	sources = [];
+	that.tracks = [];
+	that.loadQueue = [];
 	if (initialized)
 	{
 		updateDisplay();
@@ -730,30 +826,39 @@ var enableButton = function (buttonId, bEnable) {
 };
 
 var updateDisplay = function () {
-	if (numTracks() == 0) return;
-
-	$("#trackIndex" + that.id).html(trackIndex + 1);
-	$("#tracks" + that.id).html(numTracks());
-	$("#totalPosition" + that.id).html(getTotalPositionText());
-	enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
-	enableButton('next', that.loop || trackIndex < that.tracks.length - 1);
-
-	if (sources[trackIndex].inPlayState())
+	if (numTracks() == 0)
 	{
-		enableButton('play', false);
-		isPlayButton = false;
+		$("#trackIndex" + that.id).html(0);
+		$("#tracks" + that.id).html(0);
+		$("#totalPosition" + that.id).html("00:00.00");
+		enableButton('prev', false);
+		enableButton('next', false);
 	}
 	else
 	{
-		enableButton('play', true);
-		isPlayButton = true;
+		$("#trackIndex" + that.id).html(trackIndex + 1);
+		$("#tracks" + that.id).html(numTracks());
+		$("#totalPosition" + that.id).html(getTotalPositionText());
+		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
+		enableButton('next', that.loop || trackIndex < that.tracks.length - 1);
 
-		if (sources[trackIndex].getState() == Gapless5State.Error)
+		if (sources[trackIndex].inPlayState())
 		{
-			runCallback(that.onerror);
+			enableButton('play', false);
+			isPlayButton = false;
 		}
+		else
+		{
+			enableButton('play', true);
+			isPlayButton = true;
+
+			if (sources[trackIndex].getState() == Gapless5State.Error)
+			{
+				runCallback(that.onerror);
+			}
+		}
+		sources[trackIndex].uiDirty = false;
 	}
-	sources[trackIndex].uiDirty = false;
 };
 
 var Tick = function(tickMS) {

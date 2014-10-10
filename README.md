@@ -59,6 +59,7 @@ Setup
   - create a Gapless5 object, passing the above id as a parameter
   - add tracks using addTrack() or via options (see below)
   - optional stuff:
+    - manipulate tracklist with insertTrack(), replaceTrack(), removeTrack(), and removeAllTracks() (see example)
     - register callbacks (see below)
     - link keys to actions using mapKeys() or via options (see below)
 
@@ -76,6 +77,13 @@ Example:
     var player = new Gapless5("gapless5-block");
     player.addTrack("audio/song1.mp3");
     player.addTrack("audio/song2.mp3");
+
+    // extra stuff to manipulate tracklist, indexes start at 0!
+    player.replaceTrack(0, "audio/song1_alt.mp3");
+    player.insertTrack(1, "audio/transition.mp3");
+    player.removeTrack(2); // removes third track
+    player.removeAllTracks(); // clear all tracks
+
     player.mapKeys({cue: "7", stop: "8", next: "9"});
 
   --></script>
