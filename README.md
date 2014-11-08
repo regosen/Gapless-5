@@ -14,12 +14,20 @@ A gapless JavaScript/CSS audio player for HTML5
 - *NOTE: Most mobile browsers don't fully support HTML5 Audio objects in js, so we're stuck with only WebAudio in that case.*
 
 
+Getting Started
+-----
+Gapless 5 is a registered bower package, so installation is as simple as:
+```
+ $ bower install gapless5 --save
+```
+
+
 Demos
 -----
 
 - Gapless 5 demonstration page.  It utilizes key mappings for cueing and other transport bar features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
 
-- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page. <br/>http://www.zenfingerpainting.com
+- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page.Â <br/>http://www.zenfingerpainting.com
 
 
 Features
@@ -38,7 +46,7 @@ Browser Support
 
 - Safari
   - tested on OSX and iOS
-- Chrome 
+- Chrome
   - not tested on Android yet
 - Firefox
 - *unsupported on IE*
@@ -123,8 +131,8 @@ Example:
 
 ```
 var player = new Gapless5("gapless5-block", {
-  tracks: ["loop1.mp3", "loop2.mp3"], 
-  loop: true, 
+  tracks: ["loop1.mp3", "loop2.mp3"],
+  loop: true,
   playOnLoad: true,
   mapKeys: {prev: "a", playpause: "s", stop: "d", next: "f"}
 });
@@ -144,7 +152,7 @@ Callbacks
 
 Example:
 
-``` 
+```
 function prevCallback() {
   console.log("user clicked 'prev'");
 }
