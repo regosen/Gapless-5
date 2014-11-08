@@ -27,7 +27,7 @@ Demos
 
 - Gapless 5 demonstration page.  It utilizes key mappings for cueing and other transport bar features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
 
-- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page. <br/>http://www.zenfingerpainting.com
+- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page.Â <br/>http://www.zenfingerpainting.com
 
 
 Features
