@@ -6,7 +6,7 @@
   "authors": [
     "regosen <regosen@yahoo.com>"
   ],
-  "description": "'gapless player for html5'",
+  "description": "'gapless audio-player for html5'",
   "moduleType": [
     "es6",
     "globals"
