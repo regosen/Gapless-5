@@ -186,7 +186,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 			source.connect(outputNode);
 			source.buffer = buffer;
 			source.onended = onEnded;
-
+                        if(offsetSec < 0)
+                          offsetSec = 0;
 			var offsetSec = position / 1000;
 			var restSec = source.buffer.duration-offsetSec;
 			if (window.hasWebKit)
