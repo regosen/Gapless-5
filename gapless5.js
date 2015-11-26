@@ -59,6 +59,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	var state = Gapless5State.None;
 	var loadedPercent = 0;
 	var audioFinished = false;
+	var endedCallback = null;
 
 	this.uiDirty = false;
 	var that = this;
@@ -156,7 +157,11 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		{
 			if (source)
 			{
-				source.onended = null;
+				if (endedCallback)
+				{
+					window.clearTimeout(endedCallback);
+					endedCallback = null;
+				}
 				if (window.hasWebKit) 
 					source.noteOff(0);
 				else 
@@ -185,10 +190,14 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 			source = context.createBufferSource();
 			source.connect(outputNode);
 			source.buffer = buffer;
-			source.onended = onEnded;
 
 			var offsetSec = position / 1000;
 			var restSec = source.buffer.duration-offsetSec;
+			if (endedCallback)
+			{
+				window.clearTimeout(endedCallback);
+			}
+			endedCallback = window.setTimeout(onEnded, restSec*1000);
 			if (window.hasWebKit)
 				source.noteGrainOn(0, offsetSec, restSec);
 			else
