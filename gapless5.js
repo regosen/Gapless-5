@@ -303,7 +303,6 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	 		audio.addEventListener('play', onPlayEvent, false);
  			// not using audio.networkState because it's not dependable on all browsers
 		}
-		// cancel if url doesn't exist
                 // cancel if url doesn't exist, but don't download again
                 $.ajax({
                         url: inAudioPath,
