@@ -334,7 +334,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Methods
 	this.updateTrack = function(index) {
 		this.currentItem = index;
->>>>>>> initial shuffle/playlist code from separate project
 	}
 
 	// Playlist must start on the next track we want to play 
