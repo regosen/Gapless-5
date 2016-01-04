@@ -35,6 +35,7 @@ var Gapless5State = {
 	"Error"   : 4
 	};
 
+
 // A Gapless5Source "class" handles track-specific audio requests
 function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
@@ -303,12 +304,82 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	 		audio.addEventListener('play', onPlayEvent, false);
  			// not using audio.networkState because it's not dependable on all browsers
 		}
-		// cancel if url doesn't exist
-		$.get(inAudioPath).fail(function() { 
-	        that.cancelRequest(true);
-	    })
+                // cancel if url doesn't exist, but don't download again
+                $.ajax({
+                        url: inAudioPath,
+                        type: "HEAD",
+                }).fail(function() { 
+                        that.cancelRequest(true);
+                });
 	}
 }
+
+
+// A Gapless5FileList "class". Processes a JSON object, taking the "file"
+// members out to constitute the sources[] in the Gapless5 player
+var Gapless5FileList = function(inPlayList, inStartingTrack) {
+
+	// Playlist and Track Items
+	var originalList = inPlayList;
+	var orderedList = {}
+	var shuffledList = {};
+
+	var startingTrack = inStartingTrack;
+	var currentItem = startingTrack;
+
+	// If the tracklist ordering changes, after a pre/next song,
+	// the playlist needs to be regenerated
+	var remakeList = false;
+
+	// Methods
+	this.updateTrack = function(index) {
+		this.currentItem = index;
+	}
+
+	// Playlist must start on the next track we want to play 
+	this.reorderPlayList = function(inputList, outputList, desiredIndex) {
+		tempList = inputList.slice();
+		outputList = tempList.concat(tempList.splice(0, desiredIndex));
+	}
+
+	// Shuffle a playlist, making sure that the next track in the list
+	// won't be the same as the current track being played.
+	this.shufflePlayList = function(inputList, index) {
+		var originalList = inputList.slice();
+
+		// Shuffle the input list
+		for ( var n = 0; n < inputList.length - 1; n++ ) {
+			var k = n + Math.floor(Math.random() * (inputList.length - n ));
+			var temp = inputList[k];
+			inputList[k] = inputList[n];
+			inputList[n] = temp;
+		}
+
+		// For Gapless, re-sort this array so that the chosen index 
+		// comes first, and we don't have to do a gotoTrack after 
+		// constructing the jukebox. .slice copies the input array.
+		inputList = createPlayerOrderedList(inputList.slice(), index);
+
+		// In a Gapless playback-ordered list, after moving to an ordered list,
+		// current is always 0, next is always 1, and last is always "-1".
+		var nextIndex = 1;
+		var prevIndex = inputList.length - 1;     
+
+		// After shuffling, if the next/previous track is the same as
+		// the current track in the unshuffled, swap the current index.
+		if ( originalList[index].file == inputList[prevIndex].file ) {
+			var temp = inputList[0];
+			inputList[0] = inputList[prevIndex];
+			inputList[prevIndex] = temp;
+		}
+		if ( originalList[index].file == inputList[nextIndex].file ) {
+			var temp = inputList[0];
+			inputList[0] = inputList[nextIndex];
+			inputList[nextIndex] = temp;
+		}
+        }
+}
+
 
 
 // parameters are optional.  options:
