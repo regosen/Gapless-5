@@ -315,28 +315,102 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 }
 
 
-// A Gapless5FileList "class". Processes a JSON object, taking the "file"
-// members out to constitute the sources[] in the Gapless5 player
-var Gapless5FileList = function(inPlayList, inStartingTrack) {
+// A Gapless5FileList "class". Processes an array of JSON song objects, taking 
+// the "file" members out to constitute the sources[] in the Gapless5 player
+var Gapless5PlayList = function(inPlayList, inStartingTrack) {
 
+	// OBJECT STATE
 	// Playlist and Track Items
-	var originalList = inPlayList;
-	var orderedList = {}
-	var shuffledList = {};
+	var originalList = inPlayList;	// Starting JSON input
+	var currentList = inPlayList;	// Working version of the list
 
 	var startingTrack = inStartingTrack;
 	var currentItem = startingTrack;
+	var that = this;
+
+	var previousList = {};		// Support double-toggle undo
+	var previousItem = 0;		// to last list and last index
 
 	// If the tracklist ordering changes, after a pre/next song,
 	// the playlist needs to be regenerated
-	var remakeList = false;
+	var shuffleMode = false;	// Ordered or Shuffle
+	var remakeList = false;		// Will need to re-order list
+					// upon track changing
 
-	// Methods
-	this.updateTrack = function(index) {
-		this.currentItem = index;
+	// PUBLIC METHODS
+	// Toggle shuffle mode or not, and prepare for rebasing the playlist
+	// upon changing to the next available song.
+	this.shuffleToggle = function() {
+		if ( that.remakeList ) 
+		{
+			// Already pressed the shuffle button once.
+			// Revert to previous list / item, and terminate
+			that.currentList = that.previousList;
+			that.currentItem = that.previousItem;
+			that.shuffleMode = !(that.shuffleMode);
+			that.remakeList = false;
+			return;
+		} 
+		else 
+		{
+			// In case the mode is toggled multiple times,
+			// have the previous list and play item ready.
+			that.previousList = that.currentList;
+			that.previousItem = that.currentItem;
+		}
+
+		if ( that.shuffleMode ) 
+		{
+			that.shufflePlayList(that.originalList, that.currentItem);
+			that.shuffleMode = true;
+			that.remakeList = true;
+		} 
+		else 
+		{
+			that.previousList = that.currentList;
+			that.reorderPlayList(that.originalList, that.currentList, that.currentItem);
+			that.shuffleMode = false;
+			that.remakeList = true;
+		}
+		that.currentItem = 0;	// Position to head of list
+		that.remakeList = true;	// After next track is chosen, 
+					// rebasing the list is necessary
 	}
 
-	// Playlist must start on the next track we want to play 
+	// After toggling the list, the next/prev track action must trigger
+	// the list getting remade, with the next desired track as the head.
+	// This function will remake the list as needed.
+	this.rebasePlayList = function(index) {
+		if ( that.remakeList ) 
+		{
+			that.reorderPlayList(that.currentList, that.currentList, index);
+			that.currentItem = 0;		// Position to head of the list
+			that.remakeList = false;	// Rebasing is finished.
+		}
+	}
+
+	// Signify to this object that at the next track change, it will be OK 
+	// to reorder the current playlist starting at the next desired track.
+	this.flagForRebase = function()
+		that.remakeList = true;
+	}
+
+	// PlayList manipulation requires us to keep state on which track is 
+	// playing. Player object state changes may need to update the current
+	// index in the FileList object as well.
+	this.setIndex = function(index) {
+		that.currentItem = index;
+	}
+
+	// Get an array of songfile paths from this object, appropriate for 
+	// including in a Player object.
+	this.trackList = function() {
+		return that.currentList.map(function (song) { return song.file });
+	}
+
+	// PRIVATE METHODS
+	// Reorder a playlist so that the outputList starts at the desiredIndex
+	// of the inputList.
 	this.reorderPlayList = function(inputList, outputList, desiredIndex) {
 		tempList = inputList.slice();
 		outputList = tempList.concat(tempList.splice(0, desiredIndex));
@@ -345,20 +419,20 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Shuffle a playlist, making sure that the next track in the list
 	// won't be the same as the current track being played.
 	this.shufflePlayList = function(inputList, index) {
-		var originalList = inputList.slice();
+		var startList = inputList.slice();
 
 		// Shuffle the input list
-		for ( var n = 0; n < inputList.length - 1; n++ ) {
+		for ( var n = 0; n < inputList.length - 1; n++ ) 
+		{
 			var k = n + Math.floor(Math.random() * (inputList.length - n ));
 			var temp = inputList[k];
 			inputList[k] = inputList[n];
 			inputList[n] = temp;
 		}
 
-		// For Gapless, re-sort this array so that the chosen index 
-		// comes first, and we don't have to do a gotoTrack after 
-		// constructing the jukebox. .slice copies the input array.
-		inputList = createPlayerOrderedList(inputList.slice(), index);
+		// Reorder playlist array so that the chosen index comes first, 
+		// and gotoTrack isn't needed after Player object is remade.
+		that.reorderPlayList(inputList, inputList, index);
 
 		// In a Gapless playback-ordered list, after moving to an ordered list,
 		// current is always 0, next is always 1, and last is always "-1".
@@ -367,12 +441,14 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// After shuffling, if the next/previous track is the same as
 		// the current track in the unshuffled, swap the current index.
-		if ( originalList[index].file == inputList[prevIndex].file ) {
+		if ( startList[index].file == inputList[prevIndex].file ) 
+		{
 			var temp = inputList[0];
 			inputList[0] = inputList[prevIndex];
 			inputList[prevIndex] = temp;
 		}
-		if ( originalList[index].file == inputList[nextIndex].file ) {
+		if ( startList[index].file == inputList[nextIndex].file ) 
+		{
 			var temp = inputList[0];
 			inputList[0] = inputList[nextIndex];
 			inputList[nextIndex] = temp;
@@ -425,6 +501,7 @@ if (context && gainNode)
 var trackIndex = (typeof startingTrack == 'undefined') ? 0 : startingTrack;
 var loadingTrack = -1;
 var sources = [];
+var playList = {}
 
 // Callback and Execution logic
 var inCallback = false;
@@ -1066,6 +1143,23 @@ var Init = function(elem_id, options, tickMS) {
 			{
 				that.addTrack(options.tracks[index]);
 			}
+		}
+	}
+
+	// set up playlist object
+	if ( options != null && 'startingTrack' in options)
+	{
+		if (typeof options.tracks == 'number')
+		{
+			that.startingTrack = options.startingTrack;
+		}
+	}
+
+	if ( options != null && 'playlist' in options)
+	{
+		if (typeof options.playlist == "object")
+		{
+			that.playlist = new Gapless5PlayList(options.playlist, that.startingTrack);
 		}
 	}
 
