@@ -317,7 +317,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 // A Gapless5FileList "class". Processes an array of JSON song objects, taking 
 // the "file" members out to constitute the sources[] in the Gapless5 player
-var Gapless5PlayList = function(inPlayList, inStartingTrack) {
+var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// OBJECT STATE
 	// Playlist and Track Items
@@ -381,12 +381,9 @@ var Gapless5PlayList = function(inPlayList, inStartingTrack) {
 	// the list getting remade, with the next desired track as the head.
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
-		if ( that.remakeList ) 
-		{
-			that.reorderPlayList(that.currentList, that.currentList, index);
-			that.currentItem = 0;		// Position to head of the list
-			that.remakeList = false;	// Rebasing is finished.
-		}
+		that.reorderPlayList(that.currentList, that.currentList, index);
+		that.currentItem = 0;		// Position to head of the list
+		that.remakeList = false;	// Rebasing is finished.
 	}
 
 	// Signify to this object that at the next track change, it will be OK 
@@ -404,7 +401,7 @@ var Gapless5PlayList = function(inPlayList, inStartingTrack) {
 
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
-	this.trackList = function() {
+	this.tracks = function() {
 		return that.currentList.map(function (song) { return song.file });
 	}
 
@@ -501,7 +498,8 @@ if (context && gainNode)
 var trackIndex = (typeof startingTrack == 'undefined') ? 0 : startingTrack;
 var loadingTrack = -1;
 var sources = [];
-var playList = {}
+var fileList = null;
+
 
 // Callback and Execution logic
 var inCallback = false;
@@ -516,6 +514,7 @@ this.onplay = null;
 this.onpause = null;
 this.onstop = null;
 this.onnext = null;
+this.onshuffle = null;
 
 this.onerror = null;
 this.onfinishedtrack = null;
@@ -576,6 +575,15 @@ var runCallback = function (cb) {
 		inCallback = false;
 	}
 };
+
+// after shuffle mode toggle and track change, re-grab the tracklist
+var refreshTracks = function(index) {
+	that.removeAllTracks();
+	that.fileList.rebasePlayList(index);
+	that.sources[] = that.fileList.tracks();
+	that.trackIndex = that.fileList.currentIndex;
+};
+
 
 // (PUBLIC) ACTIONS
 
@@ -807,10 +815,19 @@ this.removeAllTracks = function () {
 	}
 };
 
+this.shuffleChange = function(newIndex) {
+	that.fileList.shuffleToggle();
+};
+
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-    var trackDiff = (newIndex - trackIndex)
+	// After a shuffle toggle, resort the playlist when the track changes
+	if (that.fileList.remakeList) {
+		that.refreshTracks();
+	}
+
+	var trackDiff = (newIndex - trackIndex);
 	if (trackDiff == 0)
 	{
 		resetPosition();
@@ -854,6 +871,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		sources[oldIndex].stop(); // call this last
 
 	}
+	that.fileList.setIndex(newIndex);
 	enableButton('prev', that.loop || (newIndex > 0));
 	enableButton('next', that.loop || (newIndex < that.tracks.length - 1));
 };
@@ -1159,7 +1177,7 @@ var Init = function(elem_id, options, tickMS) {
 	{
 		if (typeof options.playlist == "object")
 		{
-			that.playlist = new Gapless5PlayList(options.playlist, that.startingTrack);
+			that.fileList = new Gapless5FileList(options.playlist, that.startingTrack);
 		}
 	}
 
