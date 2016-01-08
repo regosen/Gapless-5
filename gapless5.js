@@ -1184,6 +1184,10 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.playlist == "object")
 		{
 			that.fileList = new Gapless5FileList(options.playlist, that.startingTrack);
+			for (var index in that.fileList.tracks())
+			{
+				that.addTrack(options.tracks[index]);
+			}
 		}
 	}
 
