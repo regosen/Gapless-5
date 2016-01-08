@@ -388,7 +388,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Signify to this object that at the next track change, it will be OK 
 	// to reorder the current playlist starting at the next desired track.
-	this.flagForRebase = function()
+	this.flagForRebase = function() {
 		that.remakeList = true;
 	}
 
@@ -580,7 +580,7 @@ var runCallback = function (cb) {
 var refreshTracks = function(index) {
 	that.removeAllTracks();
 	that.fileList.rebasePlayList(index);
-	that.sources[] = that.fileList.tracks();
+	that.sources = that.fileList.tracks();
 	that.trackIndex = that.fileList.currentIndex;
 };
 
@@ -825,6 +825,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	// After a shuffle toggle, resort the playlist when the track changes
 	if (that.fileList.remakeList) {
 		that.refreshTracks();
+		// TODO: will the next code DTRT?
 	}
 
 	var trackDiff = (newIndex - trackIndex);
