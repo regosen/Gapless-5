@@ -975,7 +975,7 @@ this.stop = function (e) {
 };
 
 this.totalTracks = function() {
-	return len(that.playlist.currentList);
+	return len(that.fileList.currentList);
 }
 
 
