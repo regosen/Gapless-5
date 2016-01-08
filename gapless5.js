@@ -974,6 +974,11 @@ this.stop = function (e) {
 	runCallback(that.onstop);
 };
 
+this.trackCount = function() {
+	return len(that.playlist.currentList);
+}
+
+
 // (PUBLIC) QUERIES AND CALLBACKS
 
 this.isPlaying = function () {
