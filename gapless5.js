@@ -974,7 +974,7 @@ this.stop = function (e) {
 	runCallback(that.onstop);
 };
 
-this.trackCount = function() {
+this.totalTracks = function() {
 	return len(that.playlist.currentList);
 }
 
