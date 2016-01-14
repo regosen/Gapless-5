@@ -327,12 +327,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.previousItem = 0;			// to last list and last index
 
 	this.startingTrack = inStartingTrack;
-	if ( this.startingTrack == null )
+	this.currentItem = inStartingTrack;
+	if ( inStartingTrack == null )
 	{
 		this.startingTrack = 0;
+		this.currentItem = 0;
 	}
 
-	this.currentItem = startingTrack;
 	var that = this;
 
 	// If the tracklist ordering changes, after a pre/next song,
@@ -1190,7 +1191,7 @@ var Init = function(elem_id, options, tickMS) {
 			that.fileList = new Gapless5FileList(options.playlist, that.startingTrack);
 			for (var index in that.fileList.tracks())
 			{
-				that.addTrack(options.tracks[index]);
+				that.addTrack(that.fileList.tracks[index]);
 			}
 		}
 	}
