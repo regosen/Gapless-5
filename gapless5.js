@@ -321,20 +321,19 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// OBJECT STATE
 	// Playlist and Track Items
-	var originalList = inPlayList;	// Starting JSON input
-	var currentList = inPlayList;	// Working version of the list
+	this.originalList = inPlayList;		// Starting JSON input
+	this.currentList = inPlayList.slice();	// Working version of the list
+	this.previousList = {};			// Support double-toggle undo
+	this.previousItem = 0;			// to last list and last index
 
-	var startingTrack = inStartingTrack;
-	if ( startingTrack == null )
+	this.startingTrack = inStartingTrack;
+	if ( this.startingTrack == null )
 	{
-		startingTrack = 0;
+		this.startingTrack = 0;
 	}
 
-	var currentItem = startingTrack;
+	this.currentItem = startingTrack;
 	var that = this;
-
-	var previousList = {};		// Support double-toggle undo
-	var previousItem = 0;		// to last list and last index
 
 	// If the tracklist ordering changes, after a pre/next song,
 	// the playlist needs to be regenerated
