@@ -325,6 +325,11 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	var currentList = inPlayList;	// Working version of the list
 
 	var startingTrack = inStartingTrack;
+	if ( startingTrack == null )
+	{
+		startingTrack = 0;
+	}
+
 	var currentItem = startingTrack;
 	var that = this;
 
