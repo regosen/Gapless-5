@@ -1178,7 +1178,7 @@ var Init = function(elem_id, options, tickMS) {
 	// set up playlist object
 	if ( options != null && 'startingTrack' in options)
 	{
-		if (typeof options.tracks == 'number')
+		if (typeof options.startingTrack == 'number')
 		{
 			that.startingTrack = options.startingTrack;
 		}
