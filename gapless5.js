@@ -1189,9 +1189,9 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.playlist == "object")
 		{
 			that.plist = new Gapless5FileList(options.playlist, that.startingTrack);
-			for (var index in that.plist.tracks())
+			for (var i = 0; i < that.plist.tracks().length ; i++ )
 			{
-				that.addTrack(that.plist.tracks[index]);
+				that.addTrack(that.plist.tracks[i]);
 			}
 		}
 	}
