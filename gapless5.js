@@ -321,8 +321,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// OBJECT STATE
 	// Playlist and Track Items
-	this.originalList = inPlayList;		// Starting JSON input
-	this.currentList = inPlayList.slice();	// Working version of the list
+	this.original = inPlayList;		// Starting JSON input
+	this.current = inPlayList.slice();	// Working version of the list
 	this.previousList = {};			// Support double-toggle undo
 	this.previousItem = 0;			// to last list and last index
 
@@ -350,7 +350,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			// Already pressed the shuffle button once.
 			// Revert to previous list / item, and terminate
-			that.currentList = that.previousList;
+			that.current = that.previousList;
 			that.currentItem = that.previousItem;
 			that.shuffleMode = !(that.shuffleMode);
 			that.remakeList = false;
@@ -360,20 +360,20 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			// In case the mode is toggled multiple times,
 			// have the previous list and play item ready.
-			that.previousList = that.currentList;
+			that.previousList = that.current;
 			that.previousItem = that.currentItem;
 		}
 
 		if ( that.shuffleMode ) 
 		{
-			that.shufflePlayList(that.originalList, that.currentItem);
+			that.shufflePlayList(that.original, that.currentItem);
 			that.shuffleMode = true;
 			that.remakeList = true;
 		} 
 		else 
 		{
-			that.previousList = that.currentList;
-			that.reorderPlayList(that.originalList, that.currentList, that.currentItem);
+			that.previousList = that.current;
+			that.reorderPlayList(that.original, that.current, that.currentItem);
 			that.shuffleMode = false;
 			that.remakeList = true;
 		}
@@ -386,7 +386,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// the list getting remade, with the next desired track as the head.
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
-		that.reorderPlayList(that.currentList, that.currentList, index);
+		that.reorderPlayList(that.current, that.current, index);
 		that.currentItem = 0;		// Position to head of the list
 		that.remakeList = false;	// Rebasing is finished.
 	}
@@ -407,7 +407,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
 	this.tracks = function() {
-		return that.currentList.map(function (song) { return song.file });
+		return that.current.map(function (song) { return song.file });
 	}
 
 	// PRIVATE METHODS
@@ -503,7 +503,7 @@ if (context && gainNode)
 var trackIndex = (typeof startingTrack == 'undefined') ? 0 : startingTrack;
 var loadingTrack = -1;
 var sources = [];
-var fileList = null;
+var plist = null;
 
 
 // Callback and Execution logic
@@ -584,9 +584,9 @@ var runCallback = function (cb) {
 // after shuffle mode toggle and track change, re-grab the tracklist
 var refreshTracks = function(index) {
 	that.removeAllTracks();
-	that.fileList.rebasePlayList(index);
-	that.sources = that.fileList.tracks();
-	that.trackIndex = that.fileList.currentIndex;
+	that.plist.rebasePlayList(index);
+	that.sources = that.plist.tracks();
+	that.trackIndex = that.plist.currentIndex;
 };
 
 
@@ -821,14 +821,14 @@ this.removeAllTracks = function () {
 };
 
 this.shuffleChange = function(newIndex) {
-	that.fileList.shuffleToggle();
+	that.plist.shuffleToggle();
 };
 
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
 	// After a shuffle toggle, resort the playlist when the track changes
-	if (that.fileList.remakeList) {
+	if (that.plist.remakeList) {
 		that.refreshTracks();
 		// TODO: will the next code DTRT?
 	}
@@ -877,7 +877,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		sources[oldIndex].stop(); // call this last
 
 	}
-	that.fileList.setIndex(newIndex);
+	that.plist.setIndex(newIndex);
 	enableButton('prev', that.loop || (newIndex > 0));
 	enableButton('next', that.loop || (newIndex < that.tracks.length - 1));
 };
@@ -980,7 +980,7 @@ this.stop = function (e) {
 };
 
 this.totalTracks = function() {
-	return len(that.fileList.currentList);
+	return len(that.plist.current);
 }
 
 
@@ -1188,10 +1188,10 @@ var Init = function(elem_id, options, tickMS) {
 	{
 		if (typeof options.playlist == "object")
 		{
-			that.fileList = new Gapless5FileList(options.playlist, that.startingTrack);
-			for (var index in that.fileList.tracks())
+			that.plist = new Gapless5FileList(options.playlist, that.startingTrack);
+			for (var index in that.plist.tracks())
 			{
-				that.addTrack(that.fileList.tracks[index]);
+				that.addTrack(that.plist.tracks[index]);
 			}
 		}
 	}
