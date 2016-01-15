@@ -322,8 +322,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// OBJECT STATE
 	// Playlist and Track Items
 	this.original = inPlayList;		// Starting JSON input
-	this.current = inPlayList.slice();	// Working version of the list
-	this.previousList = {};			// Support double-toggle undo
+	this.previous = {};			// Support double-toggle undo
+	this.current = {};			// Working playlist
 	this.previousItem = 0;			// to last list and last index
 
 	this.startingTrack = inStartingTrack;
@@ -332,7 +332,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	{
 		this.startingTrack = 0;
 		this.currentItem = 0;
-	}
+	}	
+	// Make current llist use startingTrack as head of list
+	this.reorderPlayList(original, current, startingTrack);
 
 	var that = this;
 
@@ -350,7 +352,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			// Already pressed the shuffle button once.
 			// Revert to previous list / item, and terminate
-			that.current = that.previousList;
+			that.current = that.previous;
 			that.currentItem = that.previousItem;
 			that.shuffleMode = !(that.shuffleMode);
 			that.remakeList = false;
@@ -360,7 +362,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			// In case the mode is toggled multiple times,
 			// have the previous list and play item ready.
-			that.previousList = that.current;
+			that.previous = that.current;
 			that.previousItem = that.currentItem;
 		}
 
@@ -372,7 +374,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		} 
 		else 
 		{
-			that.previousList = that.current;
+			that.previous = that.current;
 			that.reorderPlayList(that.original, that.current, that.currentItem);
 			that.shuffleMode = false;
 			that.remakeList = true;
