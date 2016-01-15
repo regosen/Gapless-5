@@ -333,8 +333,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		this.startingTrack = 0;
 		this.currentItem = 0;
 	}	
-	// Make current llist use startingTrack as head of list
-	this.reorderPlayList(original, current, startingTrack);
+	// Make current list use startingTrack as head of list
+	this.reorderPlayList(this.original, this.current, startingTrack);
 
 	var that = this;
 
