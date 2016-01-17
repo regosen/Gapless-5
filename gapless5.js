@@ -334,7 +334,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		this.currentItem = 0;
 	}	
 	// Make current list use startingTrack as head of list
-	this.reorderPlayList(this.original, this.current, this.startingTrack);
+	reorderPlayList(this.original, this.current, this.startingTrack);
 
 	var that = this;
 
@@ -343,6 +343,53 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	var shuffleMode = false;	// Ordered or Shuffle
 	var remakeList = false;		// Will need to re-order list
 					// upon track changing
+
+	// PRIVATE METHODS
+	// Reorder a playlist so that the outputList starts at the desiredIndex
+	// of the inputList.
+	var reorderPlayList = function(inputList, outputList, desiredIndex) {
+		tempList = inputList.slice();
+		outputList = tempList.concat(tempList.splice(0, desiredIndex));
+	}
+
+	// Shuffle a playlist, making sure that the next track in the list
+	// won't be the same as the current track being played.
+	var shufflePlayList = function(inputList, index) {
+		var startList = inputList.slice();
+
+		// Shuffle the input list
+		for ( var n = 0; n < inputList.length - 1; n++ ) 
+		{
+			var k = n + Math.floor(Math.random() * (inputList.length - n ));
+			var temp = inputList[k];
+			inputList[k] = inputList[n];
+			inputList[n] = temp;
+		}
+
+		// Reorder playlist array so that the chosen index comes first, 
+		// and gotoTrack isn't needed after Player object is remade.
+		that.reorderPlayList(inputList, inputList, index);
+
+		// In a Gapless playback-ordered list, after moving to an ordered list,
+		// current is always 0, next is always 1, and last is always "-1".
+		var nextIndex = 1;
+		var prevIndex = inputList.length - 1;     
+
+		// After shuffling, if the next/previous track is the same as
+		// the current track in the unshuffled, swap the current index.
+		if ( startList[index].file == inputList[prevIndex].file ) 
+		{
+			var temp = inputList[0];
+			inputList[0] = inputList[prevIndex];
+			inputList[prevIndex] = temp;
+		}
+		if ( startList[index].file == inputList[nextIndex].file ) 
+		{
+			var temp = inputList[0];
+			inputList[0] = inputList[nextIndex];
+			inputList[nextIndex] = temp;
+		}
+        }
 
 	// PUBLIC METHODS
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
@@ -412,52 +459,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return that.current.map(function (song) { return song.file });
 	}
 
-	// PRIVATE METHODS
-	// Reorder a playlist so that the outputList starts at the desiredIndex
-	// of the inputList.
-	this.reorderPlayList = function(inputList, outputList, desiredIndex) {
-		tempList = inputList.slice();
-		outputList = tempList.concat(tempList.splice(0, desiredIndex));
-	}
-
-	// Shuffle a playlist, making sure that the next track in the list
-	// won't be the same as the current track being played.
-	this.shufflePlayList = function(inputList, index) {
-		var startList = inputList.slice();
-
-		// Shuffle the input list
-		for ( var n = 0; n < inputList.length - 1; n++ ) 
-		{
-			var k = n + Math.floor(Math.random() * (inputList.length - n ));
-			var temp = inputList[k];
-			inputList[k] = inputList[n];
-			inputList[n] = temp;
-		}
-
-		// Reorder playlist array so that the chosen index comes first, 
-		// and gotoTrack isn't needed after Player object is remade.
-		that.reorderPlayList(inputList, inputList, index);
-
-		// In a Gapless playback-ordered list, after moving to an ordered list,
-		// current is always 0, next is always 1, and last is always "-1".
-		var nextIndex = 1;
-		var prevIndex = inputList.length - 1;     
-
-		// After shuffling, if the next/previous track is the same as
-		// the current track in the unshuffled, swap the current index.
-		if ( startList[index].file == inputList[prevIndex].file ) 
-		{
-			var temp = inputList[0];
-			inputList[0] = inputList[prevIndex];
-			inputList[prevIndex] = temp;
-		}
-		if ( startList[index].file == inputList[nextIndex].file ) 
-		{
-			var temp = inputList[0];
-			inputList[0] = inputList[nextIndex];
-			inputList[nextIndex] = temp;
-		}
-        }
 }
 
 
