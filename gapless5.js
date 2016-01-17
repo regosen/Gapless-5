@@ -833,7 +833,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 	// After a shuffle toggle, resort the playlist when the track changes
 	if (that.plist.remakeList) {
-		that.refreshTracks();
+		refreshTracks();
 		// TODO: will the next code DTRT?
 	}
 
