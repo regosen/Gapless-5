@@ -394,14 +394,14 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song.
 	this.shuffleToggle = function() {
-		if ( that.remakeList ) 
+		if ( remakeList ) 
 		{
 			// Already pressed the shuffle button once.
 			// Revert to previous list / item, and terminate
 			that.current = that.previous;
 			that.currentItem = that.previousItem;
-			that.shuffleMode = !(that.shuffleMode);
-			that.remakeList = false;
+			shuffleMode = !(shuffleMode);
+			remakeList = false;
 			return;
 		} 
 		else 
@@ -412,21 +412,19 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			that.previousItem = that.currentItem;
 		}
 
-		if ( that.shuffleMode ) 
+		if ( shuffleMode ) 
 		{
 			that.shufflePlayList(that.original, that.currentItem);
-			that.shuffleMode = true;
-			that.remakeList = true;
+			shuffleMode = true;
 		} 
 		else 
 		{
 			that.previous = that.current;
 			that.current = reorderPlayList(that.original, that.currentItem);
-			that.shuffleMode = false;
-			that.remakeList = true;
+			shuffleMode = false;
 		}
 		that.currentItem = 0;	// Position to head of list
-		that.remakeList = true;	// After next track is chosen, 
+		remakeList = true;	// After next track is chosen, 
 					// rebasing the list is necessary
 	}
 
@@ -436,13 +434,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.rebasePlayList = function(index) {
 		that.current = reorderPlayList(that.current, index);
 		that.currentItem = 0;		// Position to head of the list
-		that.remakeList = false;	// Rebasing is finished.
+		remakeList = false;		// Rebasing is finished.
 	}
 
 	// Signify to this object that at the next track change, it will be OK 
 	// to reorder the current playlist starting at the next desired track.
 	this.flagForRebase = function() {
-		that.remakeList = true;
+		remakeList = true;
 	}
 
 	// PlayList manipulation requires us to keep state on which track is 
