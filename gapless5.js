@@ -333,8 +333,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		this.startingTrack = 0;
 		this.currentItem = 0;
 	}	
-	// Make current list use startingTrack as head of list
-	reorderPlayList(this.original, this.current, this.startingTrack);
 
 	var that = this;
 
@@ -347,9 +345,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// PRIVATE METHODS
 	// Reorder a playlist so that the outputList starts at the desiredIndex
 	// of the inputList.
-	var reorderPlayList = function(inputList, outputList, desiredIndex) {
+	var reorderPlayList = function(inputList, desiredIndex) {
 		tempList = inputList.slice();
 		outputList = tempList.concat(tempList.splice(0, desiredIndex));
+		return outputList;
 	}
 
 	// Shuffle a playlist, making sure that the next track in the list
@@ -368,7 +367,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Reorder playlist array so that the chosen index comes first, 
 		// and gotoTrack isn't needed after Player object is remade.
-		that.reorderPlayList(inputList, inputList, index);
+		inputList = that.reorderPlayList(inputList, index);
 
 		// In a Gapless playback-ordered list, after moving to an ordered list,
 		// current is always 0, next is always 1, and last is always "-1".
@@ -422,7 +421,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		else 
 		{
 			that.previous = that.current;
-			that.reorderPlayList(that.original, that.current, that.currentItem);
+			that.current = reorderPlayList(that.original, that.currentItem);
 			that.shuffleMode = false;
 			that.remakeList = true;
 		}
@@ -435,7 +434,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// the list getting remade, with the next desired track as the head.
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
-		that.reorderPlayList(that.current, that.current, index);
+		that.current = reorderPlayList(that.current, index);
 		that.currentItem = 0;		// Position to head of the list
 		that.remakeList = false;	// Rebasing is finished.
 	}
@@ -459,6 +458,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return that.current.map(function (song) { return song.file });
 	}
 
+	// On object creation, make current list use startingTrack as head of list
+	this.current = reorderPlayList(this.original, this.startingTrack);
 }
 
 
