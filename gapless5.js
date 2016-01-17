@@ -984,7 +984,7 @@ this.stop = function (e) {
 };
 
 this.totalTracks = function() {
-	return len(that.plist.current);
+	return that.plist.current.length;
 }
 
 
