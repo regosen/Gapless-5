@@ -439,8 +439,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Signify to this object that at the next track change, it will be OK 
 	// to reorder the current playlist starting at the next desired track.
-	this.flagForRebase = function() {
-		remakeList = true;
+	this.readyToShuffle = function() {
+		return remakeList;
 	}
 
 	// PlayList manipulation requires us to keep state on which track is 
@@ -830,9 +830,9 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
 	// After a shuffle toggle, resort the playlist when the track changes
-	if (that.plist.remakeList) {
+	if (that.plist.readyToShuffle) {
 		refreshTracks();
-		// TODO: will the next code DTRT?
+		// TODO: will the next code DTRT? Nope, indexing is hosed
 	}
 
 	var trackDiff = (newIndex - trackIndex);
