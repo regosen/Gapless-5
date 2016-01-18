@@ -829,13 +829,12 @@ this.shuffleChange = function(newIndex) {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-	// After a shuffle toggle, resort the playlist when the track changes
-	if (that.plist.readyToShuffle == true) {
-		refreshTracks();
+	var trackDiff = (newIndex - trackIndex);
+	if (that.plist.readyToShuffle()) {
+		refreshTracks(newIndex);
 		// TODO: will the next code DTRT? Nope, indexing is hosed
 	}
 
-	var trackDiff = (newIndex - trackIndex);
 	if (trackDiff == 0)
 	{
 		resetPosition();
