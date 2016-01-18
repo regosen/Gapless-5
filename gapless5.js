@@ -829,12 +829,11 @@ this.shuffleChange = function(newIndex) {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-	var trackDiff = (newIndex - trackIndex);
 	if (that.plist.readyToShuffle()) {
 		refreshTracks(newIndex);
-		// TODO: will the next code DTRT? Nope, indexing is hosed
 	}
 
+	var trackDiff = (newIndex - trackIndex);
 	if (trackDiff == 0)
 	{
 		resetPosition();
