@@ -439,7 +439,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Signify to this object that at the next track change, it will be OK 
 	// to reorder the current playlist starting at the next desired track.
-	this.readyToShuffle = function() {
+	this.readyToRemake = function() {
 		return remakeList;
 	}
 
@@ -829,7 +829,8 @@ this.shuffleChange = function(newIndex) {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-	if (that.plist.readyToShuffle()) {
+	if (that.plist.readyToRemake()) {
+		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 	}
 
