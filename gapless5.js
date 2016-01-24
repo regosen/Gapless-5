@@ -587,12 +587,11 @@ var runCallback = function (cb) {
 var refreshTracks = function(index) {
 	that.removeAllTracks();
 	that.plist.rebasePlayList(index);
-	that.tracks = that.plist.tracks();
-	for (var i = 0; i < that.tracks.length ; i++ )
+	for (var i = 0; i < that.plist.tracks().length ; i++ )
 	{
-		that.addTrack(that.tracks[i]);
+		that.addTrack(that.plist.tracks()[i]);
 	}
-	that.trackIndex = that.plist.currentIndex;
+	that.trackIndex = that.plist.currentItem;
 };
 
 
