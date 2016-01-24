@@ -854,7 +854,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		{
 			sources[oldIndex].cancelRequest();
 			// that.loadQueue.push([oldIndex, sources[oldIndex].audioPath]);
-			that.loadQueue.push([oldIndex, that.tracks[oldIndex]);
+			that.loadQueue.push([oldIndex, that.tracks[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after trackIndex has been updated
