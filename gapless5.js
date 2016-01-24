@@ -180,6 +180,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 	var playAudioFile = function (force) {
 		if (state == Gapless5State.Play) return;
+		position = Math.max(position, 0);
 		if (position >= endpos) position = 0;
 
 		var offsetSec = position / 1000;
@@ -192,7 +193,6 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 			source.connect(outputNode);
 			source.buffer = buffer;
 
-			var offsetSec = position / 1000;
 			var restSec = source.buffer.duration-offsetSec;
 			if (endedCallback)
 			{
@@ -304,13 +304,13 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	 		audio.addEventListener('play', onPlayEvent, false);
  			// not using audio.networkState because it's not dependable on all browsers
 		}
-                // cancel if url doesn't exist, but don't download again
-                $.ajax({
-                        url: inAudioPath,
-                        type: "HEAD",
-                }).fail(function() { 
-                        that.cancelRequest(true);
-                });
+		// cancel if url doesn't exist, but don't download again
+		$.ajax({
+			url: inAudioPath,
+			type: "HEAD",
+		}).fail(function() { 
+			that.cancelRequest(true);
+		});
 	}
 }
 
