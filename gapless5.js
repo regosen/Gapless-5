@@ -367,7 +367,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Reorder playlist array so that the chosen index comes first, 
 		// and gotoTrack isn't needed after Player object is remade.
-		inputList = that.reorderPlayList(inputList, index);
+		inputList = reorderPlayList(inputList, index);
 
 		// In a Gapless playback-ordered list, after moving to an ordered list,
 		// current is always 0, next is always 1, and last is always "-1".
@@ -412,7 +412,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			that.previousItem = that.currentItem;
 		}
 
-		if ( shuffleMode ) 
+		if ( shuffleMode == false ) 
 		{
 			shufflePlayList(that.original, that.currentItem);
 			shuffleMode = true;
