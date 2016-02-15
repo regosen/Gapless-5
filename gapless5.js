@@ -414,7 +414,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		if ( shuffleMode ) 
 		{
-			that.shufflePlayList(that.original, that.currentItem);
+			shufflePlayList(that.original, that.currentItem);
 			shuffleMode = true;
 		} 
 		else 
