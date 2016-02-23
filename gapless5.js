@@ -430,7 +430,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			{
 				if (track == that.original[i].name )
 				{
-                         		that.current = reorderPlayList(that.original, that.currentItem);
+                         		that.current = reorderPlayList(that.original, i);
 					that.currentItem = 0;
 				}
                         }
