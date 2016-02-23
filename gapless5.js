@@ -358,17 +358,17 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		var outputList = inputList.slice();
 
 		// Shuffle the input list
-		for ( var n = 0; n < inputList.length - 1; n++ ) 
+		for ( var n = 0; n < startList.length - 1; n++ ) 
 		{
-			var k = n + Math.floor(Math.random() * (inputList.length - n ));
-			var temp = inputList[k];
-			inputList[k] = inputList[n];
-			inputList[n] = temp;
+			var k = n + Math.floor(Math.random() * (startList.length - n ));
+			var temp = startList[k];
+			startList[k] = startList[n];
+			startList[n] = temp;
 		}
 
 		// Reorder playlist array so that the chosen index comes first, 
 		// and gotoTrack isn't needed after Player object is remade.
-		outputList = reorderPlayList(inputList, index);
+		outputList = reorderPlayList(startList, index);
 
 		// In a Gapless playback-ordered list, after moving to an ordered list,
 		// current is always 0, next is always 1, and last is always "-1".
@@ -423,6 +423,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		else 
 		{
 			that.previous = that.current;
+			// TODO: Find where current song is in original playlist, and make that
+			// the head of the new unshuffled playlist
+			// var track = that.current[that.currentItem].name;
 			that.current = reorderPlayList(that.original, that.currentItem);
 			shuffleMode = false;
 		}
