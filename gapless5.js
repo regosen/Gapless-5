@@ -423,7 +423,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		else 
 		{
 			// TODO: these need to be copies of current?
-			that.previous = that.current;
+			that.previous = that.current.slice();
 			// Find where current song is in original playlist, and make that
 			// the head of the new unshuffled playlist
 			var track = that.current[that.currentItem].name;
@@ -432,7 +432,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 				if (track == that.original[i].name )
 				{
                          		that.current = reorderPlayList(that.original, i);
-					that.currentItem = 0;
 					// TODO: post-track-change, this assumes startingTrack is BM :(
 				}
                         }
