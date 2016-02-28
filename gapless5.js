@@ -432,6 +432,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
                          		that.current = reorderPlayList(that.original, i);
 				}
                         }
+			shuffleMode = false;
 		}
 		that.currentItem = 0;	// Position to head of list
 		remakeList = true;	// After next track is chosen, 
@@ -451,6 +452,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// to reorder the current playlist starting at the next desired track.
 	this.readyToRemake = function() {
 		return remakeList;
+	}
+
+	// Are we in shuffle mode or not? If we just came out of shuffle mode,
+	// the player object will want to know.
+	this.justShuffled = function() {
+		return shuffleMode;
 	}
 
 	// PlayList manipulation requires us to keep state on which track is 
@@ -842,7 +849,9 @@ this.shuffleChange = function(newIndex) {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-	if (that.plist.readyToRemake()) {
+	// If the list is flagged for remaking on the change of shuffle mode, and 
+	// we're not returning out of shuffle mode, remake the list in shuffled order
+	if ( (that.plist.readyToRemake()) && ! (that.plist.justShuffled()) ) {
 		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 	}
