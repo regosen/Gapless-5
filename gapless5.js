@@ -411,7 +411,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			// In case the mode is toggled multiple times,
 			// have the previous list and play item ready.
-			that.previous = that.current;
+			that.previous = that.current.slice();
 			that.previousItem = that.currentItem;
 		}
 
@@ -422,8 +422,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		} 
 		else 
 		{
-			// TODO: these need to be copies of current?
-			that.previous = that.current.slice();
 			// Find where current song is in original playlist, and make that
 			// the head of the new unshuffled playlist
 			var track = that.current[that.currentItem].name;
@@ -432,10 +430,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 				if (track == that.original[i].name )
 				{
                          		that.current = reorderPlayList(that.original, i);
-					// TODO: post-track-change, this assumes startingTrack is BM :(
 				}
                         }
-			shuffleMode = false;
 		}
 		that.currentItem = 0;	// Position to head of list
 		remakeList = true;	// After next track is chosen, 
