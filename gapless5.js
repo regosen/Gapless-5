@@ -1042,6 +1042,7 @@ var updateDisplay = function () {
 		$("#tracks" + that.id).html(0);
 		$("#totalPosition" + that.id).html("00:00.00");
 		enableButton('prev', false);
+		enableButton('shuffle', false);
 		enableButton('next', false);
 	}
 	else
@@ -1067,6 +1068,15 @@ var updateDisplay = function () {
 				runCallback(that.onerror);
 			}
 		}
+		if ( that.plist.justShuffled() == false )
+		{
+			enableButton('shuffle', true);
+		}
+		else 
+		{
+			enableButton('shuffle', false);
+		}
+
 		sources[trackIndex].uiDirty = false;
 	}
 };
