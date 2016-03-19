@@ -842,7 +842,7 @@ this.removeAllTracks = function () {
 	}
 };
 
-this.shuffleChange = function(newIndex) {
+this.shuffle = function(newIndex) {
 	that.plist.shuffleToggle();
 };
 
@@ -1134,6 +1134,7 @@ var Init = function(elem_id, options, tickMS) {
 	player_html += '<button class="g5button g5prev" id="prev' + that.id + '"/>';
 	player_html += '<button class="g5button g5play" id="play' + that.id + '"/>';
 	player_html += '<button class="g5button g5stop" id="stop' + that.id + '"/>';
+	player_html += '<button class="g5button g5shuffle" id="shuffle' + that.id + '"/>';
 	player_html += '<button class="g5button g5next" id="next' + that.id + '"/>';
 
 	if (isMobileBrowser)
@@ -1164,6 +1165,7 @@ var Init = function(elem_id, options, tickMS) {
 	$('#prev' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].prev);
 	$('#play' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].playpause);
 	$('#stop' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].stop);
+	$('#shuffle' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].shuffle);
 	$('#next' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].next);
 
 	// set up key mappings
