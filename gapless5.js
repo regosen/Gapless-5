@@ -1077,10 +1077,12 @@ var updateDisplay = function () {
 		if ( that.plist.justShuffled() )
 		{
 			enableButton('shuffle', true);
+			isShuffleButton = true;
 		}
 		else
 		{
 			enableButton('shuffle', false);
+			isShuffleButton = false;
 		}
 		sources[trackIndex].uiDirty = false;
 	}
