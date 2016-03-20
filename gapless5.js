@@ -440,16 +440,20 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// PUBLIC METHODS
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
-	// upon changing to the next available song.
+	// upon changing to the next available song. NOTE that each function here
+	// changes flags, so the logic must exclude any logic if a revert occurs.
 	this.shuffleToggle = function() {
 		if ( remakeList == true ) 
 			revertShuffle();	
 
-		if ( remakeList == false && shuffleMode == false )
-			enableShuffle();
+		else
+		{
+			if ( shuffleMode == false )
+				enableShuffle();
 
-		if ( remakeList == false && shuffleMode == true )
-			disableShuffle();
+			if ( shuffleMode == true )
+				disableShuffle();
+		}
 	}
 
 	// After toggling the list, the next/prev track action must trigger
