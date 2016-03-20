@@ -419,6 +419,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			that.current = shufflePlayList(that.original, that.currentItem);
 			shuffleMode = true;
+			remakeList = true;
 		} 
 		else 
 		{
@@ -433,10 +434,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 				}
                         }
 			shuffleMode = false;
+			remakeList = false;
 		}
 		that.currentItem = 0;	// Position to head of list
-		remakeList = true;	// After next track is chosen, 
-					// rebasing the list is necessary
 	}
 
 	// After toggling the list, the next/prev track action must trigger
@@ -854,9 +854,9 @@ this.shuffle = function() {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
-	// If the list is flagged for remaking on the change of shuffle mode, and 
-	// we're not returning out of shuffle mode, remake the list in shuffled order
-	if ( that.plist.readyToRemake() == true && that.plist.justShuffled() == true ) {
+	// If the list is flagged for remaking on the change of shuffle mode, 
+	// remake the list in shuffled order
+	if ( that.plist.readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 	}
