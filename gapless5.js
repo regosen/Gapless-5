@@ -530,6 +530,7 @@ var inCallback = false;
 var firstUICallback = true;
 var that = this;
 var isPlayButton = true;
+var isShuffleButton = true;
 var keyMappings = {};
 
 // Callbacks
@@ -844,6 +845,10 @@ this.removeAllTracks = function () {
 
 this.shuffle = function(newIndex) {
 	that.plist.shuffleToggle();
+	if (isShuffleButton)
+		enableButton('shuffle', true);
+	else
+		enableButton('shuffle', false);
 };
 
 this.gotoTrack = function (newIndex, bForcePlay) {
@@ -1052,6 +1057,7 @@ var updateDisplay = function () {
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
 		enableButton('next', that.loop || trackIndex < that.tracks.length - 1);
+		enableButton('shuffle', false);
 
 		if (sources[trackIndex].inPlayState())
 		{
@@ -1068,15 +1074,6 @@ var updateDisplay = function () {
 				runCallback(that.onerror);
 			}
 		}
-		if ( that.plist.justShuffled() == false )
-		{
-			enableButton('shuffle', false);
-		}
-		else 
-		{
-			enableButton('shuffle', true);
-		}
-
 		sources[trackIndex].uiDirty = false;
 	}
 };
