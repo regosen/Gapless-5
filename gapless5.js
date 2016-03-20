@@ -444,16 +444,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// changes flags, so the logic must exclude any logic if a revert occurs.
 	this.shuffleToggle = function() {
 		if ( remakeList == true ) 
-			revertShuffle();	
+			return revertShuffle();	
 
-		else
-		{
-			if ( shuffleMode == false )
-				enableShuffle();
+		if ( shuffleMode == false )
+			return enableShuffle();
 
-			if ( shuffleMode == true )
-				disableShuffle();
-		}
+		if ( shuffleMode == true )
+			return disableShuffle();
 	}
 
 	// After toggling the list, the next/prev track action must trigger
@@ -863,7 +860,7 @@ this.removeAllTracks = function () {
 	}
 };
 
-this.shuffle = function() {
+this.shuffleToggle = function() {
 	that.plist.shuffleToggle();
 	if (isShuffleButton)
 		enableButton('shuffle', false);
