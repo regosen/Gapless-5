@@ -1047,7 +1047,7 @@ var updateDisplay = function () {
 		$("#tracks" + that.id).html(0);
 		$("#totalPosition" + that.id).html("00:00.00");
 		enableButton('prev', false);
-		enableButton('shuffle', false);
+		enableButton('shuffle', true);
 		enableButton('next', false);
 	}
 	else
@@ -1056,8 +1056,8 @@ var updateDisplay = function () {
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
+		enableButton('shuffle', true);
 		enableButton('next', that.loop || trackIndex < that.tracks.length - 1);
-		enableButton('shuffle', false);
 
 		if (sources[trackIndex].inPlayState())
 		{
