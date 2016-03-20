@@ -843,7 +843,7 @@ this.removeAllTracks = function () {
 	}
 };
 
-this.shuffle = function(newIndex) {
+this.shuffle = function() {
 	that.plist.shuffleToggle();
 	if (isShuffleButton)
 		enableButton('shuffle', false);
