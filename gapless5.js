@@ -420,7 +420,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Leaving shuffle mode. Tell the Player to remake the list
 	// as soon as a new track is reached or chosen.
-	var disableShuffle = function()
+	var disableShuffle = function() {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
 		that.previousItem = that.currentItem;
