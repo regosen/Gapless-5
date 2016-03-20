@@ -530,7 +530,6 @@ var inCallback = false;
 var firstUICallback = true;
 var that = this;
 var isPlayButton = true;
-var isShuffleButton = true;
 var keyMappings = {};
 
 // Callbacks
@@ -1071,12 +1070,10 @@ var updateDisplay = function () {
 		}
 		if ( that.plist.justShuffled() == false )
 		{
-			isShuffleButton = false;
-			enableButton('unshuffle', true);
+			enableButton('shuffle', false);
 		}
 		else 
 		{
-			isShuffleButton = true;
 			enableButton('shuffle', true);
 		}
 
