@@ -856,7 +856,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 	// If the list is flagged for remaking on the change of shuffle mode, and 
 	// we're not returning out of shuffle mode, remake the list in shuffled order
-	if ( (that.plist.readyToRemake()) && ! (that.plist.justShuffled()) ) {
+	if ( that.plist.readyToRemake() == true && that.plist.justShuffled() == true ) {
 		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 	}
