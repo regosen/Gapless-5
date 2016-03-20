@@ -1199,7 +1199,7 @@ var Init = function(elem_id, options, tickMS) {
 	$('#prev' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].prev);
 	$('#play' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].playpause);
 	$('#stop' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].stop);
-	$('#shuffle' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].shuffle);
+	$('#shuffle' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].shuffleToggle);
 	$('#next' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].next);
 
 	// set up key mappings
