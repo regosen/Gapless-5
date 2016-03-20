@@ -328,6 +328,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	this.startingTrack = inStartingTrack;
 	this.currentItem = inStartingTrack;
+
 	if ( inStartingTrack == null )
 	{
 		this.startingTrack = 0;
@@ -397,13 +398,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song.
 	this.shuffleToggle = function() {
-		if ( remakeList ) 
+		if ( remakeList == true && shuffleMode == true ) 
 		{
-			// Already pressed the shuffle button once.
+			// Already pressed the shuffle button once from normal mode.
 			// Revert to previous list / item, and terminate
 			that.current = that.previous;
 			that.currentItem = that.previousItem;
-			shuffleMode = !(shuffleMode);
+			shuffleMode = false;
 			remakeList = false;
 			return;
 		} 
@@ -419,7 +420,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		{
 			that.current = shufflePlayList(that.original, that.currentItem);
 			shuffleMode = true;
-			remakeList = true;
 		} 
 		else 
 		{
@@ -433,9 +433,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
                          		that.current = reorderPlayList(that.original, i);
 				}
                         }
-			shuffleMode = false;
-			remakeList = false;
 		}
+		remakeList = true;
 		that.currentItem = 0;	// Position to head of list
 	}
 
