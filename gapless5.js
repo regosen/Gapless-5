@@ -456,7 +456,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// the list getting remade, with the next desired track as the head.
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
-		that.current = reorderPlayList(that.current, index);
+		if ( that.justShuffled() )
+			that.current = reorderPlayList(that.current, index);
 
 		that.currentItem = 0;		// Position to head of the list
 		remakeList = false;		// Rebasing is finished.
@@ -618,8 +619,7 @@ var runCallback = function (cb) {
 // after shuffle mode toggle and track change, re-grab the tracklist
 var refreshTracks = function(index) {
 	that.removeAllTracks();
-	if ( that.plist.justShuffled == true )
-		that.plist.rebasePlayList(index);
+	that.plist.rebasePlayList(index);
 
 	for (var i = 0; i < that.plist.tracks().length ; i++ )
 	{
@@ -877,7 +877,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		refreshTracks(newIndex);
 	}
 
-	var trackDiff = (newIndex - trackIndex);
+	var trackDiff = newIndex - trackIndex;
 	if (trackDiff == 0)
 	{
 		resetPosition();
