@@ -394,48 +394,62 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return outputList;
         }
 
+	// Already pressed the shuffle button once from normal mode.
+	// Revert to previous list / item, and terminate
+	var revertShuffle = function() {
+		that.current = that.previous;
+
+		that.currentItem = that.previousItem;
+		shuffleMode = !(shuffleMode);
+		remakeList = false;
+	}
+
+	// Going into shuffle mode. Tell the Player to remake the list
+	// as soon as a new track is reached or chosen.
+	var enableShuffle = function() {
+		// Save old state in case we need to revert
+		that.previous = that.current.slice();
+		that.previousItem = that.currentItem;
+
+		that.current = shufflePlayList(that.original, that.currentItem);
+
+		that.currentItem = 0;	// Position to head of list
+		shuffleMode = true;
+		remakeList = true;
+	}
+
+	// Leaving shuffle mode. Tell the Player to remake the list
+	// as soon as a new track is reached or chosen.
+	var disableShuffle = function()
+		// Save old state in case we need to revert
+		that.previous = that.current.slice();
+		that.previousItem = that.currentItem;
+
+		// Find where current song is in original playlist, and make that
+		// the head of the new unshuffled playlist
+		var track = that.current[that.currentItem].name;
+		for (var i = 0; i < that.original.length ; i++ )
+			if (track == that.original[i].name )
+                        	that.current = reorderPlayList(that.original, i);
+		
+		that.currentItem = 0;	// Position to head of list
+		shuffleMode = false;
+		remakeList = true;
+	}
+
+
 	// PUBLIC METHODS
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song.
 	this.shuffleToggle = function() {
-		if ( remakeList == true && shuffleMode == true ) 
-		{
-			// Already pressed the shuffle button once from normal mode.
-			// Revert to previous list / item, and terminate
-			that.current = that.previous;
-			that.currentItem = that.previousItem;
-			shuffleMode = false;
-			remakeList = false;
-			return;
-		} 
-		else 
-		{
-			// In case the mode is toggled multiple times,
-			// have the previous list and play item ready.
-			that.previous = that.current.slice();
-			that.previousItem = that.currentItem;
-		}
+		if ( remakeList == true ) 
+			revertShuffle();	
 
-		if ( shuffleMode == false ) 
-		{
-			that.current = shufflePlayList(that.original, that.currentItem);
-			shuffleMode = true;
-		} 
-		else 
-		{
-			// Find where current song is in original playlist, and make that
-			// the head of the new unshuffled playlist
-			var track = that.current[that.currentItem].name;
-	                for (var i = 0; i < that.original.length ; i++ )
-			{
-				if (track == that.original[i].name )
-				{
-                         		that.current = reorderPlayList(that.original, i);
-				}
-                        }
-		}
-		remakeList = true;
-		that.currentItem = 0;	// Position to head of list
+		if ( remakeList == false && shuffleMode == false )
+			enableShuffle();
+
+		if ( remakeList == false && shuffleMode == true )
+			disableShuffle();
 	}
 
 	// After toggling the list, the next/prev track action must trigger
@@ -443,6 +457,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
 		that.current = reorderPlayList(that.current, index);
+
 		that.currentItem = 0;		// Position to head of the list
 		remakeList = false;		// Rebasing is finished.
 	}
@@ -603,7 +618,9 @@ var runCallback = function (cb) {
 // after shuffle mode toggle and track change, re-grab the tracklist
 var refreshTracks = function(index) {
 	that.removeAllTracks();
-	that.plist.rebasePlayList(index);
+	if ( that.plist.justShuffled == true )
+		that.plist.rebasePlayList(index);
+
 	for (var i = 0; i < that.plist.tracks().length ; i++ )
 	{
 		that.addTrack(that.plist.tracks()[i]);
