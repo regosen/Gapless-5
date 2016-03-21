@@ -875,6 +875,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	// remake the list in shuffled order
 	if ( that.plist.readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
+		that.stop();
 		refreshTracks(newIndex);
 	}
 
