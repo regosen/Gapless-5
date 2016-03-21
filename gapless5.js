@@ -871,12 +871,15 @@ this.shuffleToggle = function() {
 this.gotoTrack = function (newIndex, bForcePlay) {
 	if (inCallback) return;
 
+	var justRemade = false;
+
 	// If the list is flagged for remaking on the change of shuffle mode, 
 	// remake the list in shuffled order
 	if ( that.plist.readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
 		that.stop();
 		refreshTracks(newIndex);
+		justRemade = true;
 	}
 
 	var trackDiff = newIndex - trackIndex;
@@ -917,7 +920,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		}
 		updateDisplay();
 		
-		if ((bForcePlay == true) || sources[oldIndex].isPlayActive())
+		if ((bForcePlay == true) || sources[oldIndex].isPlayActive() || (justRemade == true ))
 		{
 			sources[newIndex].play();
 		}
