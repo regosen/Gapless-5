@@ -13,7 +13,7 @@
     font-size: 9px;
     color:#888;
     text-align:center;
-    width:130px;
+    width:135px;
     padding:2px;
 }
 
@@ -24,7 +24,7 @@
     border:1px;
     border-color:gray;
     border-style:solid;
-    width:130px;
+    width:135px;
     height:30px;
     padding:3px;
     overflow: hidden;
@@ -55,7 +55,7 @@ input[type='range'].transportbar {
     margin-left: 2px;
     padding: 0;
     height:4px;
-    width:126px;
+    width:130px;
     background: transparent; 
 }
 
