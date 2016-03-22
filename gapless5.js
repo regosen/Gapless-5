@@ -1122,7 +1122,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(trackIndex + 1);
+		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex] + 1);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
