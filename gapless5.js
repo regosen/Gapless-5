@@ -330,7 +330,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.startingTrack = inStartingTrack;
 	this.currentItem = inStartingTrack;
 
-
 	if ( inStartingTrack == null )
 	{
 		this.startingTrack = 0;
@@ -363,7 +362,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Update the display index array to represent the unshuffled values of
 	// the songs from the original array.
 	var originalIndices = function(trackCount, startingTrack) {
-		return reorderPlayList(range(1, trackCount), startingTrack - 1);
+		return reorderPlayList(range(1, trackCount), startingTrack);
 	}
 
 	// Search a shuffled array song by song in comparison to the original
