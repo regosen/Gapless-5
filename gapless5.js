@@ -375,10 +375,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// place in the original array, and return its original index.
 		for (var i = 0; i < originalList.length - 1; i++)
 		{
-			item = originalList[i];
+			var item = originalList[i];
 			for (var j = 0; j < currentList.length - 1; j++) 
 			{
-				compare = currentList[j];
+				var compare = currentList[j];
 				if ( compare == item ) {
 					newIndexes.push(j+1);
 					break;
@@ -443,6 +443,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	var revertShuffle = function() {
 		that.current = that.previous;
 		that.currentItem = that.previousItem;
+
 		that.dispIndex = originalIndices(that.original.length, that.currentItem);
 
 		shuffleMode = !(shuffleMode);
