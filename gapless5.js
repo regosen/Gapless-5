@@ -369,7 +369,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Search a shuffled array song by song in comparison to the original
 	// array, and construct a displayIndex list.
 	var shuffledIndices = function(originalList, currentList) {
-		var newIndexes = []
+		var newIndexes = [];
 
 		// In the song array, look at each song by name. Then find its
 		// place in the original array, and return its original index.
@@ -474,11 +474,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// Find where current song is in original playlist, and make that
 		// the head of the new unshuffled playlist
 		var track = that.current[that.currentItem].name;
+		var point = 0;
 		for (var i = 0; i < that.original.length ; i++ )
 			if (track == that.original[i].name )
-                        	that.current = reorderPlayList(that.original, i);
-		
-		that.dispIndex = originalIndices(that.original.length, that.startingTrack);
+                		point = i;
+        	
+		that.current = reorderPlayList(that.original, point);
+		that.dispIndex = originalIndices(that.original.length, point);
 
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
