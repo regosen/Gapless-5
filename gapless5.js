@@ -366,7 +366,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Search a shuffled array song by song in comparison to the original
-	// array, and construct a displayIndex list.
+	// array, and construct a displayIndex list. STILL BROKEN
 	var shuffledIndices = function(originalList, currentList) {
 		var newIndices = [];
 
