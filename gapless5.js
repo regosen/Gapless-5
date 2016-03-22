@@ -369,23 +369,24 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Search a shuffled array song by song in comparison to the original
 	// array, and construct a displayIndex list.
 	var shuffledIndices = function(originalList, currentList) {
-		var newIndexes = [];
+		var newIndices = [];
 
 		// In the song array, look at each song by name. Then find its
 		// place in the original array, and return its original index.
-		for (var i = 0; i < originalList.length - 1; i++)
+		for (var i = 0; i < currentList.length; i++)
 		{
-			var item = originalList[i];
-			for (var j = 0; j < currentList.length - 1; j++) 
+			var item = currentList[i];
+			for (var j = 0; j < originalList.length; j++) 
 			{
-				var compare = currentList[j];
-				if ( compare == item ) {
-					newIndexes.push(j+1);
+				var compare = originalList[j];
+				if ( compare == item ) 
+				{
+					newIndices.push(j+1);
 					break;
 				}
 			}
 		}		
-		return newIndexes;
+		return newIndices;
 	}
 
 	// Reorder a playlist so that the outputList starts at the desiredIndex
@@ -1125,7 +1126,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex+1]);
+		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex]);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
