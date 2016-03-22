@@ -898,7 +898,6 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
 		{
 			sources[oldIndex].cancelRequest();
-			// that.loadQueue.push([oldIndex, sources[oldIndex].audioPath]);
 			that.loadQueue.push([oldIndex, that.tracks[oldIndex]]);
 		}
 
