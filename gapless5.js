@@ -442,7 +442,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Revert to previous list / item, and terminate
 	var revertShuffle = function() {
 		that.current = that.previous;
-		that.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
+		that.dispIndex = originalIndexes(this.original.length, this.startingTrack);
 
 		that.currentItem = that.previousItem;
 		shuffleMode = !(shuffleMode);
@@ -478,7 +478,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			if (track == that.original[i].name )
                         	that.current = reorderPlayList(that.original, i);
 		
-		that.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
+		that.dispIndex = originalIndexes(this.original.length, this.startingTrack);
 
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
@@ -540,7 +540,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.current = reorderPlayList(this.original, this.startingTrack);
 
 	// For starters, display index matches starting track
-	this.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
+	this.dispIndex = originalIndexes(this.original.length, this.startingTrack);
 }
 
 
@@ -1122,7 +1122,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex] + 1);
+		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex+1]);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
