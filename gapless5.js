@@ -325,8 +325,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.previous = {};		// Support double-toggle undo
 	this.current = {};		// Working playlist
 	this.previousItem = 0;		// to last list and last index
-	this.prevDispIndex = [];	// Consistent track index when shuffled
-	this.curDispIndex = [];
+	this.dispIndex = [];		// Consistent track index when shuffled
 
 	this.startingTrack = inStartingTrack;
 	this.currentItem = inStartingTrack;
@@ -359,6 +358,19 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
         		output.push(start + i);
     		}
     		return output;
+	}
+
+	// Update the display index array to represent the unshuffled values of
+	// the songs from the original array.
+	var originalIndexes = function(trackCount, startingTrack) {
+		return reorderPlaylist(range(1, trackCount), startingTrack);
+	}
+
+	// Search a shuffled array song by song in comparison to the original
+	// array, and construct a displayIndex list.
+	var shuffledIndexes = function(trackCount) {
+		// TOWRITE
+		return;
 	}
 
 	// Reorder a playlist so that the outputList starts at the desiredIndex
@@ -454,7 +466,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		remakeList = true;
 	}
 
-
 	// PUBLIC METHODS
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song. NOTE that each function here
@@ -510,7 +521,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.current = reorderPlayList(this.original, this.startingTrack);
 
 	// For starters, display index matches starting track
-	this.curDispIndex = reorderPlaylist(range(1, this.original.length + 1), this.startingTrack);
+	this.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
 }
 
 
