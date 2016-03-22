@@ -442,9 +442,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Revert to previous list / item, and terminate
 	var revertShuffle = function() {
 		that.current = that.previous;
-		that.dispIndex = originalIndices(that.original.length, that.startingTrack);
-
 		that.currentItem = that.previousItem;
+		that.dispIndex = originalIndices(that.original.length, that.currentItem);
+
 		shuffleMode = !(shuffleMode);
 		remakeList = false;
 	}
