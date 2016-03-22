@@ -368,9 +368,24 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Search a shuffled array song by song in comparison to the original
 	// array, and construct a displayIndex list.
-	var shuffledIndexes = function(trackCount) {
-		// TOWRITE
-		return;
+	var shuffledIndexes = function(originalList, currentList) {
+		var newIndexes = []
+
+		// In the song array, look at each song by name. Then find its
+		// place in the original array, and return its original index.
+		for (var i = 0; i < originalList.length - 1; i++)
+		{
+			item = originalList[i];
+			for (var j = 0; j < currentList.length - 1; j++) 
+			{
+				compare = currentList[j];
+				if ( compare == item ) {
+					newIndexes.push(j);
+					break;
+				}
+			}
+		}		
+		return newIndexes;
 	}
 
 	// Reorder a playlist so that the outputList starts at the desiredIndex
@@ -427,6 +442,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Revert to previous list / item, and terminate
 	var revertShuffle = function() {
 		that.current = that.previous;
+		that.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
 
 		that.currentItem = that.previousItem;
 		shuffleMode = !(shuffleMode);
@@ -441,6 +457,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.previousItem = that.currentItem;
 
 		that.current = shufflePlayList(that.original, that.currentItem);
+		that.dispIndex = shuffledIndexes(that.original, that.current);
 
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = true;
@@ -461,6 +478,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			if (track == that.original[i].name )
                         	that.current = reorderPlayList(that.original, i);
 		
+		that.dispIndex = originalIndexes(this.original.length + 1, this.startingTrack);
+
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
 		remakeList = true;
