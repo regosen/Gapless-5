@@ -321,13 +321,16 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// OBJECT STATE
 	// Playlist and Track Items
-	this.original = inPlayList;		// Starting JSON input
-	this.previous = {};			// Support double-toggle undo
-	this.current = {};			// Working playlist
-	this.previousItem = 0;			// to last list and last index
+	this.original = inPlayList;	// Starting JSON input
+	this.previous = {};		// Support double-toggle undo
+	this.current = {};		// Working playlist
+	this.previousItem = 0;		// to last list and last index
+	this.prevDispIndex = [];	// Consistent track index when shuffled
+	this.curDispIndex = [];
 
 	this.startingTrack = inStartingTrack;
 	this.currentItem = inStartingTrack;
+
 
 	if ( inStartingTrack == null )
 	{
@@ -344,6 +347,20 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 					// upon track changing
 
 	// PRIVATE METHODS
+	// Construct a range of values for use as display indexes
+	var range = function(start, count) {
+		if(arguments.length == 1) {
+        		count = start;
+        		start = 0;
+    		}
+
+    		var output = [];
+    		for (var i = 0; i < count; i++) {
+        		output.push(start + i);
+    		}
+    		return output;
+	}
+
 	// Reorder a playlist so that the outputList starts at the desiredIndex
 	// of the inputList.
 	var reorderPlayList = function(inputList, desiredIndex) {
@@ -491,6 +508,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorderPlayList(this.original, this.startingTrack);
+
+	// For starters, display index matches starting track
+	this.curDispIndex = reorderPlaylist(range(1, this.original.length + 1), this.startingTrack);
 }
 
 
