@@ -460,7 +460,17 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.current = shufflePlayList(that.original, that.currentItem);
 		that.dispIndex = shuffledIndices(that.original, that.current);
 
-		that.currentItem = 0;	// Position to head of list
+		for (i = 0; i < dispIndex.length ; i++) 
+		{
+			// Position to where the current randomized
+			// song landed in the list
+			if (that.dispIndex[i] == that.currentItem) 
+			{
+				that.currentItem = i;
+				break;
+			}
+		}
+	
 		shuffleMode = true;
 		remakeList = true;
 	}
