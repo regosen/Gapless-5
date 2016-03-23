@@ -485,10 +485,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Find where current song is in original playlist, and make that
 		// the head of the new unshuffled playlist
-		var track = that.current[that.currentItem].name;
+		var track = that.current[that.currentItem];
 		var point = 0;
 		for (var i = 0; i < that.original.length ; i++ )
-			if (track == that.original[i].name )
+			if (track == that.original[i] )
                 		point = i;
         	
 		that.current = reorderPlayList(that.original, point);
