@@ -366,7 +366,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Search a shuffled array song by song in comparison to the original
-	// array, and construct a displayIndex list. STILL BROKEN
+	// array, and construct a displayIndex list.
 	var shuffledIndices = function(originalList, currentList) {
 		var newIndices = [];
 
@@ -456,15 +456,16 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
 		that.previousItem = that.currentItem;
+		var oldDispIndex = that.dispIndex.slice();
 
 		that.current = shufflePlayList(that.original, that.currentItem);
 		that.dispIndex = shuffledIndices(that.original, that.current);
 
-		for (i = 0; i < dispIndex.length ; i++) 
+		for (i = 0; i < that.dispIndex.length ; i++) 
 		{
-			// Position to where the current randomized
-			// song landed in the list
-			if (that.dispIndex[i] == that.currentItem) 
+			// Position to where the current song
+			// landed in the new randomized list
+			if (that.dispIndex[i] == oldDispIndex[that.currentItem]) 
 			{
 				that.currentItem = i;
 				break;
