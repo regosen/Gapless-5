@@ -468,7 +468,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// the list getting remade, with the next desired track as the head.
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
-		if ( that.justShuffled() )
+		if ( shuffleMode == true )
 			that.current = reorderPlayList(that.current, index);
 
 		that.currentItem = 0;		// Position to head of the list
@@ -520,7 +520,6 @@ var Gapless5 = function(elem_id, options) {
 // MEMBERS AND CONSTANTS
 
 // PUBLIC
-this.tracks = [];
 this.tickMS = 27; // fast enough for numbers to look real-time
 
 // PRIVATE
@@ -589,7 +588,7 @@ var getSoundPos = function (uiPosition) {
 };
 
 var numTracks = function () {
-	return that.tracks.length;
+	return that.plist.current.length;
 };
 
 var getFormattedTime = function (inMS) {
@@ -608,7 +607,7 @@ var getFormattedTime = function (inMS) {
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
 	var srcLength = sources[trackIndex].getLength();
-	if (that.tracks.length == 0)
+	if (that.plist.current.length == 0)
 	{
 		text = getFormattedTime(0);
 	}
@@ -637,7 +636,7 @@ var refreshTracks = function(index) {
 	that.removeAllTracks();
 	that.plist.rebasePlayList(index);
 
-	for (var i = 0; i < that.plist.tracks().length ; i++ )
+	for (var i = 0; i < that.plist.current.length ; i++ )
 	{
 		that.addTrack(that.plist.tracks()[i]);
 	}
@@ -769,6 +768,7 @@ this.loadQueue = [];
 
 this.addTrack = function (audioPath) {
 	var index = numTracks();
+	// TODO: replace with what?
 	that.tracks.push(audioPath);
 	sources[index] = new Gapless5Source(this, context, gainNode);
 	that.loadQueue.push([index, audioPath]);
@@ -792,6 +792,7 @@ this.insertTrack = function (index, audioPath) {
 	else
 	{
 		var oldIndex = index+1;
+		// TODO: replace with what?
 		that.tracks.splice(index,0,audioPath);
 		sources.splice(index, 0, new Gapless5Source(this, context, gainNode));
 
@@ -839,6 +840,7 @@ this.removeTrack = function (index) {
 	{
 		that.loadQueue.splice(removeIndex,1);
 	}
+	// TODO: replace with what?
 	that.tracks.splice(index,1);
 	sources.splice(index,1);
 	if (loadingTrack == index)
@@ -867,6 +869,7 @@ this.removeAllTracks = function () {
 	trackIndex = 0;
 	loadingTrack = -1;
 	sources = [];
+	// TODO: remove?
 	that.tracks = [];
 	that.loadQueue = [];
 	if (initialized)
@@ -913,12 +916,14 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
 		{
 			sources[oldIndex].cancelRequest();
+			// TODO: replace with what?
 			that.loadQueue.push([oldIndex, that.tracks[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after trackIndex has been updated
 		if (sources[newIndex].getState() == Gapless5State.None)
 		{
+			// TODO: replace with what?
 			sources[newIndex].load(that.tracks[trackIndex]);
 
 			//re-sort queue so that this track is at the head of the list
@@ -943,6 +948,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 	that.plist.setIndex(newIndex);
 	enableButton('prev', that.loop || (newIndex > 0));
+	// TODO: replace with filelist info
 	enableButton('next', that.loop || (newIndex < that.tracks.length - 1));
 };
 
@@ -1092,6 +1098,7 @@ var updateDisplay = function () {
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
 		enableButton('shuffle', true);
+		// TODO: replace with file list object
 		enableButton('next', that.loop || trackIndex < that.tracks.length - 1);
 
 		if (sources[trackIndex].inPlayState())
@@ -1237,23 +1244,7 @@ var Init = function(elem_id, options, tickMS) {
 	enableButton('play', true);
 	enableButton('stop', true);
 
-	// set up tracks
-	if (options != null && 'tracks' in options)
-	{
-		if (typeof options.tracks == 'string')
-		{
-			that.addTrack(options.tracks);
-		}
-		else if (typeof options.tracks == "object")
-		{
-			for (var index in options.tracks)
-			{
-				that.addTrack(options.tracks[index]);
-			}
-		}
-	}
-
-	// set up playlist object
+	// set up starting track number
 	if ( options != null && 'startingTrack' in options)
 	{
 		if (typeof options.startingTrack == 'number')
@@ -1262,11 +1253,16 @@ var Init = function(elem_id, options, tickMS) {
 		}
 	}
 
-	if ( options != null && 'playlist' in options)
+	// set up tracks into a FileList object
+	if ( options != null && 'tracks' in options)
 	{
-		if (typeof options.playlist == "object")
+		if (typeof options.tracks == 'string')
 		{
-			that.plist = new Gapless5FileList(options.playlist, that.startingTrack);
+			that.addTrack(options.tracks);
+		}
+		if (typeof options.tracks == "object")
+		{
+			that.plist = new Gapless5FileList(options.tracks, that.startingTrack);
 			for (var i = 0; i < that.plist.tracks().length ; i++ )
 			{
 				that.addTrack(that.plist.tracks()[i]);
