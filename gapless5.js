@@ -354,7 +354,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Add _index values to each member of the array, so we know what the
 	// original track was.
 	var addIndices = function(inputList) {
-		temp = inputList.slice();
+		var temp = inputList.slice();
 		for ( var n = 0; n < temp.length - 1 ; n++)
 			temp[n]._index = n + 1;
 		return temp;
@@ -501,7 +501,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Add _index parameter to the JSON array of tracks
-	this.current = addIndices(this.current);
+	this.original = addIndices(this.original);
 
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorderPlayList(this.original, this.startingTrack);
