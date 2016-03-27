@@ -355,7 +355,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// original track was.
 	var addIndices = function(inputList) {
 		var temp = inputList.slice();
-		for ( var n = 0; n < temp.length - 1 ; n++)
+		for ( var n = 0; n < temp.length ; n++)
 			temp[n]._index = n + 1;
 		return temp;
 	}
