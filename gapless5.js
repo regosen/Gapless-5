@@ -404,7 +404,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
         }
 
 	// Already pressed the shuffle button once from normal mode.
-	// Revert to previous list / item, and terminate
+	// Revert to previous list / item, and terminate. TODO: TEST
 	var revertShuffle = function() {
 		that.current = that.previous;
 		that.currentItem = that.previousItem;
@@ -414,7 +414,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Going into shuffle mode. Tell the Player to remake the list
-	// as soon as a new track is reached or chosen.
+	// as soon as a new track is reached or chosen. 
 	var enableShuffle = function() {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
@@ -428,7 +428,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Leaving shuffle mode. Tell the Player to remake the list
-	// as soon as a new track is reached or chosen.
+	// as soon as a new track is reached or chosen. TODO: TEST
 	var disableShuffle = function() {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
