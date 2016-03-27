@@ -496,7 +496,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
-	this.tracks = function() {
+	this.files = function() {
 		return that.current.map(function (song) { return song.file });
 	}
 
@@ -638,7 +638,7 @@ var refreshTracks = function(index) {
 
 	for (var i = 0; i < that.plist.current.length ; i++ )
 	{
-		that.addTrack(that.plist.tracks()[i]);
+		that.addTrack(that.plist.files()[i]);
 	}
 	that.trackIndex = that.plist.currentItem;
 };
@@ -1263,9 +1263,9 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.tracks == "object")
 		{
 			that.plist = new Gapless5FileList(options.tracks, that.startingTrack);
-			for (var i = 0; i < that.plist.tracks().length ; i++ )
+			for (var i = 0; i < that.plist.files().length ; i++ )
 			{
-				that.addTrack(that.plist.tracks()[i]);
+				that.addTrack(that.plist.files()[i]);
 			}
 		}
 	}
