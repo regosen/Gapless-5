@@ -526,8 +526,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		if ( that.justShuffled() )
 			that.current = reorderPlayList(that.current, index);
 
-		that.currentItem = 0;		// Position to head of the list
 		that.dispIndex = reorderIndices(that.dispIndex, that.currentItem); 
+		that.currentItem = 0;		// Position to head of the list
 		remakeList = false;		// Rebasing is finished.
 	}
 
