@@ -555,6 +555,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return shuffleMode;
 	}
 
+	// PlayList manipulation requires us to keep state on which track is 		
+	// playing. Player object state changes may need to update the current		
+	// index in the FileList object as well.		
+	this.setIndex = function(index) {		
+		that.currentItem = index;		
+	}
+
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
 	this.tracks = function() {
