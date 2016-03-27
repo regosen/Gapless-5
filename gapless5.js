@@ -359,15 +359,23 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
     		return output;
 	}
 
+	// Reorder an array so that the outputList starts at the desiredIndex
+	// of the inputList.
+	var reorderArray = function(inputList, desiredIndex) {
+		var tempList = inputList.slice();
+		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
+		return outputList;
+	}
+
 	// Update the display index array to represent the unshuffled values of
 	// the songs from the original array.
 	var originalIndices = function(trackCount, startingTrack) {
-		return reorderPlayList(range(1, trackCount), startingTrack);
+		return reorderArray(range(1, trackCount), startingTrack);
 	}
 
 	// Reorder an existing dispIndexes list to a specific starting track
 	var reorderIndices = function(indexList, startingTrack) {
-		return reorderPlayList(indexList.slice(), startingTrack);
+		return reorderArray(indexList, startingTrack);
 	}
 
 	// Search a shuffled array song by song in comparison to the original
@@ -394,10 +402,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Reorder a playlist so that the outputList starts at the desiredIndex
-	// of the inputList.
+	// of the inputList. Also reorder the display list at the same time.
 	var reorderPlayList = function(inputList, desiredIndex) {
-		var tempList = inputList.slice();
-		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
+		var outputList = reorderArray(inputList, desiredIndex);
+		that.dispIndex = reorderArray(that.dispIndex, desiredIndex);
 		return outputList;
 	}
 
@@ -526,7 +534,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		if ( that.justShuffled() )
 			that.current = reorderPlayList(that.current, index);
 
-		that.dispIndex = reorderIndices(that.dispIndex, that.currentItem); 
 		that.currentItem = 0;		// Position to head of the list
 		remakeList = false;		// Rebasing is finished.
 	}
