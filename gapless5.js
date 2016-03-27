@@ -367,6 +367,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return outputList;
 	}
 
+	// Swap two elements in an array
+	var swapElements = function(someList, sourceIndex, destIndex) { 
+		var temp = someList[sourceIndex];
+		someList[sourceIndex] = someList[destIndex];
+		someList[destIndex] = temp;
+	}
+
 	// Update the display index array to represent the unshuffled values of
 	// the songs from the original array.
 	var originalIndices = function(trackCount, startingTrack) {
@@ -437,15 +444,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// the current track in the unshuffled, swap the current index.
 		if ( startList[index].file == outputList[prevIndex].file ) 
 		{
-			var temp = outputList[0];
-			outputList[0] = outputList[prevIndex];
-			outputList[prevIndex] = temp;
+			swapElements(outputList, 0, prevIndex);
+			swapElements(dispIndex, 0, prevIndex);
 		}
 		if ( startList[index].file == outputList[nextIndex].file ) 
 		{
-			var temp = outputList[0];
-			outputList[0] = outputList[nextIndex];
-			outputList[nextIndex] = temp;
+			swapElements(outputList, 0, nextIndex);
+			swapElements(dispIndex, 0, nextIndex);
 		}
 
 		return outputList;
