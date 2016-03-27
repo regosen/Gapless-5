@@ -325,7 +325,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.previous = {};		// Support double-toggle undo
 	this.current = {};		// Working playlist
 	this.previousItem = 0;		// to last list and last index
-	this.dispIndex = [];		// Consistent track index when shuffled
 
 	this.startingTrack = inStartingTrack;
 	this.currentItem = inStartingTrack;
@@ -345,28 +344,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 					// upon track changing
 
 	// PRIVATE METHODS
-	// Construct a range of values for use as display indexes
-	var range = function(start, count) {
-		if(arguments.length == 1) {
-        		count = start;
-        		start = 0;
-    		}
-
-    		var output = [];
-    		for (var i = 0; i < count; i++) {
-        		output.push(start + i);
-    		}
-    		return output;
-	}
-
-	// Reorder an array so that the outputList starts at the desiredIndex
-	// of the inputList.
-	var reorderArray = function(inputList, desiredIndex) {
-		var tempList = inputList.slice();
-		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
-		return outputList;
-	}
-
 	// Swap two elements in an array
 	var swapElements = function(someList, sourceIndex, destIndex) { 
 		var temp = someList[sourceIndex];
@@ -374,45 +351,20 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		someList[destIndex] = temp;
 	}
 
-	// Update the display index array to represent the unshuffled values of
-	// the songs from the original array.
-	var originalIndices = function(trackCount, startingTrack) {
-		return reorderArray(range(1, trackCount), startingTrack);
+	// Add _index values to each member of the array, so we know what the
+	// original track was.
+	var addIndices = function(inputList) {
+		temp = inputList.slice();
+		for ( var n = 0; n < temp.length - 1 ; n++)
+			temp[n]._index = n + 1;
+		return temp;
 	}
 
-	// Reorder an existing dispIndexes list to a specific starting track
-	var reorderIndices = function(indexList, startingTrack) {
-		return reorderArray(indexList, startingTrack);
-	}
-
-	// Search a shuffled array song by song in comparison to the original
-	// array, and construct a displayIndex list.
-	var shuffledIndices = function(originalList, currentList) {
-		var newIndices = [];
-
-		// In the song array, look at each song by name. Then find its
-		// place in the original array, and return its original index.
-		for (var i = 0; i < currentList.length; i++)
-		{
-			var item = currentList[i];
-			for (var j = 0; j < originalList.length; j++) 
-			{
-				var compare = originalList[j];
-				if ( compare == item ) 
-				{
-					newIndices.push(j+1);
-					break;
-				}
-			}
-		}		
-		return newIndices;
-	}
-
-	// Reorder a playlist so that the outputList starts at the desiredIndex
-	// of the inputList. Also reorder the display list at the same time.
+	// Reorder an array so that the outputList starts at the desiredIndex
+	// of the inputList.
 	var reorderPlayList = function(inputList, desiredIndex) {
-		var outputList = reorderArray(inputList, desiredIndex);
-		that.dispIndex = reorderArray(that.dispIndex, desiredIndex);
+		var tempList = inputList.slice();
+		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
 		return outputList;
 	}
 
@@ -443,15 +395,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// After shuffling, if the next/previous track is the same as
 		// the current track in the unshuffled, swap the current index.
 		if ( startList[index].file == outputList[prevIndex].file ) 
-		{
 			swapElements(outputList, 0, prevIndex);
-			swapElements(dispIndex, 0, prevIndex);
-		}
+
 		if ( startList[index].file == outputList[nextIndex].file ) 
-		{
 			swapElements(outputList, 0, nextIndex);
-			swapElements(dispIndex, 0, nextIndex);
-		}
 
 		return outputList;
         }
@@ -461,8 +408,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	var revertShuffle = function() {
 		that.current = that.previous;
 		that.currentItem = that.previousItem;
-
-		that.dispIndex = originalIndices(that.original.length, that.currentItem);
 
 		shuffleMode = !(shuffleMode);
 		remakeList = false;
@@ -474,21 +419,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
 		that.previousItem = that.currentItem;
-		var oldDispIndex = that.dispIndex.slice();
 
 		that.current = shufflePlayList(that.original, that.currentItem);
-		that.dispIndex = shuffledIndices(that.original, that.current);
-
-		for (i = 0; i < that.dispIndex.length ; i++) 
-		{
-			// Position to where the current song
-			// landed in the new randomized list
-			if (that.dispIndex[i] == oldDispIndex[that.currentItem]) 
-			{
-				that.currentItem = i;
-				break;
-			}
-		}
+		that.currentItem = 0;
 	
 		shuffleMode = true;
 		remakeList = true;
@@ -510,7 +443,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
                 		point = i;
         	
 		that.current = reorderPlayList(that.original, point);
-		that.dispIndex = originalIndices(that.original.length, point);
 
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
@@ -568,11 +500,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return that.current.map(function (song) { return song.file });
 	}
 
+	// Add _index parameter to the JSON array of tracks
+	this.current = addIndices(this.current);
+
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorderPlayList(this.original, this.startingTrack);
 
-	// For starters, display index matches starting track
-	this.dispIndex = originalIndices(this.original.length, this.startingTrack);
 }
 
 
@@ -1154,7 +1087,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.plist.dispIndex[trackIndex]);
+		$("#trackIndex" + that.id).html(that.plist.current[trackIndex]._index);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || trackIndex > 0 || sources[trackIndex].getPosition() > 0);
