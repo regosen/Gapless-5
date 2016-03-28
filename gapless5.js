@@ -660,6 +660,9 @@ var runCallback = function (cb) {
 
 // after shuffle mode toggle and track change, re-grab the tracklist
 var refreshTracks = function(newIndex) {
+	// prevent updates while tracks are coming in
+	initialized = false;
+
 	that.removeAllTracks();
 	that.tracks.rebasePlayList(newIndex);
 
@@ -667,6 +670,9 @@ var refreshTracks = function(newIndex) {
 	{
 		that.addTrack(that.tracks.files()[i]);
 	}
+
+	// re-enable GUI updates
+	initialized = true;
 };
 
 
@@ -820,8 +826,6 @@ this.insertTrack = function (point, audioPath) {
 	else
 	{
 		var oldPoint = point+1;
-		// TODO: FileList doesn't support adding tracks in real time
-		// that.tracks.splice(index,0,audioPath);
 		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
 
 		//re-enumerate queue
