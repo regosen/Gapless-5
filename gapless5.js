@@ -499,7 +499,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// index in the FileList object as well.		
 	this.set = function(index) {		
 		that.currentItem = index;
-		that.displayIndex = index;		
+		that.displayIndex = this.current[index]._index;		
 	}
 	
 	this.get = function(index) {
