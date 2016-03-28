@@ -736,7 +736,7 @@ this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
 	sources[index()].stop(true);
-	if (that.loop || index() < numTracks() - 1)
+	if (that.loop || index() < that.numTracks() - 1)
 	{
 		that.next(true);
 		runCallback(that.onfinishedtrack);
@@ -799,7 +799,7 @@ this.addTrack = function (audioPath) {
 };
 
 this.insertTrack = function (point, audioPath) {
-	var trackCount = numTracks();
+	var trackCount = that.numTracks();
 	point = Math.min(Math.max(point, 0), trackCount);
 	if (point == trackCount)
 	{
@@ -972,7 +972,7 @@ this.prevtrack = function (e) {
 	}
 	else if (that.loop)
 	{
-		that.gotoTrack(numTracks() - 1);
+		that.gotoTrack(that.numTracks() - 1);
 		runCallback(that.onprev);
 	}
 };
@@ -991,7 +991,7 @@ this.prev = function (e) {
 	}
 	else if (that.loop)
 	{
-		that.gotoTrack(numTracks() - 1);
+		that.gotoTrack(that.numTracks() - 1);
 		runCallback(that.onprev);
 	}
 };
@@ -999,7 +999,7 @@ this.prev = function (e) {
 this.next = function (e) {
 	if (sources.length == 0) return;
 	var bForcePlay = (e == true);
-	if (index() < numTracks() - 1)
+	if (index() < that.numTracks() - 1)
 	{
 		that.gotoTrack(index() + 1, bForcePlay);
 		runCallback(that.onnext);
