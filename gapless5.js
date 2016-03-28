@@ -582,19 +582,19 @@ this.onfinishedall = null;
 // INTERNAL HELPERS
 
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : sources[that.current()].getPosition();
-	return (position / sources[that.current()].getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : sources[that.index()].getPosition();
+	return (position / sources[that.index()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
-	return ((uiPosition / SCRUB_RESOLUTION) * sources[that.current()].getLength());
+	return ((uiPosition / SCRUB_RESOLUTION) * sources[that.index()].getLength());
 };
 
 var numTracks = function () {
 	return that.tracks.current.length;
 };
 
-var current = function () {
+var index = function () {
 	return that.tracks.get();
 }
 
@@ -613,12 +613,12 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = sources[that.current()].getLength();
+	var srcLength = sources[that.index()].getLength();
 	if (that.numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
-	else if (sources[that.current()].getState() == Gapless5State.Error)
+	else if (sources[that.index()].getState() == Gapless5State.Error)
 	{
 		text = ERROR_TEXT;
 	}
@@ -698,16 +698,16 @@ this.setGain = function (uiPos) {
 	var normalized = uiPos / SCRUB_RESOLUTION;
 	//var power_range = Math.sin(normalized * 0.5*Math.PI);
 	gainNode.gain.value = normalized; //power_range;
-	sources[that.current()].setGain(normalized);
+	sources[index()].setGain(normalized);
 };
 
 this.scrub = function (uiPos) {
 	scrubPosition = getSoundPos(uiPos);
 	$("#currentPosition" + that.id).html(getFormattedTime(scrubPosition));
-	enableButton('prev', that.loop || (that.current() != 0 || scrubPosition != 0));
+	enableButton('prev', that.loop || (index() != 0 || scrubPosition != 0));
 	if (!isScrubbing)
 	{
-		sources[that.current()].setPosition(scrubPosition, true);
+		sources[index()].setPosition(scrubPosition, true);
 	}
 };
 
@@ -723,8 +723,8 @@ this.setLoadedSpan = function(percent)
 this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
-	sources[that.current()].stop(true);
-	if (that.loop || that.current() < numTracks() - 1)
+	sources[index()].stop(true);
+	if (that.loop || index() < numTracks() - 1)
 	{
 		that.next(true);
 		runCallback(that.onfinishedtrack);
@@ -760,13 +760,13 @@ this.onStartedScrubbing = function () {
 this.onFinishedScrubbing = function () {
 	isScrubbing = false;
 	var newPosition = scrubPosition;
-	if (sources[that.current()].inPlayState() && newPosition >= sources[that.current()].getLength())
+	if (sources[index()].inPlayState() && newPosition >= sources[index()].getLength())
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[that.current()].setPosition(newPosition, true);
+		sources[index()].setPosition(newPosition, true);
 	}
 };
 
@@ -901,18 +901,18 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		justRemade = true;
 	}
 
-	var trackDiff = newIndex - that.current();
+	var trackDiff = newIndex - index();
 	if (trackDiff == 0)
 	{
 		resetPosition();
-		if ((bForcePlay == true) || sources[that.current()].isPlayActive())
+		if ((bForcePlay == true) || sources[index()].isPlayActive())
 		{
 			sources[newIndex].play();
 		}
 	}
 	else
 	{
-		var oldIndex = that.current();
+		var oldIndex = index();
 	        that.tracks.set(newIndex);
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
 		{
@@ -953,9 +953,9 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 this.prevtrack = function (e) {
 	if (sources.length == 0) return;
-	if (that.current() > 0)
+	if (index() > 0)
 	{
-		that.gotoTrack(that.current() - 1);
+		that.gotoTrack(index() - 1);
 		runCallback(that.onprev);
 	}
 	else if (that.loop)
