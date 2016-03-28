@@ -582,19 +582,12 @@ this.onfinishedall = null;
 // INTERNAL HELPERS
 
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : sources[that.index()].getPosition();
-	return (position / sources[that.index()].getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : sources[index()].getPosition();
+	return (position / sources[index()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
-	return ((uiPosition / SCRUB_RESOLUTION) * sources[that.index()].getLength());
-};
-
-var numTracks = function () {
-	if ( that.tracks != null )
-		return that.tracks.current.length;
-	else
-		return 0;
+	return ((uiPosition / SCRUB_RESOLUTION) * sources[index()].getLength());
 };
 
 var index = function () {
@@ -626,12 +619,12 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = sources[that.index()].getLength();
-	if (that.numTracks() == 0)
+	var srcLength = sources[index()].getLength();
+	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
-	else if (sources[that.index()].getState() == Gapless5State.Error)
+	else if (sources[index()].getState() == Gapless5State.Error)
 	{
 		text = ERROR_TEXT;
 	}
@@ -656,7 +649,7 @@ var refreshTracks = function(newIndex) {
 	that.removeAllTracks();
 	that.tracks.rebasePlayList(newIndex);
 
-	for (var i = 0; i < that.numTracks() ; i++ )
+	for (var i = 0; i < numTracks() ; i++ )
 	{
 		that.addTrack(that.tracks.files()[i]);
 	}
@@ -664,6 +657,12 @@ var refreshTracks = function(newIndex) {
 
 
 // (PUBLIC) ACTIONS
+this.numTracks = function () {
+	if ( that.tracks != null )
+		return that.tracks.current.length;
+	else
+		return 0;
+};
 
 this.mapKeys = function (options) {
 	for (var key in options)
