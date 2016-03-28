@@ -620,7 +620,7 @@ var getFormattedTime = function (inMS) {
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
 	var srcLength = sources[index()].getLength();
-	if (numTracks() == 0)
+	if (that.numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
@@ -649,7 +649,7 @@ var refreshTracks = function(newIndex) {
 	that.removeAllTracks();
 	that.tracks.rebasePlayList(newIndex);
 
-	for (var i = 0; i < numTracks() ; i++ )
+	for (var i = 0; i < that.numTracks() ; i++ )
 	{
 		that.addTrack(that.tracks.files()[i]);
 	}
@@ -1089,7 +1089,7 @@ var enableButton = function (buttonId, bEnable) {
 };
 
 var updateDisplay = function () {
-	if (numTracks() == 0)
+	if (that.numTracks() == 0)
 	{
 		$("#trackIndex" + that.id).html(0);
 		$("#tracks" + that.id).html(0);
@@ -1101,12 +1101,12 @@ var updateDisplay = function () {
 	else
 	{
 		$("#trackIndex" + that.id).html(that.tracks.current[index()]._index);
-		$("#tracks" + that.id).html(numTracks());
+		$("#tracks" + that.id).html(that.numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('shuffle', true);
 		// TODO: replace with file list object
-		enableButton('next', that.loop || index() < numTracks() - 1);
+		enableButton('next', that.loop || index() < that.numTracks() - 1);
 
 		if (sources[index()].inPlayState())
 		{
@@ -1138,7 +1138,7 @@ var updateDisplay = function () {
 };
 
 var Tick = function(tickMS) {
-	if (numTracks() > 0)
+	if (that.numTracks() > 0)
 	{
 		sources[index()].tick();
 
