@@ -327,13 +327,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.previousItem = 0;		// to last list and last index
 
 	this.startingTrack = inStartingTrack;
-	this.currentItem = inStartingTrack;
-
 	if ( inStartingTrack == null )
 	{
 		this.startingTrack = 0;
-		this.currentItem = 0;
 	}	
+	this.currentItem = inStartingTrack;
+	this.displayIndex = inStartingTrack;	// Displayed track index in GUI
 
 	var that = this;
 
@@ -499,7 +498,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// playing. Player object state changes may need to update the current		
 	// index in the FileList object as well.		
 	this.set = function(index) {		
-		that.currentItem = index;		
+		that.currentItem = index;
+		that.displayIndex = index;		
 	}
 	
 	this.get = function(index) {
@@ -598,6 +598,7 @@ var getSoundPos = function (uiPosition) {
 };
 
 var numTracks = function () {
+	// FileList object must be initiated
 	if ( that.tracks != null )
 		return that.tracks.current.length;
 	else
@@ -605,6 +606,7 @@ var numTracks = function () {
 };
 
 var index = function () {
+	// FileList object must be initiated
 	if ( that.tracks != null )
 		return that.tracks.get();
 	else
@@ -612,6 +614,7 @@ var index = function () {
 }
 
 var readyToRemake = function () {
+	// FileList object must be initiated
 	if ( that.tracks.readyToRemake() != null )
 		return that.tracks.readyToRemake();
 	else
@@ -930,7 +933,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 
 	var trackDiff = newIndex - index();
-	if (trackDiff == 0)
+	if (trackDiff == 0 && justRemade == false)
 	{
 		resetPosition();
 		if ((bForcePlay == true) || sources[index()].isPlayActive())
@@ -1116,7 +1119,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.tracks.current[index()]._index);
+		$("#trackIndex" + that.id).html(that.tracks.displayIndex);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
