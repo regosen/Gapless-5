@@ -591,11 +591,24 @@ var getSoundPos = function (uiPosition) {
 };
 
 var numTracks = function () {
-	return that.tracks.current.length;
+	if ( that.tracks != null )
+		return that.tracks.current.length;
+	else
+		return 0;
 };
 
 var index = function () {
-	return that.tracks.get();
+	if ( that.tracks != null )
+		return that.tracks.get();
+	else
+		return -1;
+}
+
+var readyToRemake = function () {
+	if ( that.tracks.readyToRemake() != null )
+		return that.tracks.readyToRemake();
+	else
+		return false;
 }
 
 var getFormattedTime = function (inMS) {
@@ -894,7 +907,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 	// If the list is flagged for remaking on the change of shuffle mode, 
 	// remake the list in shuffled order
-	if ( that.tracks.readyToRemake() == true ) {
+	if ( readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
 		that.stop();
 		refreshTracks(newIndex);
@@ -967,14 +980,14 @@ this.prevtrack = function (e) {
 
 this.prev = function (e) {
 	if (sources.length == 0) return;
-	if (sources[current()].getPosition() > 0)
+	if (sources[index()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(current());
+		that.gotoTrack(index());
 	}
-	else if (current() > 0)
+	else if (index() > 0)
 	{
-		that.gotoTrack(current() - 1);
+		that.gotoTrack(index() - 1);
 		runCallback(that.onprev);
 	}
 	else if (that.loop)
@@ -987,9 +1000,9 @@ this.prev = function (e) {
 this.next = function (e) {
 	if (sources.length == 0) return;
 	var bForcePlay = (e == true);
-	if (current() < numTracks() - 1)
+	if (index() < numTracks() - 1)
 	{
-		that.gotoTrack(current() + 1, bForcePlay);
+		that.gotoTrack(index() + 1, bForcePlay);
 		runCallback(that.onnext);
 	}
 	else if (that.loop)
@@ -1001,13 +1014,13 @@ this.next = function (e) {
 
 this.play = function (e) {
 	if (sources.length == 0) return;
-	if (sources[current()].audioFinished)
+	if (sources[index()].audioFinished)
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[current()].play();
+		sources[index()].play();
 	}
 	runCallback(that.onplay);
 };
@@ -1024,7 +1037,7 @@ this.cue = function (e) {
 	{
 		that.prev(e);
 	}
-	else if (sources[current()].getPosition() > 0)
+	else if (sources[index()].getPosition() > 0)
 	{
 		that.prev(e);
 		that.play(e);
@@ -1037,14 +1050,14 @@ this.cue = function (e) {
 
 this.pause = function (e) {
 	if (sources.length == 0) return;
-	sources[current()].stop();
+	sources[index()].stop();
 	runCallback(that.onpause);
 };
 
 this.stop = function (e) {
 	if (sources.length == 0) return;
 	resetPosition();
-	sources[current()].stop(true);
+	sources[index()].stop(true);
 	runCallback(that.onstop);
 };
 
@@ -1052,13 +1065,13 @@ this.stop = function (e) {
 // (PUBLIC) QUERIES AND CALLBACKS
 
 this.isPlaying = function () {
-	return sources[current()].inPlayState();
+	return sources[index()].inPlayState();
 };
 
 // INIT AND UI
 
 var resetPosition = function(forceScrub) {
-	if (!forceScrub && sources[current()].getPosition() == 0) return; // nothing else to do
+	if (!forceScrub && sources[index()].getPosition() == 0) return; // nothing else to do
 	that.scrub(0);
 	$("#transportbar" + that.id).val(0);
 };
@@ -1088,15 +1101,15 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.tracks.current[current()]._index);
+		$("#trackIndex" + that.id).html(that.tracks.current[index()]._index);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
-		enableButton('prev', that.loop || current() > 0 || sources[current()].getPosition() > 0);
+		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('shuffle', true);
 		// TODO: replace with file list object
-		enableButton('next', that.loop || current() < that.tracks.length - 1);
+		enableButton('next', that.loop || index() < numTracks() - 1);
 
-		if (sources[current()].inPlayState())
+		if (sources[index()].inPlayState())
 		{
 			enableButton('play', false);
 			isPlayButton = false;
@@ -1106,7 +1119,7 @@ var updateDisplay = function () {
 			enableButton('play', true);
 			isPlayButton = true;
 
-			if (sources[current()].getState() == Gapless5State.Error)
+			if (sources[index()].getState() == Gapless5State.Error)
 			{
 				runCallback(that.onerror);
 			}
@@ -1121,22 +1134,22 @@ var updateDisplay = function () {
 			enableButton('shuffle', false);
 			isShuffleButton = false;
 		}
-		sources[current()].uiDirty = false;
+		sources[index()].uiDirty = false;
 	}
 };
 
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[current()].tick();
+		sources[index()].tick();
 
-		if (sources[current()].uiDirty)
+		if (sources[index()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (sources[current()].inPlayState())
+		if (sources[index()].inPlayState())
 		{
-			var soundPos = sources[current()].getPosition();
+			var soundPos = sources[index()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
@@ -1272,7 +1285,7 @@ var Init = function(elem_id, options, tickMS) {
 	var playOnLoad = (options != undefined) && ('playOnLoad' in options) && (options.playOnLoad == true);
 	if (playOnLoad && (that.count > 0))
 	{
-		sources[current()].play();
+		sources[index()].play();
 	}
 	Tick(tickMS);
 };
