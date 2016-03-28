@@ -933,6 +933,8 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 
 	var trackDiff = newIndex - index();
+
+	// No shuffle / unshuffle occurred, and we're just restarting a track
 	if (trackDiff == 0 && justRemade == false)
 	{
 		resetPosition();
@@ -941,12 +943,34 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 			sources[newIndex].play();
 		}
 	}
+
+	// A shuffle or an unshuffle just occurred
+	else if ( justRemade == true ) {
+		that.tracks.set(newIndex);
+		sources[newIndex].load(that.tracks.files()[newIndex]);
+
+		// Cancel whatever track is loading
+		for (n = 0; n < sources.length ; n++)
+		{
+			if (sources[n].getState == Gapless5State.Loadng)
+				sources[n].cancelRequest();
+			else if (sources[n].isPlayActive()) 
+			{
+				// Start playing the new track
+				// cancelling the old track
+				sources[newIndex].play();
+				sources[n].stop();
+			}
+		}
+		updateDisplay();
+	}
+
+	// A normal track change just occurred
 	else
 	{
-		// :( post-shuffle this isn't the same. need some code to make the oldIndex
-		// from the previous array be more apparent.
 		var oldIndex = index();
 	        that.tracks.set(newIndex);
+		// Cancel any track that's in loading state right now
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
 		{
 			sources[oldIndex].cancelRequest();
@@ -973,7 +997,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		}
 		updateDisplay();
 		
-		if ((bForcePlay == true) || sources[oldIndex].isPlayActive() || justRemade == true)
+		if ((bForcePlay == true) || sources[oldIndex].isPlayActive())
 		{
 			sources[newIndex].play();
 		}
