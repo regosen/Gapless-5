@@ -362,7 +362,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Reorder an array so that the outputList starts at the desiredIndex
 	// of the inputList.
-	var reorderPlayList = function(inputList, desiredIndex) {
+	var reorder = function(inputList, desiredIndex) {
 		var tempList = inputList.slice();
 		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
 		return outputList;
@@ -370,7 +370,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Shuffle a playlist, making sure that the next track in the list
 	// won't be the same as the current track being played.
-	var shufflePlayList = function(inputList, index) {
+	var shuffle = function(inputList, index) {
 		var startList = inputList.slice();
 		var outputList = inputList.slice();
 
@@ -385,7 +385,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Reorder playlist array so that the chosen index comes first, 
 		// and gotoTrack isn't needed after Player object is remade.
-		outputList = reorderPlayList(startList, index);
+		outputList = reorder(startList, index);
 
 		// In a Gapless playback-ordered list, after moving to an ordered list,
 		// current is always 0, next is always 1, and last is always "-1".
@@ -420,7 +420,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.previous = that.current.slice();
 		that.previousItem = that.currentItem;
 
-		that.current = shufflePlayList(that.original, that.currentItem);
+		that.current = shuffle(that.original, that.currentItem);
 		that.currentItem = 0;
 	
 		shuffleMode = true;
@@ -442,7 +442,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			if (track == that.original[i] )
                 		point = i;
         	
-		that.current = reorderPlayList(that.original, point);
+		that.current = reorder(that.original, point);
 
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
@@ -469,7 +469,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// This function will remake the list as needed.
 	this.rebasePlayList = function(index) {
 		if ( shuffleMode == true )
-			that.current = reorderPlayList(that.current, index);
+			that.current = reorder(that.current, index);
 
 		that.currentItem = 0;		// Position to head of the list
 		remakeList = false;		// Rebasing is finished.
@@ -508,7 +508,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.original = addIndices(this.original);
 
 	// On object creation, make current list use startingTrack as head of list
-	this.current = reorderPlayList(this.original, this.startingTrack);
+	this.current = reorder(this.original, this.startingTrack);
 
 }
 
