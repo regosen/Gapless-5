@@ -553,11 +553,9 @@ if (context && gainNode)
 }
 
 // Playlist
-// TODO: Experimenting with FileList holding the current trackIndex
-// var trackIndex = (typeof startingTrack == 'undefined') ? 0 : startingTrack;
 var loadingTrack = -1;
-var sources = [];
-this.tracks = null;
+var sources = [];	// Loaded as audio files
+this.tracks = null;	// Playlist manager object
 
 
 // Callback and Execution logic
@@ -641,9 +639,9 @@ var runCallback = function (cb) {
 };
 
 // after shuffle mode toggle and track change, re-grab the tracklist
-var refreshTracks = function(index) {
+var refreshTracks = function(newIndex) {
 	that.removeAllTracks();
-	that.tracks.rebasePlayList(index);
+	that.tracks.rebasePlayList(newIndex);
 
 	for (var i = 0; i < that.numTracks() ; i++ )
 	{
@@ -775,10 +773,9 @@ this.onFinishedScrubbing = function () {
 this.loadQueue = [];
 
 this.addTrack = function (audioPath) {
-	// TODO: refer to sources instead?
-	var index = numTracks();
-	sources[index] = new Gapless5Source(this, context, gainNode);
-	that.loadQueue.push([index, audioPath]);
+	var next = sources.length;
+	sources[next] = new Gapless5Source(this, context, gainNode);
+	that.loadQueue.push([next, audioPath]);
 	if (loadingTrack == -1)
 	{
 		that.dequeueNextLoad();
@@ -789,38 +786,38 @@ this.addTrack = function (audioPath) {
 	}
 };
 
-this.insertTrack = function (index, audioPath) {
+this.insertTrack = function (point, audioPath) {
 	var trackCount = numTracks();
-	index = Math.min(Math.max(index, 0), trackCount);
-	if (index == trackCount)
+	point = Math.min(Math.max(point, 0), trackCount);
+	if (point == trackCount)
 	{
 		that.addTrack(audioPath);
 	}
 	else
 	{
-		var oldIndex = index+1;
-		// TODO: replace with what?
+		var oldPoint = point+1;
+		// TODO: FileList doesn't support adding tracks in real time
 		// that.tracks.splice(index,0,audioPath);
-		sources.splice(index, 0, new Gapless5Source(this, context, gainNode));
+		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
 
 		//re-enumerate queue
 		for (var i in that.loadQueue)
 		{
 			var entry = that.loadQueue[i];
-			if (entry[0] >= index)
+			if (entry[0] >= point)
 			{
 				entry[0] += 1;
 			}
 		}
-		that.loadQueue.splice(0,0,[index,audioPath]);
+		that.loadQueue.splice(0,0,[point,audioPath]);
 		updateDisplay();
 	}
 };
 
-this.removeTrack = function (index) {
-	if (index < 0 || index >= sources.length) return;
+this.removeTrack = function (point) {
+	if (point < 0 || point >= sources.length) return;
 
-	var curSource = sources[index];
+	var curSource = sources[point];
 	if (curSource.getState() == Gapless5State.Loading)
 	{
 		curSource.cancelRequest();
@@ -834,11 +831,11 @@ this.removeTrack = function (index) {
 	for (var i in that.loadQueue)
 	{
 		var entry = that.loadQueue[i];
-		if (entry[0] == index)
+		if (entry[0] == point)
 		{
 			removeIndex = i;
 		}
-		else if (entry[0] > index)
+		else if (entry[0] > point)
 		{
 			entry[0] -= 1;
 		}
@@ -847,10 +844,10 @@ this.removeTrack = function (index) {
 	{
 		that.loadQueue.splice(removeIndex,1);
 	}
-	// TODO: replace with what?
+	// TODO: FileList needs add/remove playlist items
 	// that.tracks.splice(index,1);
-	sources.splice(index,1);
-	if (loadingTrack == index)
+	sources.splice(point,1);
+	if (loadingTrack == point)
 	{
 		that.dequeueNextLoad();
 	}
@@ -860,9 +857,9 @@ this.removeTrack = function (index) {
 	}
 };
 
-this.replaceTrack = function (index, audioPath) {
-	that.removeTrack(index);
-	that.insertTrack(index, audioPath);
+this.replaceTrack = function (point, audioPath) {
+	that.removeTrack(point);
+	that.insertTrack(point, audioPath);
 }
 
 this.removeAllTracks = function () {
@@ -924,7 +921,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 			that.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
 		}
 
-		resetPosition(true); // make sure this comes after trackIndex has been updated
+		resetPosition(true); // make sure this comes after currentIndex has been updated
 		if (sources[newIndex].getState() == Gapless5State.None)
 		{
 			// TODO: better way to have just the file list?
@@ -975,7 +972,7 @@ this.prev = function (e) {
 		// jump to start of track if we're not there
 		that.gotoTrack(current());
 	}
-	else if (trackIndex > 0)
+	else if (current() > 0)
 	{
 		that.gotoTrack(current() - 1);
 		runCallback(that.onprev);
@@ -1131,7 +1128,7 @@ var updateDisplay = function () {
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[trackIndex].tick();
+		sources[current()].tick();
 
 		if (sources[current()].uiDirty)
 		{
