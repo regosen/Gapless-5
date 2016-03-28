@@ -450,6 +450,14 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// PUBLIC METHODS
+	// Insert a track into the filelist at the given index point. 
+	// this.insert = function() {
+	// }
+
+	// Remove a track from the filelist at the given index point.
+	// this.remove = function() {
+	// }
+
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song. NOTE that each function here
 	// changes flags, so the logic must exclude any logic if a revert occurs.
@@ -1269,7 +1277,12 @@ var Init = function(elem_id, options, tickMS) {
 	{
 		if (typeof options.tracks == 'string')
 		{
-			that.addTrack(options.tracks);
+			// convert single track into a one-item filelist.
+			// TODO: test
+			var item = {};
+			item.file = options.tracks;
+			that.tracks = new Gapless5FileList(item, 0);
+			that.addTrack(that.tracks.files()[0]);
 		}
 		if (typeof options.tracks == "object")
 		{
