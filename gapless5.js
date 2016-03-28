@@ -580,7 +580,6 @@ this.onfinishedall = null;
 
 
 // INTERNAL HELPERS
-
 var getUIPos = function () {
 	var position = isScrubbing ? scrubPosition : sources[index()].getPosition();
 	return (position / sources[index()].getLength()) * SCRUB_RESOLUTION;
@@ -588,6 +587,13 @@ var getUIPos = function () {
 
 var getSoundPos = function (uiPosition) {
 	return ((uiPosition / SCRUB_RESOLUTION) * sources[index()].getLength());
+};
+
+var numTracks = function () {
+	if ( that.tracks != null )
+		return that.tracks.current.length;
+	else
+		return 0;
 };
 
 var index = function () {
@@ -620,7 +626,7 @@ var getFormattedTime = function (inMS) {
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
 	var srcLength = sources[index()].getLength();
-	if (that.numTracks() == 0)
+	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
@@ -649,7 +655,7 @@ var refreshTracks = function(newIndex) {
 	that.removeAllTracks();
 	that.tracks.rebasePlayList(newIndex);
 
-	for (var i = 0; i < that.numTracks() ; i++ )
+	for (var i = 0; i < numTracks() ; i++ )
 	{
 		that.addTrack(that.tracks.files()[i]);
 	}
@@ -657,12 +663,10 @@ var refreshTracks = function(newIndex) {
 
 
 // (PUBLIC) ACTIONS
-this.numTracks = function () {
-	if ( that.tracks != null )
-		return that.tracks.current.length;
-	else
-		return 0;
-};
+this.totalTracks = function() {
+	return numTracks();
+}
+
 
 this.mapKeys = function (options) {
 	for (var key in options)
@@ -736,7 +740,7 @@ this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
 	sources[index()].stop(true);
-	if (that.loop || index() < that.numTracks() - 1)
+	if (that.loop || index() < numTracks() - 1)
 	{
 		that.next(true);
 		runCallback(that.onfinishedtrack);
@@ -799,7 +803,7 @@ this.addTrack = function (audioPath) {
 };
 
 this.insertTrack = function (point, audioPath) {
-	var trackCount = that.numTracks();
+	var trackCount = numTracks();
 	point = Math.min(Math.max(point, 0), trackCount);
 	if (point == trackCount)
 	{
@@ -960,7 +964,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 	}
 	enableButton('prev', that.loop || (newIndex > 0));
-	enableButton('next', that.loop || (newIndex < that.numTracks() - 1));
+	enableButton('next', that.loop || (newIndex < numTracks() - 1));
 };
 
 this.prevtrack = function (e) {
@@ -972,7 +976,7 @@ this.prevtrack = function (e) {
 	}
 	else if (that.loop)
 	{
-		that.gotoTrack(that.numTracks() - 1);
+		that.gotoTrack(numTracks() - 1);
 		runCallback(that.onprev);
 	}
 };
@@ -991,7 +995,7 @@ this.prev = function (e) {
 	}
 	else if (that.loop)
 	{
-		that.gotoTrack(that.numTracks() - 1);
+		that.gotoTrack(numTracks() - 1);
 		runCallback(that.onprev);
 	}
 };
@@ -999,7 +1003,7 @@ this.prev = function (e) {
 this.next = function (e) {
 	if (sources.length == 0) return;
 	var bForcePlay = (e == true);
-	if (index() < that.numTracks() - 1)
+	if (index() < numTracks() - 1)
 	{
 		that.gotoTrack(index() + 1, bForcePlay);
 		runCallback(that.onnext);
@@ -1089,7 +1093,7 @@ var enableButton = function (buttonId, bEnable) {
 };
 
 var updateDisplay = function () {
-	if (that.numTracks() == 0)
+	if (numTracks() == 0)
 	{
 		$("#trackIndex" + that.id).html(0);
 		$("#tracks" + that.id).html(0);
@@ -1101,12 +1105,12 @@ var updateDisplay = function () {
 	else
 	{
 		$("#trackIndex" + that.id).html(that.tracks.current[index()]._index);
-		$("#tracks" + that.id).html(that.numTracks());
+		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('shuffle', true);
 		// TODO: replace with file list object
-		enableButton('next', that.loop || index() < that.numTracks() - 1);
+		enableButton('next', that.loop || index() < numTracks() - 1);
 
 		if (sources[index()].inPlayState())
 		{
@@ -1138,7 +1142,7 @@ var updateDisplay = function () {
 };
 
 var Tick = function(tickMS) {
-	if (that.numTracks() > 0)
+	if (numTracks() > 0)
 	{
 		sources[index()].tick();
 
