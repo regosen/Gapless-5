@@ -943,6 +943,8 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 	else
 	{
+		// :( post-shuffle this isn't the same. need some code to make the oldIndex
+		// from the previous array be more apparent.
 		var oldIndex = index();
 	        that.tracks.set(newIndex);
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
@@ -971,7 +973,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		}
 		updateDisplay();
 		
-		if ((bForcePlay == true) || sources[oldIndex].isPlayActive() || (justRemade == true ))
+		if ((bForcePlay == true) || sources[oldIndex].isPlayActive() || justRemade == true)
 		{
 			sources[newIndex].play();
 		}
