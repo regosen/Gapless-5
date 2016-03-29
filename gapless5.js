@@ -927,7 +927,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	// remake the list in shuffled order
 	if ( readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
-		that.stop();
+		sources[that.tracks.previousItem].stop();
 		refreshTracks(newIndex);
 		justRemade = true;
 	}
@@ -948,20 +948,8 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	else if ( justRemade == true ) {
 		that.tracks.set(newIndex);
 		sources[newIndex].load(that.tracks.files()[newIndex]);
+		sources[newIndex].play();
 
-		// Cancel whatever track is loading
-		for (n = 0; n < sources.length ; n++)
-		{
-			if (sources[n].getState == Gapless5State.Loadng)
-				sources[n].cancelRequest();
-			else if (sources[n].isPlayActive()) 
-			{
-				// Start playing the new track
-				// cancelling the old track
-				sources[newIndex].play();
-				sources[n].stop();
-			}
-		}
 		updateDisplay();
 	}
 
