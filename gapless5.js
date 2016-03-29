@@ -437,6 +437,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// the head of the new unshuffled playlist
 		var track = that.current[that.currentItem];
 		var point = 0;
+		// TODO: use lastIndex here?
 		for (var i = 0; i < that.original.length ; i++ )
 			if (track == that.original[i] )
                 		point = i;
