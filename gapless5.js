@@ -449,13 +449,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// PUBLIC METHODS
-	// Insert a track into the filelist at the given index point. 
-	// this.insert = function() {
-	// }
-
-	// Remove a track from the filelist at the given index point.
-	// this.remove = function() {
-	// }
+	// After a shuffle or unshuffle, the array has changed. Get the index
+	// for the current-displayed song in the previous array.
+	this.lastIndex = function(index, oldList) {
+		compare = that.current[index];
+		for (var n = 0; n < oldList.length ; n++ )
+			if ( oldList[n] == compare )
+				return n;
 
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song. NOTE that each function here
@@ -640,6 +640,10 @@ var getTotalPositionText = function () {
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
+	}
+	else if (readyToRemake()) 
+	{ 
+		text = getFormattedTime(sources[lastIndex()].getLength();	
 	}
 	else if (sources[index()].getState() == Gapless5State.Error)
 	{
@@ -1137,8 +1141,6 @@ var updateDisplay = function () {
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
-		enableButton('shuffle', true);
-		// TODO: replace with file list object
 		enableButton('next', that.loop || index() < numTracks() - 1);
 
 		if (sources[index()].inPlayState())
