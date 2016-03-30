@@ -447,18 +447,15 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// After a shuffle or unshuffle, the array has changed. Get the index
 	// for the current-displayed song in the previous array.
 	this.lastIndex = function(index, oldList) {
-		var point = index;
-		var searchList = oldList; 
+		if ( typeof oldList == "undefined" )
+			oldList = that.previous;
 
-		if ( typeof oldList == undefined )
-			searchList = that.previous;
+		if ( typeof index == "undefined" )
+			index = that.currentItem;
 
-		if ( typeof index == undefined )
-			point = that.currentItem;
-
-		compare = that.current[point];
-		for (var n = 0; n < searchList.length ; n++ )
-			if ( searchList[n] == compare )
+		compare = that.current[index];
+		for (var n = 0; n < oldList.length ; n++ )
+			if ( oldList[n] == compare )
 				return n;
 	}
 
@@ -594,12 +591,12 @@ this.onfinishedall = null;
 
 // INTERNAL HELPERS
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : sources[index()].getPosition();
-	return (position / sources[index()].getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : sources[dispIndex()].getPosition();
+	return (position / sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
-	return ((uiPosition / SCRUB_RESOLUTION) * sources[index()].getLength());
+	return ((uiPosition / SCRUB_RESOLUTION) * sources[dispIndex()].getLength());
 };
 
 var numTracks = function () {
@@ -610,6 +607,7 @@ var numTracks = function () {
 		return 0;
 };
 
+// Index for calculating actual playlist locatoin
 var index = function () {
 	// FileList object must be initiated
 	if ( that.tracks != null )
@@ -618,12 +616,15 @@ var index = function () {
 		return -1;
 };
 
-var lastIndex = function () {
-	// FileList object must be initiated
-	if ( that.tracks != null )
+// Index for displaying the currently playing
+// track, suitable for use in update functions
+var dispIndex = function () {
+	if ( readyToRemake() )
 		return that.tracks.lastIndex();
+	else if ( that.tracks != null )
+		return that.tracks.get();
 	else
-		return -1;
+		return -1
 };
 
 var readyToRemake = function () {
@@ -649,15 +650,11 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = sources[index()].getLength();
+	var srcLength = sources[dispIndex()].getLength();
 
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
-	}
-	else if (readyToRemake()) 
-	{ 
-		text = getFormattedTime(sources[lastIndex()].getLength());
 	}
 	else if (sources[index()].getState() == Gapless5State.Error)
 	{
@@ -749,7 +746,7 @@ this.setGain = function (uiPos) {
 	var normalized = uiPos / SCRUB_RESOLUTION;
 	//var power_range = Math.sin(normalized * 0.5*Math.PI);
 	gainNode.gain.value = normalized; //power_range;
-	sources[index()].setGain(normalized);
+	sources[dispIndex()].setGain(normalized);
 };
 
 this.scrub = function (uiPos) {
@@ -758,7 +755,7 @@ this.scrub = function (uiPos) {
 	enableButton('prev', that.loop || (index() != 0 || scrubPosition != 0));
 	if (!isScrubbing)
 	{
-		sources[index()].setPosition(scrubPosition, true);
+		sources[dispIndex()].setPosition(scrubPosition, true);
 	}
 };
 
@@ -774,7 +771,7 @@ this.setLoadedSpan = function(percent)
 this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
-	sources[index()].stop(true);
+	sources[dispIndex()].stop(true);
 	if (that.loop || index() < numTracks() - 1)
 	{
 		that.next(true);
@@ -811,13 +808,13 @@ this.onStartedScrubbing = function () {
 this.onFinishedScrubbing = function () {
 	isScrubbing = false;
 	var newPosition = scrubPosition;
-	if (sources[index()].inPlayState() && newPosition >= sources[index()].getLength())
+	if (sources[dispIndex()].inPlayState() && newPosition >= sources[dispIndex()].getLength())
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[index()].setPosition(newPosition, true);
+		sources[dispIndex()].setPosition(newPosition, true);
 	}
 };
 
@@ -945,7 +942,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	// remake the list in shuffled order
 	if ( readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
-		sources[that.tracks.previousItem].stop();
+		sources[dispIndex()].stop();
 		refreshTracks(newIndex);
 		justRemade = true;
 	}
@@ -1030,10 +1027,10 @@ this.prevtrack = function (e) {
 
 this.prev = function (e) {
 	if (sources.length == 0) return;
-	if (sources[index()].getPosition() > 0)
+	if (sources[dispIndex()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(index());
+		that.gotoTrack(dispIndex());
 	}
 	else if (index() > 0)
 	{
@@ -1087,7 +1084,7 @@ this.cue = function (e) {
 	{
 		that.prev(e);
 	}
-	else if (sources[index()].getPosition() > 0)
+	else if (sources[dispIndex()].getPosition() > 0)
 	{
 		that.prev(e);
 		that.play(e);
@@ -1100,14 +1097,14 @@ this.cue = function (e) {
 
 this.pause = function (e) {
 	if (sources.length == 0) return;
-	sources[index()].stop();
+	sources[dispIndex()].stop();
 	runCallback(that.onpause);
 };
 
 this.stop = function (e) {
 	if (sources.length == 0) return;
 	resetPosition();
-	sources[index()].stop(true);
+	sources[dispIndex()].stop(true);
 	runCallback(that.onstop);
 };
 
@@ -1121,7 +1118,7 @@ this.isPlaying = function () {
 // INIT AND UI
 
 var resetPosition = function(forceScrub) {
-	if (!forceScrub && sources[index()].getPosition() == 0) return; // nothing else to do
+	if (!forceScrub && sources[dispIndex()].getPosition() == 0) return; // nothing else to do
 	that.scrub(0);
 	$("#transportbar" + that.id).val(0);
 };
@@ -1189,15 +1186,15 @@ var updateDisplay = function () {
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[index()].tick();
+		sources[dispIndex()].tick();
 
-		if (sources[index()].uiDirty)
+		if (sources[dispIndex()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (sources[index()].inPlayState())
+		if (sources[dispIndex()].inPlayState())
 		{
-			var soundPos = sources[index()].getPosition();
+			var soundPos = sources[dispIndex()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
