@@ -917,7 +917,7 @@ this.removeAllTracks = function () {
 		}
 	}
 	loadingTrack = -1;
-	that.stop();
+	sources[dispIndex()].stop();
 	sources = [];
 	that.loadQueue = [];
 	if (initialized)
@@ -1061,7 +1061,7 @@ this.next = function (e) {
 
 this.play = function (e) {
 	if (sources.length == 0) return;
-	if (sources[index()].audioFinished)
+	if (sources[dispIndex()].audioFinished)
 	{
 		that.next(true);
 	}
@@ -1112,7 +1112,7 @@ this.stop = function (e) {
 // (PUBLIC) QUERIES AND CALLBACKS
 
 this.isPlaying = function () {
-	return sources[index()].inPlayState();
+	return sources[dispIndex()].inPlayState();
 };
 
 // INIT AND UI
