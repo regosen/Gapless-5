@@ -915,9 +915,9 @@ this.removeAllTracks = function () {
 		{
 			sources[i].cancelRequest();
 		}
+		sources[i].stop();
 	}
 	loadingTrack = -1;
-	sources[dispIndex()].stop();
 	sources = [];
 	that.loadQueue = [];
 	if (initialized)
