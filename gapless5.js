@@ -332,7 +332,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		this.startingTrack = 0;
 	}	
 	this.currentItem = inStartingTrack;
-	this.displayIndex = inStartingTrack;	// Displayed track index in GUI
+	this.trackNumber = inStartingTrack;	// Displayed track index in GUI
 
 	var that = this;
 
@@ -501,7 +501,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// index in the FileList object as well.		
 	this.set = function(index) {		
 		that.currentItem = index;
-		that.displayIndex = this.current[index]._index;		
+		that.trackNumber = this.current[index]._index;		
 	}
 	
 	this.get = function(index) {
@@ -607,7 +607,7 @@ var numTracks = function () {
 		return 0;
 };
 
-// Index for calculating actual playlist locatoin
+// Index for calculating actual playlist location
 var index = function () {
 	// FileList object must be initiated
 	if ( that.tracks != null )
@@ -1148,7 +1148,7 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.tracks.displayIndex);
+		$("#trackIndex" + that.id).html(that.tracks.trackNumber);
 		$("#tracks" + that.id).html(numTracks());
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
