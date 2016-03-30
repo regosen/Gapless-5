@@ -435,13 +435,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Find where current song is in original playlist, and make that
 		// the head of the new unshuffled playlist
-		var track = that.current[that.currentItem];
-		var point = 0;
-		// TODO: use lastIndex here?
-		for (var i = 0; i < that.original.length ; i++ )
-			if (track == that.original[i] )
-                		point = i;
-        	
+		var point = that.lastIndex(that.currentItem, that.original);
 		that.current = reorder(that.original, point);
 
 		that.currentItem = 0;	// Position to head of list
