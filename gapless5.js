@@ -451,6 +451,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		for (var n = 0; n < oldList.length ; n++ )
 			if ( oldList[n] == compare )
 				return n;
+	}
 
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
 	// upon changing to the next available song. NOTE that each function here
