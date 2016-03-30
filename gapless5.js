@@ -447,9 +447,18 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// After a shuffle or unshuffle, the array has changed. Get the index
 	// for the current-displayed song in the previous array.
 	this.lastIndex = function(index, oldList) {
-		compare = that.current[index];
-		for (var n = 0; n < oldList.length ; n++ )
-			if ( oldList[n] == compare )
+		var point = index;
+		var searchList = oldList; 
+
+		if ( typeof oldList == undefined )
+			searchList = that.previous;
+
+		if ( typeof index == undefined )
+			point = that.currentItem;
+
+		compare = that.current[point];
+		for (var n = 0; n < searchList.length ; n++ )
+			if ( searchList[n] == compare )
 				return n;
 	}
 
