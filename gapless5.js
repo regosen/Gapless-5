@@ -917,6 +917,7 @@ this.removeAllTracks = function () {
 		}
 	}
 	loadingTrack = -1;
+	that.stop();
 	sources = [];
 	that.loadQueue = [];
 	if (initialized)
@@ -942,7 +943,6 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	// remake the list in shuffled order
 	if ( readyToRemake() == true ) {
 		// just changed our shuffle mode. remake the list
-		sources[dispIndex()].stop();
 		refreshTracks(newIndex);
 		justRemade = true;
 	}
