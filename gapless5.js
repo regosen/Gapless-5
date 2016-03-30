@@ -606,7 +606,15 @@ var index = function () {
 		return that.tracks.get();
 	else
 		return -1;
-}
+};
+
+var lastIndex = function () {
+	// FileList object must be initiated
+	if ( that.tracks != null )
+		return that.tracks.lastIndex();
+	else
+		return -1;
+};
 
 var readyToRemake = function () {
 	// FileList object must be initiated
@@ -614,7 +622,7 @@ var readyToRemake = function () {
 		return that.tracks.readyToRemake();
 	else
 		return false;
-}
+};
 
 var getFormattedTime = function (inMS) {
     var minutes = Math.floor(inMS / 60000);
@@ -632,13 +640,14 @@ var getFormattedTime = function (inMS) {
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
 	var srcLength = sources[index()].getLength();
+
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
 	else if (readyToRemake()) 
 	{ 
-		text = getFormattedTime(sources[lastIndex()].getLength();	
+		text = getFormattedTime(sources[lastIndex()].getLength());
 	}
 	else if (sources[index()].getState() == Gapless5State.Error)
 	{
