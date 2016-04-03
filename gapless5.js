@@ -627,6 +627,16 @@ var dispIndex = function () {
 		return -1
 };
 
+// TODO: determine if necessary
+var dispPrevIndex = function () {
+	if ( readyToRemake() )
+		return that.tracks.previousItem;
+	else if ( that.tracks != null )
+		return that.tracks.get();
+	else
+		return -1;
+}
+
 var readyToRemake = function () {
 	// FileList object must be initiated
 	if ( that.tracks.readyToRemake() != null )
@@ -650,13 +660,13 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = sources[dispIndex()].getLength();
+	var srcLength = sources[dispPrevIndex()].getLength();
 
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
-	else if (sources[index()].getState() == Gapless5State.Error)
+	else if (sources[dispPrevIndex()].getState() == Gapless5State.Error)
 	{
 		text = ERROR_TEXT;
 	}
