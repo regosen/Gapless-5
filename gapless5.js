@@ -1033,12 +1033,18 @@ this.prevtrack = function (e) {
 
 this.prev = function (e) {
 	if (sources.length == 0) return;
-	if (sources[dispIndex()].getPosition() > 0)
+	if ( readyToRemake() == true )
+	{
+		// jump to start of track that's in a new position
+		// at the head of the re-made list.
+		that.gotoTrack(0);
+	}
+	else if (sources[index()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(dispIndex());
+		that.gotoTrack(index());
 	}
-	else if (dispIndex() > 0)
+	else if (index() > 0)
 	{
 		that.gotoTrack(index() - 1);
 		runCallback(that.onprev);
@@ -1053,7 +1059,7 @@ this.prev = function (e) {
 this.next = function (e) {
 	if (sources.length == 0) return;
 	var bForcePlay = (e == true);
-	if (dispIndex() < numTracks() - 1)
+	if (index() < numTracks() - 1)
 	{
 		that.gotoTrack(index() + 1, bForcePlay);
 		runCallback(that.onnext);
