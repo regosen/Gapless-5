@@ -403,7 +403,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
         }
 
 	// Already pressed the shuffle button once from normal mode.
-	// Revert to previous list / item, and terminate. TODO: TEST
+	// Revert to previous list / item, and terminate.
 	var revertShuffle = function() {
 		that.current = that.previous;
 		that.currentItem = that.previousItem;
@@ -499,7 +499,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// PlayList manipulation requires us to keep state on which track is 		
 	// playing. Player object state changes may need to update the current		
 	// index in the FileList object as well.		
-	this.set = function(index) {		
+	this.set = function(index) {
+		that.previousItem = that.currentItem;	
 		that.currentItem = index;
 		that.trackNumber = this.current[index]._index;		
 	}
