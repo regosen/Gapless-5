@@ -592,8 +592,8 @@ this.onfinishedall = null;
 
 // INTERNAL HELPERS
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : sources[dispIndex()].getPosition();
-	return (position / sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : sources[dispPrevIndex()].getPosition();
+	return (position / sources[dispPrevIndex()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
@@ -1043,10 +1043,10 @@ this.prevtrack = function (e) {
 
 this.prev = function (e) {
 	if (sources.length == 0) return;
-	if (sources[dispIndex()].getPosition() > 0)
+	if (sources[dispPrevIndex()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(dispIndex());
+		that.gotoTrack(dispPrevIndex());
 	}
 	else if (index() > 0)
 	{
@@ -1077,13 +1077,13 @@ this.next = function (e) {
 
 this.play = function (e) {
 	if (sources.length == 0) return;
-	if (sources[dispIndex()].audioFinished)
+	if (sources[dispPrevIndex()].audioFinished)
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[index()].play();
+		sources[dispPrevIndex()].play();
 	}
 	runCallback(that.onplay);
 };
@@ -1100,7 +1100,7 @@ this.cue = function (e) {
 	{
 		that.prev(e);
 	}
-	else if (sources[dispIndex()].getPosition() > 0)
+	else if (sources[dispPrevIndex()].getPosition() > 0)
 	{
 		that.prev(e);
 		that.play(e);
@@ -1113,14 +1113,14 @@ this.cue = function (e) {
 
 this.pause = function (e) {
 	if (sources.length == 0) return;
-	sources[dispIndex()].stop();
+	sources[dispPrevIndex()].stop();
 	runCallback(that.onpause);
 };
 
 this.stop = function (e) {
 	if (sources.length == 0) return;
 	resetPosition();
-	sources[dispIndex()].stop(true);
+	sources[dispPrevIndex()].stop(true);
 	runCallback(that.onstop);
 };
 
@@ -1170,7 +1170,7 @@ var updateDisplay = function () {
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('next', that.loop || index() < numTracks() - 1);
 
-		if (sources[index()].inPlayState())
+		if (sources[dispPrevIndex()].inPlayState())
 		{
 			enableButton('play', false);
 			isPlayButton = false;
@@ -1180,7 +1180,7 @@ var updateDisplay = function () {
 			enableButton('play', true);
 			isPlayButton = true;
 
-			if (sources[index()].getState() == Gapless5State.Error)
+			if (sources[dispPrevIndex()].getState() == Gapless5State.Error)
 			{
 				runCallback(that.onerror);
 			}
@@ -1202,15 +1202,15 @@ var updateDisplay = function () {
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[index()].tick();
+		sources[dispPrevIndex()].tick();
 
-		if (sources[index()].uiDirty)
+		if (sources[dispPrevIndex()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (sources[index()].inPlayState())
+		if (sources[dispPrevIndex()].inPlayState())
 		{
-			var soundPos = sources[index()].getPosition();
+			var soundPos = sources[dispPrevIndex()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
