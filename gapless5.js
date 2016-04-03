@@ -1036,9 +1036,9 @@ this.prev = function (e) {
 	if (sources[dispIndex()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(index());
+		that.gotoTrack(dispIndex());
 	}
-	else if (index() > 0)
+	else if (dispIndex() > 0)
 	{
 		that.gotoTrack(index() - 1);
 		runCallback(that.onprev);
@@ -1053,7 +1053,7 @@ this.prev = function (e) {
 this.next = function (e) {
 	if (sources.length == 0) return;
 	var bForcePlay = (e == true);
-	if (index() < numTracks() - 1)
+	if (dispIndex() < numTracks() - 1)
 	{
 		that.gotoTrack(index() + 1, bForcePlay);
 		runCallback(that.onnext);
