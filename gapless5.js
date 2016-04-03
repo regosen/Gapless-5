@@ -1036,7 +1036,7 @@ this.prev = function (e) {
 	if (sources[dispIndex()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
-		that.gotoTrack(dispIndex());
+		that.gotoTrack(index());
 	}
 	else if (index() > 0)
 	{
