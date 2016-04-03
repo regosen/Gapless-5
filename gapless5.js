@@ -932,6 +932,11 @@ this.shuffleToggle = function() {
 		enableButton('shuffle', false);
 	else
 		enableButton('shuffle', true);
+
+	if (initialized)
+	{
+		updateDisplay();
+	}
 };
 
 this.gotoTrack = function (newIndex, bForcePlay) {
@@ -1186,15 +1191,15 @@ var updateDisplay = function () {
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[dispIndex()].tick();
+		sources[index()].tick();
 
-		if (sources[dispIndex()].uiDirty)
+		if (sources[index()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (sources[dispIndex()].inPlayState())
+		if (sources[index()].inPlayState())
 		{
-			var soundPos = sources[dispIndex()].getPosition();
+			var soundPos = sources[index()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
