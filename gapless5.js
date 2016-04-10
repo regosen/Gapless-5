@@ -492,7 +492,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Are we in shuffle mode or not? If we just came out of shuffle mode,
 	// the player object will want to know.
-	this.justShuffled = function() {
+	this.shuffled = function() {
 		return shuffleMode;
 	}
 
@@ -1181,7 +1181,7 @@ var updateDisplay = function () {
 				runCallback(that.onerror);
 			}
 		}
-		if ( that.tracks.justShuffled() )
+		if ( that.tracks.shuffled() )
 		{
 			enableButton('shuffle', true);
 			isShuffleButton = true;
