@@ -929,7 +929,7 @@ this.removeAllTracks = function () {
 
 this.shuffleToggle = function() {
 	// Support calling from event listeners
-	if ( that.tracks == null )
+	if (( that.tracks == null ) or ( that.tracks.trackNumber == null ))
 		return;
 
 	that.tracks.shuffleToggle();
