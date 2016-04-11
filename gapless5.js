@@ -928,6 +928,10 @@ this.removeAllTracks = function () {
 };
 
 this.shuffleToggle = function() {
+	// Support calling from event listeners
+	if ( that.tracks == null )
+		return;
+
 	that.tracks.shuffleToggle();
 	if (isShuffleButton)
 		enableButton('shuffle', false);
