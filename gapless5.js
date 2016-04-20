@@ -427,7 +427,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Leaving shuffle mode. Tell the Player to remake the list
-	// as soon as a new track is reached or chosen. TODO: TEST
+	// as soon as a new track is reached or chosen. 
 	var disableShuffle = function() {
 		// Save old state in case we need to revert
 		that.previous = that.current.slice();
@@ -1325,8 +1325,8 @@ var Init = function(elem_id, options, tickMS) {
 		{
 			// convert single track into a one-item filelist.
 			// TODO: test
-			var item = {};
-			item.file = options.tracks;
+			var item = [{}];
+			item[0].file = options.tracks;
 			that.tracks = new Gapless5FileList(item, 0);
 			that.addTrack(that.tracks.files()[0]);
 		}
