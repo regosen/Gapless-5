@@ -1324,19 +1324,29 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.tracks == 'string')
 		{
 			// convert single track into a one-item filelist.
-			// TODO: test
-			var item = [{}];
-			item[0].file = options.tracks;
-			that.tracks = new Gapless5FileList(item, 0);
+			var items = [{}];
+			items[0].file = options.tracks;
+			that.tracks = new Gapless5FileList(items, 0);
 			that.addTrack(that.tracks.files()[0]);
 		}
-		if (typeof options.tracks == "object")
+		else if (typeof options.tracks[0] == 'string')
+		{
+			// convert array into JSON items
+			var items = [];
+			for (var i = 0; i < options.tracks.length ; i++)
+			{
+				items[i] = {};
+				items[i].file = options.tracks[i];
+			}	
+			that.tracks = new Gapless5FileList(items, 0);
+			for (var i = 0; i < that.tracks.files().length ; i++)
+				that.addTrack(that.tracks.files()[i]);
+		}
+		else if (typeof options.tracks[0] == 'object')
 		{
 			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack);
-			for (var i = 0; i < that.tracks.files().length ; i++ )
-			{
+			for (var i = 0; i < that.tracks.files().length ; i++)
 				that.addTrack(that.tracks.files()[i]);
-			}
 		}
 	}
 
