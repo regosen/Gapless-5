@@ -504,10 +504,16 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.currentItem = index;
 		that.trackNumber = this.current[index]._index;		
 	}
-	
+
+	// Get the "highlighted" track in the current playlist. After a shuffle,
+	// this may not be the track that is currently playing.	
 	this.get = function(index) {
 		return that.currentItem;
 	}
+
+	// TODO: Add a new song into the FileList object. 
+
+	// TODO: Remove a song from the FileList object.
 
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
@@ -690,13 +696,12 @@ var refreshTracks = function(newIndex) {
 
 	for (var i = 0; i < numTracks() ; i++ )
 	{
-		that.addTrack(that.tracks.files()[i]);
+		that.addInitialTrack(that.tracks.files()[i]);
 	}
 
 	// re-enable GUI updates
 	initialized = true;
 };
-
 
 // (PUBLIC) ACTIONS
 this.totalTracks = function() {
@@ -824,9 +829,28 @@ this.onFinishedScrubbing = function () {
 
 this.loadQueue = [];
 
+// Assume the FileList already accounts for this track, and just add it to the
+// loading queue. Until sources[] lives in the FileList object, this compromise
+// ensures addTrack/removeTrack functions can modify the FileList object when
+// called by Gapless applications.
+this.addInitialTrack = function(audioPath) {
+	var next = sources.length;
+	sources[next] = new Gapless5Source(this, context, gainNode);
+	that.loadQueue.push([next, audioPath]);
+	if (loadingTrack == -1)
+	{
+		that.dequeueNextLoad();
+	}
+	if (initialized)
+	{
+		updateDisplay();
+	}
+};
+
 this.addTrack = function (audioPath) {
 	var next = sources.length;
 	sources[next] = new Gapless5Source(this, context, gainNode);
+	// TODO: check if in the FileList already. If not, add it.
 	that.loadQueue.push([next, audioPath]);
 	if (loadingTrack == -1)
 	{
@@ -849,6 +873,7 @@ this.insertTrack = function (point, audioPath) {
 	{
 		var oldPoint = point+1;
 		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
+		// TODO: check if in the FileList already. If not, add it.
 
 		//re-enumerate queue
 		for (var i in that.loadQueue)
@@ -894,9 +919,8 @@ this.removeTrack = function (point) {
 	{
 		that.loadQueue.splice(removeIndex,1);
 	}
-	// TODO: FileList needs add/remove playlist items
-	// that.tracks.splice(index,1);
 	sources.splice(point,1);
+	// TODO: check if this is still in the FileList already. If not, remove it.
 	if (loadingTrack == point)
 	{
 		that.dequeueNextLoad();
@@ -1330,7 +1354,7 @@ var Init = function(elem_id, options, tickMS) {
 			var items = [{}];
 			items[0].file = options.tracks;
 			that.tracks = new Gapless5FileList(items, 0);
-			that.addTrack(that.tracks.files()[0]);
+			that.addInitialTrack(that.tracks.files()[0]);
 		}
 		else if (typeof options.tracks[0] == 'string')
 		{
@@ -1343,13 +1367,13 @@ var Init = function(elem_id, options, tickMS) {
 			}	
 			that.tracks = new Gapless5FileList(items, 0);
 			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addTrack(that.tracks.files()[i]);
+				that.addInitialTrack(that.tracks.files()[i]);
 		}
 		else if (typeof options.tracks[0] == 'object')
 		{
 			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack);
 			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addTrack(that.tracks.files()[i]);
+				that.addInitialTrack(that.tracks.files()[i]);
 		}
 	}
 
