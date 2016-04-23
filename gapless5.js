@@ -518,6 +518,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Add _index parameter to the JSON array of tracks
 	this.original = addIndices(this.original);
 
+	// Set displayed song number to whatever the current-plaing index is
+	this.trackNumber = this.original[this.startingTrack]._index;
+
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorder(this.original, this.startingTrack);
 
