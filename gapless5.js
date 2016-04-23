@@ -511,9 +511,35 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return that.currentItem;
 	}
 
-	// TODO: Add a new song into the FileList object. 
+	// Add a new song into the FileList object.
+	// TODO: this should take objects, not files, as input
+	// TODO: deshuffling after a song removal may not work.
+	//   Consider rewriting deshuffle to rely entirely on _index vals
+	this.add = function(index, file) {
+		var addin = {};
+		addin._index = index;
+		addin.file = file;
 
-	// TODO: Remove a song from the FileList object.
+		that.previous = that.current;
+		that.previousItem = that.currentItem;
+		that.current.splice(index, 0, addin);
+
+		// Shift currentItem if the insert file is earlier in the list
+		if ( index <= that.currentItem )
+			that.currentItem = that.currentItem + 1;
+	}
+
+	// Remove a song from the FileList object.
+	this.remove = function(index) {
+		that.previous = that.current;
+		that.previousItem = that.currentItem;
+		that.current.splice(index, 1);
+
+		// Stay at the same song index, unless currentItem is after the
+		// removed index, or was removed at the edge of the list 
+		if (( index < that.currentItem ) || ( index == that.previous.length - 1))
+			that.currentItem = that.currentItem - 1;
+	}
 
 	// Get an array of songfile paths from this object, appropriate for 
 	// including in a Player object.
@@ -850,7 +876,8 @@ this.addInitialTrack = function(audioPath) {
 this.addTrack = function (audioPath) {
 	var next = sources.length;
 	sources[next] = new Gapless5Source(this, context, gainNode);
-	// TODO: check if in the FileList already. If not, add it.
+	// TODO: refactor to take an entire JSON object
+	that.tracks.add(next, audioPath);
 	that.loadQueue.push([next, audioPath]);
 	if (loadingTrack == -1)
 	{
@@ -873,8 +900,8 @@ this.insertTrack = function (point, audioPath) {
 	{
 		var oldPoint = point+1;
 		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
-		// TODO: check if in the FileList already. If not, add it.
-
+		// TODO: refactor to take an entire JSON object
+		that.tracks.add(point, audioPath);
 		//re-enumerate queue
 		for (var i in that.loadQueue)
 		{
@@ -921,6 +948,7 @@ this.removeTrack = function (point) {
 	}
 	sources.splice(point,1);
 	// TODO: check if this is still in the FileList already. If not, remove it.
+	that.tracks.remove(point);
 	if (loadingTrack == point)
 	{
 		that.dequeueNextLoad();
