@@ -1,4 +1,4 @@
-//////////////
+/////////////
 //
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
@@ -517,7 +517,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	//   Consider rewriting deshuffle to rely entirely on _index vals
 	this.add = function(index, file) {
 		var addin = {};
-		addin._index = index;
+		// If shuffle mode, new index should be array size so
+		// unshuffled mode puts it at the back of the array.
+		if (this.shuffled())
+			addin._index = that.current.length;
+		else
+			addin._index = index + 1;
+
 		addin.file = file;
 
 		that.previous = that.current;
@@ -527,6 +533,14 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// Shift currentItem if the insert file is earlier in the list
 		if ( index <= that.currentItem )
 			that.currentItem = that.currentItem + 1;
+
+		// Recalculate _index on all shifted values. All indexes that
+		// shifted up should be added by one if non-shuffle mode.
+		if (! this.shuffled())
+			for ( var i = index + 1; i < that.current.length; i++ )
+				that.current[i]._index = that.current[i]._index + 1;
+
+		that.trackNumber = that.currentItem[index]._index;
 	}
 
 	// Remove a song from the FileList object.
@@ -539,6 +553,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// removed index, or was removed at the edge of the list 
 		if (( index < that.currentItem ) || ( index == that.previous.length - 1))
 			that.currentItem = that.currentItem - 1;
+
+		// Recalculate _index on all values.
+		for ( var i = index ; i < that.current.length ; i++ )
+			that.current[i]._index = that.current[i]._index - 1;
+
+		that.trackNumber = that.currentItem[index]._index;
 	}
 
 	// Get an array of songfile paths from this object, appropriate for 
