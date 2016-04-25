@@ -542,7 +542,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		if ( index <= that.currentItem )
 			that.currentItem = that.currentItem + 1;
 
-		that.trackNumber = that.currentItem[index]._index;
+		that.trackNumber = that.current[that.currentItem]._index;
 	}
 
 	// Remove a song from the FileList object.
