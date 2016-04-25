@@ -517,28 +517,30 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	//   Consider rewriting deshuffle to rely entirely on _index vals
 	this.add = function(index, file) {
 		var addin = {};
-		// If shuffle mode, new index should be array size so
-		// unshuffled mode puts it at the back of the array.
-		if (this.shuffled())
-			addin._index = that.current.length;
-		else
-			addin._index = index + 1;
-
+		addin._index = index + 1;
 		addin.file = file;
 
 		that.previous = that.current;
 		that.previousItem = that.currentItem;
-		that.current.splice(index, 0, addin);
+
+		// Prior to insertion, recalculate _index on all shifted values. 
+		// All indexes that shifted up should be added by one.
+		for ( var i = 0; i < that.current.length; i++ )
+			if ( that.current[i]._index >= addin._index )
+				that.current[i]._index = that.current[i]._index + 1;
+
+		// If shuffle mode, new index should be array size so
+		// unshuffled mode puts it at the back of the array.
+		if (this.shuffled())
+			that.current.push(addin);
+		else
+			that.current.splice(index, 0, addin);
+		// Add to the unshuffled array as well
+		that.original.splice(index, 0, addin);
 
 		// Shift currentItem if the insert file is earlier in the list
 		if ( index <= that.currentItem )
 			that.currentItem = that.currentItem + 1;
-
-		// Recalculate _index on all shifted values. All indexes that
-		// shifted up should be added by one if non-shuffle mode.
-		if (! this.shuffled())
-			for ( var i = index + 1; i < that.current.length; i++ )
-				that.current[i]._index = that.current[i]._index + 1;
 
 		that.trackNumber = that.currentItem[index]._index;
 	}
@@ -967,7 +969,6 @@ this.removeTrack = function (point) {
 		that.loadQueue.splice(removeIndex,1);
 	}
 	sources.splice(point,1);
-	// TODO: check if this is still in the FileList already. If not, remove it.
 	that.tracks.remove(point);
 	if (loadingTrack == point)
 	{
@@ -1236,7 +1237,7 @@ var updateDisplay = function () {
 	else
 	{
 		$("#trackIndex" + that.id).html(that.tracks.trackNumber);
-		$("#tracks" + that.id).html(numTracks());
+		$("#tracks" + that.id).html(that.tracks.current.length);
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('next', that.loop || index() < numTracks() - 1);
