@@ -513,7 +513,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Add a new song into the FileList object.
 	// TODO: this should take objects, not files, as input
-	// TODO: deshuffling after a song removal may not work.
+	// TODO: manage changes in original and changed lists
 	//   Consider rewriting deshuffle to rely entirely on _index vals
 	this.add = function(index, file) {
 		var addin = {};
@@ -531,7 +531,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// If shuffle mode, new index should be array size so
 		// unshuffled mode puts it at the back of the array.
-		if (this.shuffled())
+		if (that.shuffled())
 			that.current.push(addin);
 		else
 			that.current.splice(index, 0, addin);
@@ -546,19 +546,29 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Remove a song from the FileList object.
+	// TODO: manage changes in original and changed lists
 	this.remove = function(index) {
 		that.previous = that.current;
 		that.previousItem = that.currentItem;
-		that.current.splice(index, 1);
+
+		// Recalculate _index on all values, prior to index removal
+		for ( var i = 0 ; i < that.current.length ; i++ )
+			if ( that.current[i]._index >= index + 1 )
+				that.current[i]._index = that.current[i]._index - 1;
+			
+		// Remove from current array
+		value = that.current.splice(index, 1);
+
+		// Remove from the unshuffled array as well
+		if ( that.shuffled())
+			for ( var i = 0; i < that.original.length ; i++ )
+				if ( that.original[i] == value )
+					that.original.splice(i, 1);
 
 		// Stay at the same song index, unless currentItem is after the
 		// removed index, or was removed at the edge of the list 
 		if (( index < that.currentItem ) || ( index == that.previous.length - 1))
 			that.currentItem = that.currentItem - 1;
-
-		// Recalculate _index on all values.
-		for ( var i = index ; i < that.current.length ; i++ )
-			that.current[i]._index = that.current[i]._index - 1;
 
 		that.trackNumber = that.current[that.currentItem]._index;
 	}
