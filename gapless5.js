@@ -560,7 +560,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		for ( var i = index ; i < that.current.length ; i++ )
 			that.current[i]._index = that.current[i]._index - 1;
 
-		that.trackNumber = that.currentItem[index]._index;
+		that.trackNumber = that.current[that.currentItem]._index;
 	}
 
 	// Get an array of songfile paths from this object, appropriate for 
