@@ -55,7 +55,7 @@ input[type='range'].transportbar {
     margin-left: 2px;
     padding: 0;
     height:4px;
-    width:130px;
+    width:131px;
     background: transparent; 
 }
 
@@ -63,7 +63,7 @@ input[type='range'].transportbar {
     margin: 3px 2px 2px 2px;
     padding: 0;
     height: 4px;
-    width:111px;
+    width:131px;
     background-image: -webkit-linear-gradient(#DDD, #AAA);
     background-image: -moz-linear-gradient(#DDD, #AAA);
     background-image: -ms-linear-gradient(#DDD, #AAA);
