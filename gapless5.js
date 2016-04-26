@@ -344,27 +344,11 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// PRIVATE METHODS
 	// Clone an object so it's not passed by reference
+	// Works for objects that have no clever circular references
+	// or complex types. It's a "flash serialize".
 	var clone = function(input) { 
-		// Handle the 3 simple types, and null or undefined
-		if (null == input || "object" != typeof input) 
-			return input;
-
-		// Handle Array
-		if (input instanceof Array) {
-			copy = [];
-			for (var i = 0, i < input.length; i++)
-				copy[i] = clone(input[i]);
-			return copy;
-		}
-
-		// Handle copying objects
-		if (input instanceof Object) {
-			var copy = {};
-			for (var attr in input) 
-				if (input.hasOwnProperty(attr)) 
-					copy[attr] = clone(input[attr]);
-			return copy;
-		}
+		var copy = JSON.parse(JSON.stringify(input));
+		return copy;
 	}
 
 	// Swap two elements in an array
@@ -386,7 +370,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Reorder an array so that the outputList starts at the desiredIndex
 	// of the inputList.
 	var reorder = function(inputList, desiredIndex) {
-		var tempList = inputList.slice();
+		var tempList = clone(inputList);
 		var outputList = tempList.concat(tempList.splice(0, desiredIndex));
 		return outputList;
 	}
@@ -438,7 +422,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// as soon as a new track is reached or chosen. 
 	var enableShuffle = function() {
 		// Save old state in case we need to revert
-		that.previous = that.current.slice();
+		that.previous = clone(that.current);
 		that.previousItem = that.currentItem;
 
 		that.current = shuffle(that.original, that.currentItem);
@@ -452,7 +436,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// as soon as a new track is reached or chosen. 
 	var disableShuffle = function() {
 		// Save old state in case we need to revert
-		that.previous = that.current.slice();
+		that.previous = clone(that.current);
 		that.previousItem = that.currentItem;
 
 		// Find where current song is in original playlist, and make that
@@ -471,6 +455,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		var addin = {};
 		addin._index = point + 1;
 		addin.file = file;
+
+		// Prior to insertion, recalculate _index on all shifted values. 
+		// All indexes that shifted up should be added by one.
+		for ( var i = 0; i < list.length; i++ )
+			if ( list[i]._index >= addin._index ) 
+				list[i]._index = list[i]._index + 1;
 
 		// If shuffle mode, new index should be array size so
 		// unshuffled mode puts it at the back of the array.
@@ -552,17 +542,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// TODO: this should take objects, not files, as input
 	//   Consider rewriting deshuffle to rely entirely on _index vals
 	this.add = function(index, file) {
-		var insIndex = index + 1;
-
-		that.previous = that.current.slice()
+		that.previous = clone(that.current);
 		that.previousItem = that.currentItem;
-
-		// Prior to insertion, recalculate _index on all shifted values. 
-		// All indexes that shifted up should be added by one.
-		// NOTE: due to shared objects, this updates all prev/cur/orig indexes :/
-		for ( var i = 0; i < that.current.length; i++ )
-			if ( that.current[i]._index >= insIndex ) 
-				that.current[i]._index = that.current[i]._index + 1;
 
 		// Update current list
 		addFile(index, file, that.current, shuffleMode);
