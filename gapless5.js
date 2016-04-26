@@ -343,6 +343,30 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 					// upon track changing
 
 	// PRIVATE METHODS
+	// Clone an object so it's not passed by reference
+	var clone = function(input) { 
+		// Handle the 3 simple types, and null or undefined
+		if (null == input || "object" != typeof input) 
+			return input;
+
+		// Handle Array
+		if (input instanceof Array) {
+			copy = [];
+			for (var i = 0, i < input.length; i++)
+				copy[i] = clone(input[i]);
+			return copy;
+		}
+
+		// Handle copying objects
+		if (input instanceof Object) {
+			var copy = {};
+			for (var attr in input) 
+				if (input.hasOwnProperty(attr)) 
+					copy[attr] = clone(input[attr]);
+			return copy;
+		}
+	}
+
 	// Swap two elements in an array
 	var swapElements = function(someList, sourceIndex, destIndex) { 
 		var temp = someList[sourceIndex];
