@@ -371,7 +371,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// won't be the same as the current track being played.
 	var shuffle = function(inputList, index) {
 		var startList = inputList.slice();
-		var outputList = inputList.slice();
+		var outputList = [];
 
 		// Shuffle the input list
 		for ( var n = 0; n < startList.length - 1; n++ ) 
@@ -441,6 +441,21 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.currentItem = 0;	// Position to head of list
 		shuffleMode = false;
 		remakeList = true;
+	}
+
+	// Add a song to a single member of the FileList object, adjusting
+	// each FileList entry's _index value as necessary.
+	var addFile = function(point, file, list, listShuffled) {
+		var addin = {};
+		addin._index = point + 1;
+		addin.file = file;
+
+		// If shuffle mode, new index should be array size so
+		// unshuffled mode puts it at the back of the array.
+		if (listShuffled == true)
+			list.push(addin);
+		else
+			list.splice(point, 0, addin);
 	}
 
 	// PUBLIC METHODS
@@ -513,30 +528,32 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// Add a new song into the FileList object.
 	// TODO: this should take objects, not files, as input
-	// TODO: manage changes in original and changed lists
 	//   Consider rewriting deshuffle to rely entirely on _index vals
 	this.add = function(index, file) {
-		var addin = {};
-		addin._index = index + 1;
-		addin.file = file;
+		var insIndex = index + 1;
 
-		that.previous = that.current;
+		that.previous = that.current.slice()
 		that.previousItem = that.currentItem;
 
 		// Prior to insertion, recalculate _index on all shifted values. 
 		// All indexes that shifted up should be added by one.
+		// NOTE: due to shared objects, this updates all prev/cur/orig indexes :/
 		for ( var i = 0; i < that.current.length; i++ )
-			if ( that.current[i]._index >= addin._index )
+			if ( that.current[i]._index >= insIndex ) 
 				that.current[i]._index = that.current[i]._index + 1;
 
-		// If shuffle mode, new index should be array size so
-		// unshuffled mode puts it at the back of the array.
-		if (that.shuffled())
-			that.current.push(addin);
+		// Update current list
+		addFile(index, file, that.current, shuffleMode);
+
+		// Update original list. Assume it doesn't start in shuffle
+		addFile(index, file, that.original, false);
+
+		// Update the previous list too. If readyToRemake, that means
+		// the last list is the opposite shuffleMode of the current.
+		if ( remakeList == true )
+			that.previous = addFile(index, file, that.previous, !(shuffleMode));
 		else
-			that.current.splice(index, 0, addin);
-		// Add to the unshuffled array as well
-		that.original.splice(index, 0, addin);
+			that.previous = addFile(index, file, that.previous, shuffleMode);
 
 		// Shift currentItem if the insert file is earlier in the list
 		if ( index <= that.currentItem )
@@ -551,19 +568,29 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		that.previous = that.current;
 		that.previousItem = that.currentItem;
 
-		// Recalculate _index on all values, prior to index removal
-		for ( var i = 0 ; i < that.current.length ; i++ )
-			if ( that.current[i]._index >= index + 1 )
-				that.current[i]._index = that.current[i]._index - 1;
-			
 		// Remove from current array
-		var value = that.current.splice(index, 1);
+		var value = "";
+		if ( that.shuffled())
+			for ( var j = 0 ; j < that.current.length ; j++ )
+				if ( that.current[j]._index == index + 1 )
+					value = that.current.splice(j, 1);
+		else
+			value = that.current.splice(index, 1);
 
 		// Remove from the unshuffled array as well
 		if ( that.shuffled())
-			for ( var i = 0; i < that.original.length ; i++ )
-				if ( that.original[i] == value )
-					that.original.splice(i, 1);
+			for ( var k = 0; k < that.original.length ; k++ )
+				if ( that.original[k] == value )
+					that.original.splice(k, 1);
+
+		// Recalculate _index on all values, after index removal
+		// Do this on both arrays
+		for ( var i = 0 ; i < that.current.length ; i++ )
+			if ( that.current[i]._index >= index + 1 )
+				that.current[i]._index = that.current[i]._index - 1;
+		for ( var i = 0 ; i < that.original.length ; i++ )
+			if ( that.original[i]._index >= index + 1 )
+				that.original[i]._index = that.original[i]._index - 1;
 
 		// Stay at the same song index, unless currentItem is after the
 		// removed index, or was removed at the edge of the list 
@@ -588,7 +615,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorder(this.original, this.startingTrack);
-
 }
 
 
