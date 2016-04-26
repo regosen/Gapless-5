@@ -377,9 +377,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		for ( var n = 0; n < startList.length - 1; n++ ) 
 		{
 			var k = n + Math.floor(Math.random() * (startList.length - n ));
-			var temp = startList[k];
-			startList[k] = startList[n];
-			startList[n] = temp;
+			swapElements(startList,	k, n);
 		}
 
 		// Reorder playlist array so that the chosen index comes first, 
