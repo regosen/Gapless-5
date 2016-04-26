@@ -557,7 +557,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 				that.current[i]._index = that.current[i]._index - 1;
 			
 		// Remove from current array
-		value = that.current.splice(index, 1);
+		var value = that.current.splice(index, 1);
 
 		// Remove from the unshuffled array as well
 		if ( that.shuffled())
@@ -567,8 +567,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Stay at the same song index, unless currentItem is after the
 		// removed index, or was removed at the edge of the list 
-		if (( index < that.currentItem ) || ( index == that.previous.length - 1))
-			that.currentItem = that.currentItem - 1;
+		if (( index < that.currentItem ) || ( index >= that.previous.length - 1))
+			if ( that.currentItem > 0 )
+				that.currentItem = that.currentItem - 1;
 
 		that.trackNumber = that.current[that.currentItem]._index;
 	}
