@@ -441,7 +441,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Find where current song is in original playlist, and make that
 		// the head of the new unshuffled playlist
-		var point = that.lastIndex(that.currentItem, that.original);
+		var point = that.lastIndex(that.currentItem, that.current, that.original);
 		that.current = reorder(that.original, point);
 
 		that.currentItem = 0;	// Position to head of list
@@ -473,14 +473,8 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// PUBLIC METHODS
 	// After a shuffle or unshuffle, the array has changed. Get the index
 	// for the current-displayed song in the previous array.
-	this.lastIndex = function(index, oldList) {
-		if ( typeof oldList == "undefined" )
-			oldList = that.previous;
-
-		if ( typeof index == "undefined" )
-			index = that.currentItem;
-
-		compare = that.current[index];
+	this.lastIndex = function(index, newList, oldList) {
+		var compare = newList[index];
 		for (var n = 0; n < oldList.length ; n++ )
 			if ( oldList[n] == compare )
 				return n;
@@ -1067,6 +1061,11 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 		justRemade = true;
+
+		// Now that shuffle has happened, make the new index equal to
+		// where-ever the last playing song was in the new shuffled
+		// playlist
+		
 	}
 
 	var trackDiff = newIndex - index();
