@@ -1061,11 +1061,6 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		// just changed our shuffle mode. remake the list
 		refreshTracks(newIndex);
 		justRemade = true;
-
-		// Now that shuffle has happened, make the new index equal to
-		// where-ever the last playing song was in the new shuffled
-		// playlist
-		
 	}
 
 	var trackDiff = newIndex - index();
@@ -1130,6 +1125,9 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 	enableButton('prev', that.loop || (newIndex > 0));
 	enableButton('next', that.loop || (newIndex < numTracks() - 1));
+
+	// Communicate to other jukeboxes whether the list was remade or not
+	return justRemade;
 };
 
 this.prevtrack = function (e) {
