@@ -1125,9 +1125,6 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	}
 	enableButton('prev', that.loop || (newIndex > 0));
 	enableButton('next', that.loop || (newIndex < numTracks() - 1));
-
-	// Communicate to other jukeboxes whether the list was remade or not
-	return justRemade;
 };
 
 this.prevtrack = function (e) {
