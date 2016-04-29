@@ -379,32 +379,28 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// won't be the same as the current track being played.
 	var shuffle = function(inputList, index) {
 		var startList = inputList.slice();
-		var outputList = [];
+		var outputList = inputList.slice();
 
-		// Shuffle the input list
-		for ( var n = 0; n < startList.length - 1; n++ ) 
+		// Shuffle the list
+		for ( var n = 0; n < outputList.length - 1; n++ ) 
 		{
-			var k = n + Math.floor(Math.random() * (startList.length - n ));
-			swapElements(startList,	k, n);
+			var k = n + Math.floor(Math.random() * (outputList.length - n ));
+			swapElements(outputList, k, n);
 		}
 
 		// Reorder playlist array so that the chosen index comes first, 
 		// and gotoTrack isn't needed after Player object is remade.
-		outputList = reorder(startList, index);
+		outputList = reorder(outputList, index);
 
-		// In a Gapless playback-ordered list, after moving to an ordered list,
-		// current is always 0, next is always 1, and last is always "-1".
-		var nextIndex = 1;
-		var prevIndex = outputList.length - 1;     
+		// After shuffling, move the current-playing track to the 0th
+		// place in the index. So regardless of the next move, this track
+		// will be appropriately far away in the list
+		var swapIndex = that.lastIndex(index, that.current, outputList);
+		if ( swapIndex != 0 )
+			swapElements(outputList, swapIndex, 0);
 
-		// After shuffling, if the next/previous track is the same as
-		// the current track in the unshuffled, swap the current index.
-		if ( startList[index].file == outputList[prevIndex].file ) 
-			swapElements(outputList, 0, prevIndex);
-
-		if ( startList[index].file == outputList[nextIndex].file ) 
-			swapElements(outputList, 0, nextIndex);
-
+		// If the list of indexes in the new list is the same as the last,
+		// do a reshuffle. TOWRITE
 		return outputList;
         }
 
@@ -476,8 +472,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	this.lastIndex = function(index, newList, oldList) {
 		var compare = newList[index];
 		for (var n = 0; n < oldList.length ; n++ )
-			if ( oldList[n] == compare )
+			// Cannot compare full objects after clone() :(
+			// Instead, compare the generated _index
+			if ( oldList[n]._index == compare._index )
 				return n;
+
+		// Default value, in case some array value was removed
+		return 0;
 	}
 
 	// Toggle shuffle mode or not, and prepare for rebasing the playlist
