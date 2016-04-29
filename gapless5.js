@@ -470,9 +470,11 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// adjusting each FileList entry's _index value as necessary.
 	var removeFile = function(point, list, listShuffled) {
 		if ( listShuffled == true)
+		{
 			for ( var j = 0 ; j < list.length ; j++ )
 				if ( list[j]._index == point + 1 )
 					list.splice(j, 1);
+		}
 		else
 			list.splice(point, 1);
 
