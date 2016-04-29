@@ -466,6 +466,23 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 			list.splice(point, 0, addin);
 	}
 
+	// Remove a song from a single member of the FileList object,
+	// adjusting each FileList entry's _index value as necessary.
+	var removeFile = function(point, list, listShuffled) {
+		if ( listShuffled == true)
+			for ( var j = 0 ; j < list.length ; j++ )
+				if ( list[j]._index == point + 1 )
+					list.splice(j, 1);
+		else
+			list.splice(point, 1);
+
+		// After removing the item, re-number the indexes
+		for ( var k = 0 ; k < list.length ; k++ )
+			if ( list[k]._index >= point + 1 )
+				list[k]._index = list[k]._index - 1;
+	}
+
+
 	// PUBLIC METHODS
 	// After a shuffle or unshuffle, the array has changed. Get the index
 	// for the current-displayed song in the previous array.
@@ -549,9 +566,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		// Update the previous list too. If readyToRemake, that means
 		// the last list is the opposite shuffleMode of the current.
 		if ( remakeList == true )
-			that.previous = addFile(index, file, that.previous, !(shuffleMode));
+			addFile(index, file, that.previous, !(shuffleMode));
 		else
-			that.previous = addFile(index, file, that.previous, shuffleMode);
+			addFile(index, file, that.previous, shuffleMode);
 
 		// Shift currentItem if the insert file is earlier in the list
 		if ( index <= that.currentItem )
@@ -563,32 +580,14 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	// Remove a song from the FileList object.
 	// TODO: manage changes in original and changed lists
 	this.remove = function(index) {
-		that.previous = that.current;
+		that.previous = clone(that.current);
 		that.previousItem = that.currentItem;
 
 		// Remove from current array
-		var value = "";
-		if ( that.shuffled())
-			for ( var j = 0 ; j < that.current.length ; j++ )
-				if ( that.current[j]._index == index + 1 )
-					value = that.current.splice(j, 1);
-		else
-			value = that.current.splice(index, 1);
+		removeFile(index, that.current, shuffleMode);			
 
 		// Remove from the unshuffled array as well
-		if ( that.shuffled())
-			for ( var k = 0; k < that.original.length ; k++ )
-				if ( that.original[k] == value )
-					that.original.splice(k, 1);
-
-		// Recalculate _index on all values, after index removal
-		// Do this on both arrays
-		for ( var i = 0 ; i < that.current.length ; i++ )
-			if ( that.current[i]._index >= index + 1 )
-				that.current[i]._index = that.current[i]._index - 1;
-		for ( var i = 0 ; i < that.original.length ; i++ )
-			if ( that.original[i]._index >= index + 1 )
-				that.original[i]._index = that.original[i]._index - 1;
+		removeFile(index, that.original, shuffleMode);			
 
 		// Stay at the same song index, unless currentItem is after the
 		// removed index, or was removed at the edge of the list 
