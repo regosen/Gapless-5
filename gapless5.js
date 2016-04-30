@@ -983,12 +983,15 @@ this.removeTrack = function (point) {
 	if (point < 0 || point >= sources.length) return;
 
 	var curSource = sources[point];
+	var wasPlaying = false;
+
 	if (curSource.getState() == Gapless5State.Loading)
 	{
 		curSource.cancelRequest();
 	}
 	else if (curSource.getState() == Gapless5State.Play)
 	{
+		wasPlaying = true;
 		curSource.stop();
 	}
 	
@@ -1011,10 +1014,18 @@ this.removeTrack = function (point) {
 	}
 	sources.splice(point,1);
 	that.tracks.remove(point);
+
 	if (loadingTrack == point)
 	{
 		that.dequeueNextLoad();
 	}
+	if ( point == that.tracks.currentItem )
+	{
+		that.next();	// Don't stop after a delete
+		if ( wasPlaying )
+			that.play();
+	}
+
 	if (initialized)
 	{
 		updateDisplay();
