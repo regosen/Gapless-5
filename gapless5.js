@@ -580,7 +580,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 	}
 
 	// Remove a song from the FileList object.
-	// TODO: manage changes in original and changed lists
 	this.remove = function(index) {
 		that.previous = clone(that.current);
 		that.previousItem = that.currentItem;
@@ -590,6 +589,12 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 		// Remove from the unshuffled array as well
 		removeFile(index, that.original, shuffleMode);			
+
+		// Update previous list too
+		if ( remakeList == true )
+			removeFile(index, that.previous, !(shuffleMode));
+		else
+			removeFile(index, that.previous, shuffleMode);
 
 		// Stay at the same song index, unless currentItem is after the
 		// removed index, or was removed at the edge of the list 
@@ -1293,16 +1298,24 @@ var updateDisplay = function () {
 				runCallback(that.onerror);
 			}
 		}
-		if ( that.tracks.shuffled() )
+
+		// Must have at least 3 tracks in order for shuffle button to work
+		if ((that.tracks.shuffled()) && (that.tracks.current.length > 2))
 		{
 			enableButton('shuffle', true);
 			isShuffleButton = true;
 		}
-		else
+		else if ( that.tracks.current.length > 2 )
 		{
 			enableButton('shuffle', false);
 			isShuffleButton = false;
 		}
+		else
+		{
+			enableButton('shuffle', false);
+			isShuffleButton = true;	
+		}
+
 		sources[index()].uiDirty = false;
 	}
 };
