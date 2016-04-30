@@ -672,7 +672,7 @@ var inCallback = false;
 var firstUICallback = true;
 var that = this;
 var isPlayButton = true;
-var isShuffleButton = true;
+var isShuffleActive = false;
 var keyMappings = {};
 
 // Callbacks
@@ -1045,11 +1045,9 @@ this.removeAllTracks = function () {
 };
 
 this.shuffleToggle = function() {
+	if (isShuffleActive == false) return;
+
 	that.tracks.shuffleToggle();
-	if (isShuffleButton)
-		enableButton('shuffle', false);
-	else
-		enableButton('shuffle', true);
 
 	if (initialized)
 	{
@@ -1265,6 +1263,25 @@ var enableButton = function (buttonId, bEnable) {
 	}
 };
 
+var shuffleButton = function (mode, bEnable) {
+	var oldButtonClass = "";
+	var newButtonClass = "";
+	if (mode == "shuffle")
+	{
+		oldButtonClass = "g5unshuffle";
+		newButtonClass = "g5shuffle";
+	}
+	else 
+	{
+		oldButtonClass = "g5shuffle";
+		newButtonClass = "g5unshuffle";
+	}
+	$("#" + "shuffle" + that.id).removeClass(oldButtonClass);
+	$("#" + "shuffle" + that.id).addClass(newButtonClass);
+
+	enableButton('shuffle', bEnable);
+};
+
 var updateDisplay = function () {
 	if (numTracks() == 0)
 	{
@@ -1272,7 +1289,7 @@ var updateDisplay = function () {
 		$("#tracks" + that.id).html(0);
 		$("#totalPosition" + that.id).html("00:00.00");
 		enableButton('prev', false);
-		enableButton('shuffle', false);
+		shuffleButton('shuffle', false);
 		enableButton('next', false);
 	}
 	else
@@ -1300,21 +1317,14 @@ var updateDisplay = function () {
 		}
 
 		// Must have at least 3 tracks in order for shuffle button to work
-		if ((that.tracks.shuffled()) && (that.tracks.current.length > 2))
-		{
-			enableButton('shuffle', true);
-			isShuffleButton = true;
-		}
-		else if ( that.tracks.current.length > 2 )
-		{
-			enableButton('shuffle', false);
-			isShuffleButton = false;
-		}
+		// If so, permanently turn on the shuffle toggle
+		if (that.tracks.current.length > 2)
+			isShuffleActive = true;
+
+		if (that.tracks.shuffled())
+			shuffleButton('unshuffle', isShuffleActive);
 		else
-		{
-			enableButton('shuffle', false);
-			isShuffleButton = true;	
-		}
+			shuffleButton('shuffle', isShuffleActive);
 
 		sources[index()].uiDirty = false;
 	}
