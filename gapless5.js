@@ -629,12 +629,19 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 	// Set displayed song number to whatever the current-plaing index is
 	this.trackNumber = this.original[this.startingTrack]._index;
 
-	// On object creation, make current list use startingTrack as head of list
-	this.current = reorder(this.original, this.startingTrack);
 
-	// If shuffle mode is on, shuffle the starting list
+	// Create the current playing list, based on startingTrack and shuffleMode.
 	if ( shuffleMode == true )
+	{
+		// If shuffle mode is on, shuffle the starting list
+		this.current = clone(this.original);
 		enableShuffle();
+	}
+	else
+	{
+		// On object creation, make current list use startingTrack as head of list
+		this.current = reorder(this.original, this.startingTrack);
+	}
 }
 
 
