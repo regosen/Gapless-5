@@ -317,7 +317,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 // A Gapless5FileList "class". Processes an array of JSON song objects, taking 
 // the "file" members out to constitute the sources[] in the Gapless5 player
-var Gapless5FileList = function(inPlayList, inStartingTrack) {
+var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
 	// OBJECT STATE
 	// Playlist and Track Items
@@ -338,7 +338,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// If the tracklist ordering changes, after a pre/next song,
 	// the playlist needs to be regenerated
-	var shuffleMode = false;	// Ordered or Shuffle
+	var shuffleMode = inShuffle;	// Ordered (false) or Shuffle (true)
 	var remakeList = false;		// Will need to re-order list
 					// upon track changing
 
@@ -552,6 +552,18 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 		return that.currentItem;
 	}
 
+        // Helper: find the given index in the current playlist
+        this.getIndex = function(index) {
+		if ( that.shuffled())
+		{
+			for ( var i=0; i < that.current.length; i++ )
+				if ( that.current[i]._index == index )
+					return i - 1;
+		}
+		else
+			return index;
+	}
+
 	// Add a new song into the FileList object.
 	// TODO: this should take objects, not files, as input
 	//   Consider rewriting deshuffle to rely entirely on _index vals
@@ -619,6 +631,10 @@ var Gapless5FileList = function(inPlayList, inStartingTrack) {
 
 	// On object creation, make current list use startingTrack as head of list
 	this.current = reorder(this.original, this.startingTrack);
+
+	// If shuffle mode is on, shuffle the starting list
+	if ( shuffleMode == true )
+		enableShuffle();
 }
 
 
@@ -1451,9 +1467,25 @@ var Init = function(elem_id, options, tickMS) {
     	}
 	});
 
-	SCRUB_WIDTH = $("#transportbar" + that.id).width();
 	enableButton('play', true);
 	enableButton('stop', true);
+
+	// set up whether shuffleButton appears or not (default is invisible)
+	if (( options != null ) && ( 'shuffleButton' in options ) && ( options.shuffleButton != true))
+	{
+		// Style items per earlier Gapless versions
+		var transSize = "111px";
+		var playSize = "115px";
+		$( "input[type='range'].transportbar" ).css("width", transSize);
+		$( ".g5meter" ).css("width", transSize);
+		$( ".g5position" ).css("width", playSize);
+		$( ".g5inside" ).css("width", playSize);
+		$( "#shuffle" + that.id).remove();
+	}
+	SCRUB_WIDTH = $("#transportbar" + that.id).width();
+
+	// set up whether shuffle is enabled when the player loads (default is false)
+	var shuffleInit = (( options != null ) && ( 'shuffle' in options ) && ( options.shuffle == true))
 
 	// set up starting track number
 	if ( options != null && 'startingTrack' in options)
@@ -1470,9 +1502,10 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.tracks == 'string')
 		{
 			// convert single track into a one-item filelist.
+			// shuffle mode doesn't make sense here.
 			var items = [{}];
 			items[0].file = options.tracks;
-			that.tracks = new Gapless5FileList(items, 0);
+			that.tracks = new Gapless5FileList(items, 0, false);
 			that.addInitialTrack(that.tracks.files()[0]);
 		}
 		else if (typeof options.tracks[0] == 'string')
@@ -1484,13 +1517,13 @@ var Init = function(elem_id, options, tickMS) {
 				items[i] = {};
 				items[i].file = options.tracks[i];
 			}	
-			that.tracks = new Gapless5FileList(items, 0);
+			that.tracks = new Gapless5FileList(items, 0, shuffleInit);
 			for (var i = 0; i < that.tracks.files().length ; i++)
 				that.addInitialTrack(that.tracks.files()[i]);
 		}
 		else if (typeof options.tracks[0] == 'object')
 		{
-			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack);
+			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack, shuffleInit);
 			for (var i = 0; i < that.tracks.files().length ; i++)
 				that.addInitialTrack(that.tracks.files()[i]);
 		}
