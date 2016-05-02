@@ -655,6 +655,9 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 //   playOnLoad (default = false): play immediately
 //   useWebAudio (default = true)
 //   useHTML5Audio (default = false on mobile browsers, true otherwise)
+//   startingTrack (number or "random", default = 0)
+//   shuffle (true or false): start the jukebox in shuffle mode
+//   shuffleButton (default = true): whether shuffle button appears or not
 var Gapless5 = function(elem_id, options) {
 
 // MEMBERS AND CONSTANTS
