@@ -330,9 +330,13 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 	if ( inStartingTrack == null )
 	{
 		this.startingTrack = 0;
+	}
+	if ( inStartingTrack == "random" )
+	{
+		this.startingTrack = Math.floor(Math.random()*this.original.length);
 	}	
-	this.currentItem = inStartingTrack;
-	this.trackNumber = inStartingTrack;	// Displayed track index in GUI
+	this.currentItem = this.startingTrack;
+	this.trackNumber = this.startingTrack;	// Displayed track index in GUI
 
 	var that = this;
 
@@ -1500,6 +1504,10 @@ var Init = function(elem_id, options, tickMS) {
 		if (typeof options.startingTrack == 'number')
 		{
 			that.startingTrack = options.startingTrack;
+		}
+		else if ((typeof options.startingTrack == 'string') && (options.startingTrack == "random")) 
+		{
+			that.startingTrack = "random";
 		}
 	}
 
