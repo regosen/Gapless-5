@@ -107,11 +107,20 @@ Options
 
 - **tracks**
   - path to audio file(s)
-  - can be an array, or a single track as a string
+  - can be a single track as a string, an array, or a JSON object containing an array of JSON objects
 - **loop** (loops playlist)
   - default = false
 - **playOnLoad** (plays immediately when you open the page)
   - default = false
+- **startingTrack**
+  - default: 0
+  - Either an array index into the tracks array, or the string "random" for a random index
+- **shuffleButton**
+  - default = true
+  - Adds a shuffle button to the Gapless player.
+- **shuffle**
+  - default = false
+  - Enables shuffle mode immediately after playlist load.
 - **useHTML5Audio**
   - default = false on mobile browsers, true otherwise
 - **useWebAudio**
