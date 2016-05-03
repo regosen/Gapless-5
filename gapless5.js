@@ -1552,7 +1552,7 @@ var Init = function(elem_id, options, tickMS) {
 
 	// autostart if desired
 	var playOnLoad = (options != undefined) && ('playOnLoad' in options) && (options.playOnLoad == true);
-	if (playOnLoad && (that.count > 0))
+	if (playOnLoad && (that.tracks.current.length > 0))
 	{
 		sources[index()].play();
 	}
