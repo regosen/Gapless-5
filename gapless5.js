@@ -25,7 +25,6 @@ window.hasWebKit = ('webkitAudioContext' in window) && !('chrome' in window);
 // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
 var gapless5AudioContext = (window.hasWebKit) ? new webkitAudioContext() : (typeof AudioContext != "undefined") ? new AudioContext() : null;
 
-
 var GAPLESS5_PLAYERS = {};
 var Gapless5State = {
 	"None"    : 0,
@@ -189,6 +188,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (buffer != null)
 		{
 			//console.log("playing WebAudio");
+			gapless5AudioContext.resume();
 			source = context.createBufferSource();
 			source.connect(outputNode);
 			source.buffer = buffer;
