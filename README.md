@@ -112,6 +112,8 @@ Options
   - default = false
 - **playOnLoad** (plays immediately when you open the page)
   - default = false
+- **shuffleButton** (show shuffle button)
+  - default = true
 - **startingTrack**
   - default: 0
   - Either an array index into the tracks array, or the string "random" for a random index
