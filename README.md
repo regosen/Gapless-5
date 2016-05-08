@@ -108,21 +108,21 @@ Options
 - **tracks**
   - path to audio file(s)
   - can be a single track as a string, an array, or a JSON object containing an array of JSON objects
-- **loop** (loops playlist)
+- **loop**
   - default = false
-- **playOnLoad** (plays immediately when you open the page)
+  - loops the playlist
+- **playOnLoad**
   - default = false
-- **shuffleButton** (show shuffle button)
-  - default = true
+  - plays immediately when you open the page
 - **startingTrack**
   - default: 0
-  - Either an array index into the tracks array, or the string "random" for a random index
+  - either an array index into the tracks array, or the string "random" for a random index
 - **shuffleButton**
   - default = true
-  - Adds a shuffle button to the Gapless player.
+  - adds shuffle button to the player
 - **shuffle**
   - default = false
-  - Enables shuffle mode immediately after playlist load.
+  - enables shuffle mode immediately after playlist load
 - **useHTML5Audio**
   - default = false on mobile browsers, true otherwise
 - **useWebAudio**
@@ -130,7 +130,7 @@ Options
   - if you don't care about gapless playback, set useWebAudio to false for better performance
 - **mapKeys**
   - pressing specified key (case-insensitive) will trigger specified action.
-  - Actions that behave like the buttons:
+  - actions that behave like the buttons:
     - **prev**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
     - **playpause**: matches behavior of "play/pause" button
     - **stop**: matches behavior of "stop" button
