@@ -62,7 +62,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	var endedCallback = null;
 
 	// request manager info
-	var clock = new Date().getTime();
+	var initMS = new Date().getTime();
+	var loadMS = null;
 
 	this.uiDirty = false;
 	var that = this;
@@ -84,8 +85,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 	this.timer = function() {
 		var now = new Date().getTime();
-		var timerMs = now - clock;
-		return timerMs;
+		var timerMS = now - initMS;
+		return timerMS;
 	}
 
 	this.cancelRequest = function (isError) {
@@ -119,6 +120,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		endpos = inBuffer.duration * 1000;
 		if (audio != null || !parent.useHTML5Audio)
 		{
+			loadMS = (new Date().getTime()) - initMS;
 			parent.dequeueNextLoad();
 		}
 
@@ -146,6 +148,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (state != Gapless5State.Loading) return;
 		if (buffer != null || !parent.useWebAudio)
 		{
+			loadMS = (new Date().getTime()) - initMS;
 			parent.dequeueNextLoad();
 		}
 
@@ -325,18 +328,14 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 
 // A RequestManager tracks all the available song objects and their states.
-// It sets timers and manages the downloading of new songs based on what's
-// most appropriate for the platform used.
-// You may also select your own policy from the following:
+// It manages the downloading of new songs based on what's most appropriate 
+// for the platform used.
+// You may also manually select a policy from the following:
 //	mobile: no more than 2 songs buffered ahead of current song
 //	desktop: no more than 5 songs buffered ahead of current song
 //	album: buffer songs ahead until the last song on the album
 //	oom: keep buffering songs (until you force an Out-Of-Memory error)
 var Gapless5RequestManager = function(orderedPolicy, shuffledPolicy) {
-
-	// TODO: List of things to support request manager that should be added
-	// to the Song object: Timers, State for errors/loading problems. The RM
-	// sets timer policies, but the timers themselves are in the Source obj.
 
 	// OBJECT STATE
 	// Each request manager item is an object containing the Gapless5Source,
