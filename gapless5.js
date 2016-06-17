@@ -61,6 +61,9 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	var audioFinished = false;
 	var endedCallback = null;
 
+	// request manager info
+	var clock = new Date().getTime();
+
 	this.uiDirty = false;
 	var that = this;
 	var parent = parentPlayer;
@@ -78,6 +81,12 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		state = newState;
 		queuedState = Gapless5State.None;
 	};
+
+	this.timer = function() {
+		var now = new Date().getTime();
+		var timerMs = now - clock;
+		return timerMs;
+	}
 
 	this.cancelRequest = function (isError) {
 		setState((isError == true) ? Gapless5State.Error : Gapless5State.None);
