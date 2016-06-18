@@ -343,27 +343,12 @@ var Gapless5RequestManager = function(orderedPolicy, shuffledPolicy) {
 	this.orderedPolicy = orderedPolicy;
 	this.shuffledPolicy = shuffledPolicy;
 	
-	// Stack of songs to load. 
-	// TODO: if song is added to stack that already exists in the history,
-	// grab it from there instead of downloading it again
-	var stack = [];
-	var history = []; 
-
 	// PRIVATE METHODS
 	// Choose the effective policy in use. Some rules:
 	//    album: revert to "desktop" policy if used for shuffledPolicy
         function effectivePolicy() {
 		return;
 	}
-
-	// PUBLIC METHODS
-	// Add a song to the request manager stack. 
-	// Do this just after Method returns a Gapless5Source object, so it 
-	// can be compatible with the new Gapless5Source statements.
-	this.register = function(song) {
-		return song;
-	}
-
 }
 
 
