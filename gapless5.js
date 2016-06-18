@@ -122,7 +122,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		{
 			loadMS = (new Date().getTime()) - initMS;
 			// TODO: where does sources live!?
-			parent.manager.dequeueNextLoad(parent.sources);
+			parent.mgr.dequeueNextLoad(parent.sources);
 		}
 
 		if (queuedState == Gapless5State.Play && state == Gapless5State.Loading)
@@ -150,7 +150,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (buffer != null || !parent.useWebAudio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			parent.manager.dequeueNextLoad(parent.sources);
+			parent.mgr.dequeueNextLoad(parent.sources);
 		}
 
 		state = Gapless5State.Stop;
@@ -760,7 +760,7 @@ var sources = [];	// Loaded as audio files
 this.tracks = null;	// Playlist manager object
 
 // Request manager for loading songs
-this.manager = new Gapless5RequestManager();
+this.mgr = new Gapless5RequestManager();
 
 // Callback and Execution logic
 var inCallback = false;
@@ -1001,10 +1001,10 @@ this.onFinishedScrubbing = function () {
 this.addInitialTrack = function(audioPath) {
 	var next = sources.length;
 	sources[next] = new Gapless5Source(this, context, gainNode);
-	that.manager.loadQueue.push([next, audioPath]);
-	if (that.manager.loadingTrack == -1)
+	that.mgr.loadQueue.push([next, audioPath]);
+	if (that.mgr.loadingTrack == -1)
 	{
-		that.manager.dequeueNextLoad(sources);
+		that.mgr.dequeueNextLoad(sources);
 	}
 	if (initialized)
 	{
@@ -1017,10 +1017,10 @@ this.addTrack = function (audioPath) {
 	sources[next] = new Gapless5Source(this, context, gainNode);
 	// TODO: refactor to take an entire JSON object
 	that.tracks.add(next, audioPath);
-	that.manager.loadQueue.push([next, audioPath]);
-	if (that.manager.loadingTrack == -1)
+	that.mgr.loadQueue.push([next, audioPath]);
+	if (that.mgr.loadingTrack == -1)
 	{
-		that.manager.dequeueNextLoad(sources);
+		that.mgr.dequeueNextLoad(sources);
 	}
 	if (initialized)
 	{
@@ -1042,15 +1042,15 @@ this.insertTrack = function (point, audioPath) {
 		// TODO: refactor to take an entire JSON object
 		that.tracks.add(point, audioPath);
 		//re-enumerate queue
-		for (var i in that.manager.loadQueue)
+		for (var i in that.mgr.loadQueue)
 		{
-			var entry = that.manager.loadQueue[i];
+			var entry = that.mgr.loadQueue[i];
 			if (entry[0] >= point)
 			{
 				entry[0] += 1;
 			}
 		}
-		that.manager.loadQueue.splice(0,0,[point,audioPath]);
+		that.mgr.loadQueue.splice(0,0,[point,audioPath]);
 		updateDisplay();
 	}
 };
@@ -1072,9 +1072,9 @@ this.removeTrack = function (point) {
 	}
 	
 	var removeIndex = -1;
-	for (var i in that.manager.loadQueue)
+	for (var i in that.mgr.loadQueue)
 	{
-		var entry = that.manager.loadQueue[i];
+		var entry = that.mgr.loadQueue[i];
 		if (entry[0] == point)
 		{
 			removeIndex = i;
@@ -1086,14 +1086,14 @@ this.removeTrack = function (point) {
 	}
 	if (removeIndex >= 0)
 	{
-		that.manager.loadQueue.splice(removeIndex,1);
+		that.mgr.loadQueue.splice(removeIndex,1);
 	}
 	sources.splice(point,1);
 	that.tracks.remove(point);
 
-	if (that.manager.loadingTrack == point)
+	if (that.mgr.loadingTrack == point)
 	{
-		that.manager.dequeueNextLoad(sources);
+		that.mgr.dequeueNextLoad(sources);
 	}
 	if ( point == that.tracks.currentItem )
 	{
@@ -1122,9 +1122,9 @@ this.removeAllTracks = function () {
 		}
 		sources[i].stop();
 	}
-	that.manager.loadingTrack = -1;
+	that.mgr.loadingTrack = -1;
 	sources = [];
-	that.manager.loadQueue = [];
+	that.mgr.loadQueue = [];
 	if (initialized)
 	{
 		updateDisplay();
@@ -1186,7 +1186,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		{
 			sources[oldIndex].cancelRequest();
 			// TODO: better way to have just the file list?
-			that.manager.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
+			that.mgr.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after currentIndex has been updated
@@ -1196,14 +1196,14 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 			sources[newIndex].load(that.tracks.files()[newIndex]);
 
 			//re-sort queue so that this track is at the head of the list
-			for (var i in that.manager.loadQueue)
+			for (var i in that.mgr.loadQueue)
 			{
-				var entry = that.manager.loadQueue.shift();
+				var entry = that.mgr.loadQueue.shift();
 				if (entry[0] == newIndex)
 				{
 					break;
 				}
-				that.manager.loadQueue.push(entry);
+				that.mgr.loadQueue.push(entry);
 			}
 		}
 		updateDisplay();
@@ -1592,9 +1592,6 @@ var Init = function(elem_id, options, tickMS) {
 				that.addInitialTrack(that.tracks.files()[i]);
 		}
 	}
-
-	// Initialize the request manager 
-	// TODO
 
 	initialized = true;
 	updateDisplay();
