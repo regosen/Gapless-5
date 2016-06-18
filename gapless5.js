@@ -121,7 +121,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (audio != null || !parent.useHTML5Audio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			parent.dequeueNextLoad();
+			// TODO: where does sources live!?
+			parent.manager.dequeueNextLoad(parent.sources);
 		}
 
 		if (queuedState == Gapless5State.Play && state == Gapless5State.Loading)
@@ -149,7 +150,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (buffer != null || !parent.useWebAudio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			parent.dequeueNextLoad();
+			parent.manager.dequeueNextLoad(parent.sources);
 		}
 
 		state = Gapless5State.Stop;
@@ -283,7 +284,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		audioPath = inAudioPath;
 		if (source || audio)
 		{
-			parent.dequeueNextLoad();
+			parent.manager.dequeueNextLoad(parent.sources);
 			return;
 		}
 		if (state == Gapless5State.Loading)
@@ -328,26 +329,52 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 
 // A RequestManager tracks all the available song objects and their states.
-// It manages the downloading of new songs based on what's most appropriate 
-// for the platform used.
+// By default, it manages the downloading of new songs based on what's most 
+// appropriate for the platform detected.
+//
 // You may also manually select a policy from the following:
-//	mobile: no more than 2 songs buffered ahead of current song
-//	desktop: no more than 5 songs buffered ahead of current song
-//	album: buffer songs ahead until the last song on the album
 //	oom: keep buffering songs (until you force an Out-Of-Memory error)
-var Gapless5RequestManager = function(orderedPolicy, shuffledPolicy) {
+//	     This was Gapless-5's old behavior :)
+//	* mobile: no more than 2 songs buffered ahead of current song
+//	* desktop: no more than 5 songs buffered ahead of current song
+//	* album: buffer songs ahead until the last song on the album
+var Gapless5RequestManager = function() {
 
 	// OBJECT STATE
 	// Each request manager item is an object containing the Gapless5Source,
 	// the loading/progress state, and other metadata
-	this.orderedPolicy = orderedPolicy;
-	this.shuffledPolicy = shuffledPolicy;
+	// this.orderedPolicy = orderedPolicy;
+	// this.shuffledPolicy = shuffledPolicy;
 	
+	// Values populated by Gapless5Player actions
+	this.loadQueue = [];
+	this.loadingTrack = -1;
+	var that = this;
+
 	// PRIVATE METHODS
 	// Choose the effective policy in use. Some rules:
 	//    album: revert to "desktop" policy if used for shuffledPolicy
-        function effectivePolicy() {
-		return;
+        // function effectivePolicy() {
+	// 	return;
+	// }
+
+	// PUBLIC METHODS
+	// Ripped out of the player object. Must pass sources and loadqueue
+	this.dequeueNextLoad = function(sources) { 
+		if (that.loadQueue.length > 0)
+		{
+			var entry = that.loadQueue.shift();
+			loadingTrack = entry[0];
+			if (loadingTrack < sources.length)
+			{
+				//console.log("loading track " + loadingTrack + ": " + entry[1]);
+				sources[loadingTrack].load(entry[1]);
+			}
+		}
+		else
+		{
+			loadingTrack = -1;
+		}
 	}
 }
 
@@ -729,10 +756,11 @@ if (context && gainNode)
 }
 
 // Playlist
-var loadingTrack = -1;
 var sources = [];	// Loaded as audio files
 this.tracks = null;	// Playlist manager object
 
+// Request manager for loading songs
+this.manager = new Gapless5RequestManager();
 
 // Callback and Execution logic
 var inCallback = false;
@@ -949,23 +977,6 @@ this.onEndedCallback = function() {
 	}
 };
 
-this.dequeueNextLoad = function() { 
-	if (that.loadQueue.length > 0)
-	{
-		var entry = that.loadQueue.shift();
-		loadingTrack = entry[0];
-		if (loadingTrack < sources.length)
-		{
-			//console.log("loading track " + loadingTrack + ": " + entry[1]);
-			sources[loadingTrack].load(entry[1]);
-		}
-	}
-	else
-	{
-		loadingTrack = -1;
-	}
-}
-
 this.onStartedScrubbing = function () {
 	isScrubbing = true;
 };
@@ -983,8 +994,6 @@ this.onFinishedScrubbing = function () {
 	}
 };
 
-this.loadQueue = [];
-
 // Assume the FileList already accounts for this track, and just add it to the
 // loading queue. Until sources[] lives in the FileList object, this compromise
 // ensures addTrack/removeTrack functions can modify the FileList object when
@@ -992,10 +1001,10 @@ this.loadQueue = [];
 this.addInitialTrack = function(audioPath) {
 	var next = sources.length;
 	sources[next] = new Gapless5Source(this, context, gainNode);
-	that.loadQueue.push([next, audioPath]);
-	if (loadingTrack == -1)
+	that.manager.loadQueue.push([next, audioPath]);
+	if (that.manager.loadingTrack == -1)
 	{
-		that.dequeueNextLoad();
+		that.manager.dequeueNextLoad(sources);
 	}
 	if (initialized)
 	{
@@ -1008,10 +1017,10 @@ this.addTrack = function (audioPath) {
 	sources[next] = new Gapless5Source(this, context, gainNode);
 	// TODO: refactor to take an entire JSON object
 	that.tracks.add(next, audioPath);
-	that.loadQueue.push([next, audioPath]);
-	if (loadingTrack == -1)
+	that.manager.loadQueue.push([next, audioPath]);
+	if (that.manager.loadingTrack == -1)
 	{
-		that.dequeueNextLoad();
+		that.manager.dequeueNextLoad(sources);
 	}
 	if (initialized)
 	{
@@ -1033,15 +1042,15 @@ this.insertTrack = function (point, audioPath) {
 		// TODO: refactor to take an entire JSON object
 		that.tracks.add(point, audioPath);
 		//re-enumerate queue
-		for (var i in that.loadQueue)
+		for (var i in that.manager.loadQueue)
 		{
-			var entry = that.loadQueue[i];
+			var entry = that.manager.loadQueue[i];
 			if (entry[0] >= point)
 			{
 				entry[0] += 1;
 			}
 		}
-		that.loadQueue.splice(0,0,[point,audioPath]);
+		that.manager.loadQueue.splice(0,0,[point,audioPath]);
 		updateDisplay();
 	}
 };
@@ -1063,9 +1072,9 @@ this.removeTrack = function (point) {
 	}
 	
 	var removeIndex = -1;
-	for (var i in that.loadQueue)
+	for (var i in that.manager.loadQueue)
 	{
-		var entry = that.loadQueue[i];
+		var entry = that.manager.loadQueue[i];
 		if (entry[0] == point)
 		{
 			removeIndex = i;
@@ -1077,14 +1086,14 @@ this.removeTrack = function (point) {
 	}
 	if (removeIndex >= 0)
 	{
-		that.loadQueue.splice(removeIndex,1);
+		that.manager.loadQueue.splice(removeIndex,1);
 	}
 	sources.splice(point,1);
 	that.tracks.remove(point);
 
-	if (loadingTrack == point)
+	if (that.manager.loadingTrack == point)
 	{
-		that.dequeueNextLoad();
+		that.manager.dequeueNextLoad(sources);
 	}
 	if ( point == that.tracks.currentItem )
 	{
@@ -1113,9 +1122,9 @@ this.removeAllTracks = function () {
 		}
 		sources[i].stop();
 	}
-	loadingTrack = -1;
+	that.manager.loadingTrack = -1;
 	sources = [];
-	that.loadQueue = [];
+	that.manager.loadQueue = [];
 	if (initialized)
 	{
 		updateDisplay();
@@ -1177,7 +1186,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 		{
 			sources[oldIndex].cancelRequest();
 			// TODO: better way to have just the file list?
-			that.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
+			that.manager.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after currentIndex has been updated
@@ -1187,14 +1196,14 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 			sources[newIndex].load(that.tracks.files()[newIndex]);
 
 			//re-sort queue so that this track is at the head of the list
-			for (var i in that.loadQueue)
+			for (var i in that.manager.loadQueue)
 			{
-				var entry = that.loadQueue.shift();
+				var entry = that.manager.loadQueue.shift();
 				if (entry[0] == newIndex)
 				{
 					break;
 				}
-				that.loadQueue.push(entry);
+				that.manager.loadQueue.push(entry);
 			}
 		}
 		updateDisplay();
@@ -1583,6 +1592,9 @@ var Init = function(elem_id, options, tickMS) {
 				that.addInitialTrack(that.tracks.files()[i]);
 		}
 	}
+
+	// Initialize the request manager 
+	// TODO
 
 	initialized = true;
 	updateDisplay();
