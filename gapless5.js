@@ -364,16 +364,16 @@ var Gapless5RequestManager = function() {
 		if (that.loadQueue.length > 0)
 		{
 			var entry = that.loadQueue.shift();
-			loadingTrack = entry[0];
-			if (loadingTrack < sources.length)
+			that.loadingTrack = entry[0];
+			if (that.loadingTrack < sources.length)
 			{
-				//console.log("loading track " + loadingTrack + ": " + entry[1]);
-				sources[loadingTrack].load(entry[1]);
+				//console.log("loading track " + that.loadingTrack + ": " + entry[1]);
+				sources[that.loadingTrack].load(entry[1]);
 			}
 		}
 		else
 		{
-			loadingTrack = -1;
+			that.loadingTrack = -1;
 		}
 	}
 }
