@@ -34,6 +34,25 @@ var Gapless5State = {
 	"Error"   : 4
 	};
 
+// Request manager policies for downloading songs:
+//	oom: old Gapless behavior. Buffer tracks until OOM encountered :)
+//	* mobile: no more than 2 songs buffered ahead of current song
+//	* desktop: no more than 5 songs buffered ahead of current song
+//	* album: buffer songs ahead until the last song on the album
+var Gapless5Policy = {
+	"OOM"     : 0,
+	"Mobile"  : 1,
+	"Desktop" : 2,
+	"Album"   : 3,
+	"Memory"  : 4,
+	};
+
+// Download up to N songs ahead for the gapless buffer. 
+// This is only valid for the "Memory" policy -- other policies ignore this.
+// 0 or greater is the number of songs to grab in advance. -1 grabs as many
+// as possible.
+var Gapless5LookAhead = -1;
+
 
 // A Gapless5Source "class" handles track-specific audio requests
 function Gapless5Source(parentPlayer, inContext, inOutputNode) {
@@ -331,21 +350,15 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 // A RequestManager tracks all the available song objects and their states.
 // By default, it manages the downloading of new songs based on what's most 
 // appropriate for the platform detected.
-//
-// You may also manually select a policy from the following:
-//	oom: keep buffering songs (until you force an Out-Of-Memory error)
-//	     This was Gapless-5's old behavior :)
-//	* mobile: no more than 2 songs buffered ahead of current song
-//	* desktop: no more than 5 songs buffered ahead of current song
-//	* album: buffer songs ahead until the last song on the album
 var Gapless5RequestManager = function() {
 
 	// OBJECT STATE
 	// Each request manager item is an object containing the Gapless5Source,
 	// the loading/progress state, and other metadata
-	// this.orderedPolicy = orderedPolicy;
-	// this.shuffledPolicy = shuffledPolicy;
-	
+	this.orderedPolicy = Gapless5Policy.OOM;
+	this.shuffledPolicy = Gapless5Policy.OOM;
+	this.lookAhead = Gapless5LookAhead;
+
 	// Values populated by Gapless5Player actions
 	this.loadQueue = [];
 	this.loadingTrack = -1;
@@ -354,20 +367,21 @@ var Gapless5RequestManager = function() {
 	// PRIVATE METHODS
 	// Choose the effective policy in use. Some rules:
 	//    album: revert to "desktop" policy if used for shuffledPolicy
-        // function effectivePolicy() {
-	// 	return;
-	// }
+        function setPolicy(orderedPolicy, shuffledPolicy) {
+	 	that.orderedPolicy = orderedPolicy;
+		that.shuffledPolicy = shuffledPolicy;
+	}
 
-	// PUBLIC METHODS
-	// Ripped out of the player object. Must pass sources and loadqueue
-	this.dequeueNextLoad = function(sources) { 
+	// Default policy from gapless' original version: if the last song finished
+	// loading, continue loading new songs. This tends to OOM browsers :)
+	var oomPolicy = function(sources) {
 		if (that.loadQueue.length > 0)
 		{
 			var entry = that.loadQueue.shift();
 			that.loadingTrack = entry[0];
 			if (that.loadingTrack < sources.length)
 			{
-				//console.log("loading track " + that.loadingTrack + ": " + entry[1]);
+				//console.log("oomPolicy: loading track " + that.loadingTrack + ": " + entry[1]);
 				sources[that.loadingTrack].load(entry[1]);
 			}
 		}
@@ -375,6 +389,13 @@ var Gapless5RequestManager = function() {
 		{
 			that.loadingTrack = -1;
 		}
+	}
+
+	// PUBLIC METHODS
+	// Based on a request management policy, determine how and when the next
+	// track should be loaded.
+	this.dequeueNextLoad = function(sources) {
+		oomPolicy(sources);
 	}
 }
 
