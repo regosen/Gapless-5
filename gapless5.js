@@ -27,31 +27,32 @@ var gapless5AudioContext = (window.hasWebKit) ? new webkitAudioContext() : (type
 
 var GAPLESS5_PLAYERS = {};
 var Gapless5State = {
-	"None"    : 0,
-	"Loading" : 1,
-	"Play"    : 2,
-	"Stop"    : 3,
-	"Error"   : 4
+	"None"     : 0,
+	"Loading"  : 1,
+	"Play"     : 2,
+	"Stop"     : 3,
+	"Error"    : 4
 	};
 
-// Request manager policies for downloading songs:
-//	oom: old Gapless behavior. Buffer tracks until OOM encountered :)
-//	* mobile: no more than 2 songs buffered ahead of current song
-//	* desktop: no more than 5 songs buffered ahead of current song
-//	* album: buffer songs ahead until the last song on the album
+// Request manager policies for downloading songs
 var Gapless5Policy = {
-	"OOM"     : 0,
-	"Mobile"  : 1,
-	"Desktop" : 2,
-	"Album"   : 3,
-	"Memory"  : 4,
+	"OOM"     : 0,   // old Gapless behavior. Buffer tracks until OOM encountered :)
+	"Mobile"  : 1,   // no more than 2 songs buffered ahead of current song
+	"Desktop" : 2,   // no more than 5 songs buffered ahead of current song
+	"Album"   : 3,   // buffer songs until the last song on an album
+	"Memory"  : 4,   // use duration-based memory heuristic to limit memory use
 	};
 
-// Download up to N songs ahead for the gapless buffer. 
-// This is only valid for the "Memory" policy -- other policies ignore this.
-// 0 or greater is the number of songs to grab in advance. -1 grabs as many
-// as possible.
+// Request manager settings
+// For memory policy: # songs to grab in advance (-1 grabs as many as possible.)
 var Gapless5LookAhead = -1;
+
+// For memory policy: heuristic for uncompressed audio file size per minute
+// This is assuming 16-bit 44.1kHz audio
+var Gapless5MBPerMin = 10;
+
+// For memory policy: maximum amount of memory to use
+var Gapless5MaxMemory = 256;
 
 
 // A Gapless5Source "class" handles track-specific audio requests
@@ -82,7 +83,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 	// request manager info
 	var initMS = new Date().getTime();
-	var loadMS = null;
+	var loadMS = 0;
+	var finishMS = 0;
 
 	this.uiDirty = false;
 	var that = this;
@@ -102,6 +104,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		queuedState = Gapless5State.None;
 	};
 
+	this.finished = function() { return audioFinished; }
+
 	this.timer = function() {
 		var now = new Date().getTime();
 		var timerMS = now - initMS;
@@ -119,6 +123,9 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		buffer = null;
 		position = 0;
 		endpos = 0;
+		initMS = (new Date().getTime());
+		loadMS = 0;
+		finishMS = 0;
 		that.uiDirty = true;
 	}
 
@@ -137,10 +144,10 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		request = null;
 		buffer = inBuffer;
 		endpos = inBuffer.duration * 1000;
+		finishMS = startTime + endPos;
 		if (audio != null || !parent.useHTML5Audio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			// TODO: where does sources live!?
 			parent.mgr.dequeueNextLoad(parent.sources);
 		}
 
@@ -174,6 +181,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 		state = Gapless5State.Stop;
 		endpos = audio.duration * 1000;
+		finishMS = startTime + endPos;
 
 		if (queuedState == Gapless5State.Play)
 		{
@@ -350,7 +358,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 // A RequestManager tracks all the available song objects and their states.
 // By default, it manages the downloading of new songs based on what's most 
 // appropriate for the platform detected.
-var Gapless5RequestManager = function() {
+var Gapless5RequestManager = function(parentPlayer) {
 
 	// OBJECT STATE
 	// Each request manager item is an object containing the Gapless5Source,
@@ -362,14 +370,20 @@ var Gapless5RequestManager = function() {
 	// Values populated by Gapless5Player actions
 	this.loadQueue = [];
 	this.loadingTrack = -1;
+	var parent = parentPlayer;
 	var that = this;
 
 	// PRIVATE METHODS
-	// Choose the effective policy in use. Some rules:
-	//    album: revert to "desktop" policy if used for shuffledPolicy
-        function setPolicy(orderedPolicy, shuffledPolicy) {
-	 	that.orderedPolicy = orderedPolicy;
-		that.shuffledPolicy = shuffledPolicy;
+	// Assuming no gaps/pause events, how far are we in the current song? This 
+	// will be >100% when gaps/pauses occur, fine for request manager tracking.
+	// If track actually finished playing, return -1.
+	var percentPlayed = function(entry) {
+		if (entry.finished() == true) 
+		{
+			return -1;
+		}
+
+		return Math.ceil((entry.timer() / entry.finishMS) * 100);
 	}
 
 	// Default policy from gapless' original version: if the last song finished
@@ -391,7 +405,26 @@ var Gapless5RequestManager = function() {
 		}
 	}
 
+
 	// PUBLIC METHODS
+	// Choose the effective policy in use. Some rules:
+	//    album: revert to "desktop" policy if used for shuffledPolicy
+        this.setPolicy(orderedPolicy, shuffledPolicy) {
+	 	that.orderedPolicy = orderedPolicy;
+		that.shuffledPolicy = shuffledPolicy;
+	}
+
+	this.getPolicy() {
+		if (parent.tracks.shuffled() == true)
+		{
+			return shuffledPolicy;
+		}
+		else
+		{
+			return orderedPolicy;
+		}
+	}
+
 	// Based on a request management policy, determine how and when the next
 	// track should be loaded.
 	this.dequeueNextLoad = function(sources) {
