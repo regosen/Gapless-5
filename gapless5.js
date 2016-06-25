@@ -144,7 +144,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		request = null;
 		buffer = inBuffer;
 		endpos = inBuffer.duration * 1000;
-		finishMS = startTime + endPos;
+		finishMS = startTime + endpos;
 		if (audio != null || !parent.useHTML5Audio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
@@ -181,7 +181,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
 		state = Gapless5State.Stop;
 		endpos = audio.duration * 1000;
-		finishMS = startTime + endPos;
+		finishMS = startTime + endpos;
 
 		if (queuedState == Gapless5State.Play)
 		{
@@ -409,12 +409,12 @@ var Gapless5RequestManager = function(parentPlayer) {
 	// PUBLIC METHODS
 	// Choose the effective policy in use. Some rules:
 	//    album: revert to "desktop" policy if used for shuffledPolicy
-        this.setPolicy(orderedPolicy, shuffledPolicy) {
+        this.setPolicy = function(orderedPolicy, shuffledPolicy) {
 	 	that.orderedPolicy = orderedPolicy;
 		that.shuffledPolicy = shuffledPolicy;
 	}
 
-	this.getPolicy() {
+	this.getPolicy = function() {
 		if (parent.tracks.shuffled() == true)
 		{
 			return shuffledPolicy;
