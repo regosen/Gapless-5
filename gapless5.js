@@ -415,7 +415,7 @@ var Gapless5RequestManager = function(parentPlayer) {
 	}
 
 	this.getPolicy = function() {
-		if (parent.tracks.shuffled() == true)
+		if (parent.trk.shuffled() == true)
 		{
 			return shuffledPolicy;
 		}
@@ -810,8 +810,7 @@ if (context && gainNode)
 }
 
 // Playlist
-var sources = [];	// Loaded as audio files
-this.tracks = null;	// Playlist manager object
+this.trk = null;	// Playlist manager object
 
 // Request manager for loading songs
 this.mgr = new Gapless5RequestManager();
@@ -849,8 +848,8 @@ var getSoundPos = function (uiPosition) {
 
 var numTracks = function () {
 	// FileList object must be initiated
-	if ( that.tracks != null )
-		return that.tracks.current.length;
+	if ( that.trk != null )
+		return that.trk.current.length;
 	else
 		return 0;
 };
@@ -858,8 +857,8 @@ var numTracks = function () {
 // Index for calculating actual playlist location
 var index = function () {
 	// FileList object must be initiated
-	if ( that.tracks != null )
-		return that.tracks.get();
+	if ( that.trk != null )
+		return that.trk.get();
 	else
 		return -1;
 };
@@ -868,17 +867,17 @@ var index = function () {
 // track, suitable for use in update functions
 var dispIndex = function () {
 	if ( readyToRemake() )
-		return that.tracks.previousItem;
-	else if ( that.tracks != null )
-		return that.tracks.get();
+		return that.trk.previousItem;
+	else if ( that.trk != null )
+		return that.trk.get();
 	else
 		return -1;
 }
 
 var readyToRemake = function () {
 	// FileList object must be initiated
-	if ( that.tracks.readyToRemake() != null )
-		return that.tracks.readyToRemake();
+	if ( that.trk.readyToRemake() != null )
+		return that.trk.readyToRemake();
 	else
 		return false;
 };
@@ -930,11 +929,11 @@ var refreshTracks = function(newIndex) {
 	initialized = false;
 
 	that.removeAllTracks();
-	that.tracks.rebasePlayList(newIndex);
+	that.trk.rebasePlayList(newIndex);
 
 	for (var i = 0; i < numTracks() ; i++ )
 	{
-		that.addInitialTrack(that.tracks.files()[i]);
+		that.addInitialTrack(that.trk.files()[i]);
 	}
 
 	// re-enable GUI updates
@@ -1070,7 +1069,7 @@ this.addTrack = function (audioPath) {
 	var next = sources.length;
 	sources[next] = new Gapless5Source(this, context, gainNode);
 	// TODO: refactor to take an entire JSON object
-	that.tracks.add(next, audioPath);
+	that.trk.add(next, audioPath);
 	that.mgr.loadQueue.push([next, audioPath]);
 	if (that.mgr.loadingTrack == -1)
 	{
@@ -1094,7 +1093,7 @@ this.insertTrack = function (point, audioPath) {
 		var oldPoint = point+1;
 		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
 		// TODO: refactor to take an entire JSON object
-		that.tracks.add(point, audioPath);
+		that.trk.add(point, audioPath);
 		//re-enumerate queue
 		for (var i in that.mgr.loadQueue)
 		{
@@ -1143,13 +1142,13 @@ this.removeTrack = function (point) {
 		that.mgr.loadQueue.splice(removeIndex,1);
 	}
 	sources.splice(point,1);
-	that.tracks.remove(point);
+	that.trk.remove(point);
 
 	if (that.mgr.loadingTrack == point)
 	{
 		that.mgr.dequeueNextLoad(sources);
 	}
-	if ( point == that.tracks.currentItem )
+	if ( point == that.trk.currentItem )
 	{
 		that.next();	// Don't stop after a delete
 		if ( wasPlaying )
@@ -1188,7 +1187,7 @@ this.removeAllTracks = function () {
 this.shuffleToggle = function() {
 	if (isShuffleActive == false) return;
 
-	that.tracks.shuffleToggle();
+	that.trk.shuffleToggle();
 
 	if (initialized)
 	{
@@ -1223,8 +1222,8 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 
 	// A shuffle or an unshuffle just occurred
 	else if ( justRemade == true ) {
-		that.tracks.set(newIndex);
-		sources[newIndex].load(that.tracks.files()[newIndex]);
+		that.trk.set(newIndex);
+		sources[newIndex].load(that.trk.files()[newIndex]);
 		sources[newIndex].play();
 
 		updateDisplay();
@@ -1234,20 +1233,20 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	else
 	{
 		var oldIndex = index();
-	        that.tracks.set(newIndex);
+	        that.trk.set(newIndex);
 		// Cancel any track that's in loading state right now
 		if (sources[oldIndex].getState() == Gapless5State.Loading)
 		{
 			sources[oldIndex].cancelRequest();
 			// TODO: better way to have just the file list?
-			that.mgr.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
+			that.mgr.loadQueue.push([oldIndex, that.trk.files()[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after currentIndex has been updated
 		if (sources[newIndex].getState() == Gapless5State.None)
 		{
 			// TODO: better way to have just the file list?
-			sources[newIndex].load(that.tracks.files()[newIndex]);
+			sources[newIndex].load(that.trk.files()[newIndex]);
 
 			//re-sort queue so that this track is at the head of the list
 			for (var i in that.mgr.loadQueue)
@@ -1435,8 +1434,8 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.tracks.trackNumber);
-		$("#tracks" + that.id).html(that.tracks.current.length);
+		$("#trackIndex" + that.id).html(that.trk.trackNumber);
+		$("#tracks" + that.id).html(that.trk.current.length);
 		$("#totalPosition" + that.id).html(getTotalPositionText());
 		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
 		enableButton('next', that.loop || index() < numTracks() - 1);
@@ -1459,10 +1458,10 @@ var updateDisplay = function () {
 
 		// Must have at least 3 tracks in order for shuffle button to work
 		// If so, permanently turn on the shuffle toggle
-		if (that.tracks.current.length > 2)
+		if (that.trk.current.length > 2)
 			isShuffleActive = true;
 
-		if (that.tracks.shuffled())
+		if (that.trk.shuffled())
 			shuffleButton('unshuffle', isShuffleActive);
 		else
 			shuffleButton('shuffle', isShuffleActive);
@@ -1623,8 +1622,8 @@ var Init = function(elem_id, options, tickMS) {
 			// shuffle mode doesn't make sense here.
 			var items = [{}];
 			items[0].file = options.tracks;
-			that.tracks = new Gapless5FileList(items, 0, false);
-			that.addInitialTrack(that.tracks.files()[0]);
+			that.trk = new Gapless5FileList(items, 0, false);
+			that.addInitialTrack(that.trk.files()[0]);
 		}
 		else if (typeof options.tracks[0] == 'string')
 		{
@@ -1635,15 +1634,15 @@ var Init = function(elem_id, options, tickMS) {
 				items[i] = {};
 				items[i].file = options.tracks[i];
 			}	
-			that.tracks = new Gapless5FileList(items, 0, shuffleInit);
-			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addInitialTrack(that.tracks.files()[i]);
+			that.trk = new Gapless5FileList(items, 0, shuffleInit);
+			for (var i = 0; i < that.trk.files().length ; i++)
+				that.addInitialTrack(that.trk.files()[i]);
 		}
 		else if (typeof options.tracks[0] == 'object')
 		{
-			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack, shuffleInit);
-			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addInitialTrack(that.tracks.files()[i]);
+			that.trk = new Gapless5FileList(options.tracks, that.startingTrack, shuffleInit);
+			for (var i = 0; i < that.trk.files().length ; i++)
+				that.addInitialTrack(that.trk.files()[i]);
 		}
 	}
 
@@ -1652,7 +1651,7 @@ var Init = function(elem_id, options, tickMS) {
 
 	// autostart if desired
 	var playOnLoad = (options != undefined) && ('playOnLoad' in options) && (options.playOnLoad == true);
-	if (playOnLoad && (that.tracks.current.length > 0))
+	if (playOnLoad && (that.trk.current.length > 0))
 	{
 		sources[index()].play();
 	}
