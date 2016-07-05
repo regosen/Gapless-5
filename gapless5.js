@@ -1,4 +1,4 @@
-/////////////
+////////////
 //
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
@@ -393,7 +393,7 @@ var Gapless5RequestManager = function(parentPlayer) {
 		{
 			var entry = that.loadQueue.shift();
 			that.loadingTrack = entry[0];
-			if (that.loadingTrack < sources.length)
+			if (that.loadingTrack < parent.trk.sources.length)
 			{
 				//console.log("oomPolicy: loading track " + that.loadingTrack + ": " + entry[1]);
 				parent.trk.sources[that.loadingTrack].load(entry[1]);
@@ -816,7 +816,7 @@ if (context && gainNode)
 this.trk = null;	// Playlist manager object
 
 // Request manager for loading songs
-this.mgr = new Gapless5RequestManager();
+this.mgr = new Gapless5RequestManager(this);
 
 // Callback and Execution logic
 var inCallback = false;
@@ -840,7 +840,7 @@ this.onfinishedall = null;
 
 
 // INTERNAL HELPERS
-var dispTrk() = function() {
+var dispTrk = function() {
 	return that.trk.sources[dispIndex()];
 };
 
