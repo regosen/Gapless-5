@@ -764,9 +764,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 		// On object creation, make current list use startingTrack as head of list
 		this.current = reorder(this.original, this.startingTrack);
 	}
-
-	// Construct the list of song files
-	this.sources = this.files();
 }
 
 
@@ -840,17 +837,13 @@ this.onfinishedall = null;
 
 
 // INTERNAL HELPERS
-var dispTrk = function() {
-	return that.trk.sources[dispIndex()];
-};
-
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : dispTrk().getPosition();
-	return (position / dispTrk().getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : that.trk.sources[dispIndex()].getPosition();
+	return (position / that.trk.sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
-	return ((uiPosition / SCRUB_RESOLUTION) * dispTrk().getLength());
+	return ((uiPosition / SCRUB_RESOLUTION) * that.trk.sources[dispIndex()].getLength());
 };
 
 var numTracks = function () {
@@ -904,13 +897,13 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = dispTrk().getLength();
+	var srcLength = that.trk.sources[dispIndex()].getLength();
 
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
-	else if (dispTrk().getState() == Gapless5State.Error)
+	else if (that.trk.sources[dispIndex()].getState() == Gapless5State.Error)
 	{
 		text = ERROR_TEXT;
 	}
@@ -999,7 +992,7 @@ this.setGain = function (uiPos) {
 	var normalized = uiPos / SCRUB_RESOLUTION;
 	//var power_range = Math.sin(normalized * 0.5*Math.PI);
 	gainNode.gain.value = normalized; //power_range;
-	dispTrk().setGain(normalized);
+	that.trk.sources[dispIndex()].setGain(normalized);
 };
 
 this.scrub = function (uiPos) {
@@ -1008,7 +1001,7 @@ this.scrub = function (uiPos) {
 	enableButton('prev', that.loop || (index() != 0 || scrubPosition != 0));
 	if (!isScrubbing)
 	{
-		dispTrk().setPosition(scrubPosition, true);
+		that.trk.sources[dispIndex()].setPosition(scrubPosition, true);
 	}
 };
 
@@ -1024,7 +1017,7 @@ this.setLoadedSpan = function(percent)
 this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
-	dispTrk().stop(true);
+	that.trk.sources[dispIndex()].stop(true);
 	if (that.loop || index() < numTracks() - 1)
 	{
 		that.next(true);
@@ -1044,13 +1037,13 @@ this.onStartedScrubbing = function () {
 this.onFinishedScrubbing = function () {
 	isScrubbing = false;
 	var newPosition = scrubPosition;
-	if (dispTrk().inPlayState() && newPosition >= dispTrk().getLength())
+	if (that.trk.sources[dispIndex()].inPlayState() && newPosition >= that.trk.sources[dispIndex()].getLength())
 	{
 		that.next(true);
 	}
 	else
 	{
-		dispTrk().setPosition(newPosition, true);
+		that.trk.sources[dispIndex()].setPosition(newPosition, true);
 	}
 };
 
@@ -1339,13 +1332,13 @@ this.next = function (e) {
 
 this.play = function (e) {
 	if (that.trk.sources.length == 0) return;
-	if (dispTrk().audioFinished)
+	if (that.trk.sources[dispIndex()].audioFinished)
 	{
 		that.next(true);
 	}
 	else
 	{
-		dispTrk().play();
+		that.trk.sources[dispIndex()].play();
 	}
 	runCallback(that.onplay);
 };
@@ -1362,7 +1355,7 @@ this.cue = function (e) {
 	{
 		that.prev(e);
 	}
-	else if (dispTrk().getPosition() > 0)
+	else if (that.trk.sources[dispIndex()].getPosition() > 0)
 	{
 		that.prev(e);
 		that.play(e);
@@ -1375,14 +1368,14 @@ this.cue = function (e) {
 
 this.pause = function (e) {
 	if (that.trk.sources.length == 0) return;
-	dispTrk().stop();
+	that.trk.sources[dispIndex()].stop();
 	runCallback(that.onpause);
 };
 
 this.stop = function (e) {
 	if (that.trk.sources.length == 0) return;
 	resetPosition();
-	dispTrk().stop(true);
+	that.trk.sources[dispIndex()].stop(true);
 	runCallback(that.onstop);
 };
 
@@ -1390,13 +1383,13 @@ this.stop = function (e) {
 // (PUBLIC) QUERIES AND CALLBACKS
 
 this.isPlaying = function () {
-	return dispTrk().inPlayState();
+	return that.trk.sources[dispIndex()].inPlayState();
 };
 
 // INIT AND UI
 
 var resetPosition = function(forceScrub) {
-	if (!forceScrub && dispTrk().getPosition() == 0) return; // nothing else to do
+	if (!forceScrub && that.trk.sources[dispIndex()].getPosition() == 0) return; // nothing else to do
 	that.scrub(0);
 	$("#transportbar" + that.id).val(0);
 };
@@ -1451,7 +1444,7 @@ var updateDisplay = function () {
 		enableButton('prev', that.loop || index() > 0 || that.trk.sources[index()].getPosition() > 0);
 		enableButton('next', that.loop || index() < numTracks() - 1);
 
-		if (dispTrk().inPlayState())
+		if (that.trk.sources[dispIndex()].inPlayState())
 		{
 			enableButton('play', false);
 			isPlayButton = false;
@@ -1461,7 +1454,7 @@ var updateDisplay = function () {
 			enableButton('play', true);
 			isPlayButton = true;
 
-			if (dispTrk().getState() == Gapless5State.Error)
+			if (that.trk.sources[dispIndex()].getState() == Gapless5State.Error)
 			{
 				runCallback(that.onerror);
 			}
@@ -1484,15 +1477,15 @@ var updateDisplay = function () {
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		dispTrk().tick();
+		that.trk.sources[dispIndex()].tick();
 
-		if (dispTrk().uiDirty)
+		if (that.trk.sources[dispIndex()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (dispTrk().inPlayState())
+		if (that.trk.sources[dispIndex()].inPlayState())
 		{
-			var soundPos = dispTrk().getPosition();
+			var soundPos = that.trk.sources[dispIndex()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
