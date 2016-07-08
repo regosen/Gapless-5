@@ -148,7 +148,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (audio != null || !parent.useHTML5Audio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			parent.mgr.dequeueNextLoad(parent.mgr.sources);
+			parent.mgr.dequeueNextLoad();
 		}
 
 		if (queuedState == Gapless5State.Play && state == Gapless5State.Loading)
@@ -176,7 +176,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (buffer != null || !parent.useWebAudio)
 		{
 			loadMS = (new Date().getTime()) - initMS;
-			parent.mgr.dequeueNextLoad(parent.mgr.sources);
+			parent.mgr.dequeueNextLoad();
 		}
 
 		state = Gapless5State.Stop;
@@ -311,7 +311,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		audioPath = inAudioPath;
 		if (source || audio)
 		{
-			parent.mgr.dequeueNextLoad(parent.mgr.sources);
+			parent.mgr.dequeueNextLoad();
 			return;
 		}
 		if (state == Gapless5State.Loading)
