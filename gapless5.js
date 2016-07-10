@@ -1,4 +1,4 @@
-/////////////
+////////////
 //
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
@@ -27,12 +27,32 @@ var gapless5AudioContext = (window.hasWebKit) ? new webkitAudioContext() : (type
 
 var GAPLESS5_PLAYERS = {};
 var Gapless5State = {
-	"None"    : 0,
-	"Loading" : 1,
-	"Play"    : 2,
-	"Stop"    : 3,
-	"Error"   : 4
+	"None"     : 0,
+	"Loading"  : 1,
+	"Play"     : 2,
+	"Stop"     : 3,
+	"Error"    : 4
 	};
+
+// Request manager policies for downloading songs
+var Gapless5Policy = {
+	"OOM"     : 0,   // old Gapless behavior. Buffer tracks until OOM encountered :)
+	"Mobile"  : 1,   // no more than 2 songs buffered ahead of current song
+	"Desktop" : 2,   // no more than 5 songs buffered ahead of current song
+	"Album"   : 3,   // buffer songs until the last song on an album
+	"Memory"  : 4,   // use duration-based memory heuristic to limit memory use
+	};
+
+// Request manager settings
+// For memory policy: # songs to grab in advance (-1 grabs as many as possible.)
+var Gapless5LookAhead = -1;
+
+// For memory policy: heuristic for uncompressed audio file size per minute
+// This is assuming 16-bit 44.1kHz audio
+var Gapless5MBPerMin = 10;
+
+// For memory policy: maximum amount of memory to use
+var Gapless5MaxMemory = 256;
 
 
 // A Gapless5Source "class" handles track-specific audio requests
@@ -61,6 +81,11 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 	var audioFinished = false;
 	var endedCallback = null;
 
+	// request manager info
+	var initMS = new Date().getTime();
+	var loadMS = 0;
+	var finishMS = 0;
+
 	this.uiDirty = false;
 	var that = this;
 	var parent = parentPlayer;
@@ -79,6 +104,14 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		queuedState = Gapless5State.None;
 	};
 
+	this.finished = function() { return audioFinished; }
+
+	this.timer = function() {
+		var now = new Date().getTime();
+		var timerMS = now - initMS;
+		return timerMS;
+	}
+
 	this.cancelRequest = function (isError) {
 		setState((isError == true) ? Gapless5State.Error : Gapless5State.None);
 		if (request)
@@ -90,6 +123,9 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		buffer = null;
 		position = 0;
 		endpos = 0;
+		initMS = (new Date().getTime());
+		loadMS = 0;
+		finishMS = 0;
 		that.uiDirty = true;
 	}
 
@@ -108,9 +144,11 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		request = null;
 		buffer = inBuffer;
 		endpos = inBuffer.duration * 1000;
+		finishMS = startTime + endpos;
 		if (audio != null || !parent.useHTML5Audio)
 		{
-			parent.dequeueNextLoad();
+			loadMS = (new Date().getTime()) - initMS;
+			parent.mgr.dequeueNextLoad();
 		}
 
 		if (queuedState == Gapless5State.Play && state == Gapless5State.Loading)
@@ -137,11 +175,13 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		if (state != Gapless5State.Loading) return;
 		if (buffer != null || !parent.useWebAudio)
 		{
-			parent.dequeueNextLoad();
+			loadMS = (new Date().getTime()) - initMS;
+			parent.mgr.dequeueNextLoad();
 		}
 
 		state = Gapless5State.Stop;
 		endpos = audio.duration * 1000;
+		finishMS = startTime + endpos;
 
 		if (queuedState == Gapless5State.Play)
 		{
@@ -271,7 +311,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 		audioPath = inAudioPath;
 		if (source || audio)
 		{
-			parent.dequeueNextLoad();
+			parent.mgr.dequeueNextLoad();
 			return;
 		}
 		if (state == Gapless5State.Loading)
@@ -315,8 +355,87 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 }
 
 
+// A RequestManager tracks all the available song objects and their states.
+// By default, it manages the downloading of new songs based on what's most 
+// appropriate for the platform detected.
+var Gapless5RequestManager = function(parentPlayer) {
+
+	// OBJECT STATE
+	// Each request manager item is an object containing the Gapless5Source,
+	// the loading/progress state, and other metadata
+	this.orderedPolicy = Gapless5Policy.OOM;
+	this.shuffledPolicy = Gapless5Policy.OOM;
+	this.lookAhead = Gapless5LookAhead;
+
+	// Values populated by Gapless5Player actions
+	this.sources = [];		// List of Gapless5Sources
+	this.loadQueue = [];		// List of files to consume
+	this.loadingTrack = -1;		// What file to consume
+	var parent = parentPlayer;
+	var that = this;
+
+	// PRIVATE METHODS
+	// Assuming no gaps/pause events, how far are we in the current song? This 
+	// will be >100% when gaps/pauses occur, fine for request manager tracking.
+	// If track actually finished playing, return -1.
+	var percentPlayed = function(entry) {
+		if (entry.finished() == true) 
+		{
+			return -1;
+		}
+
+		return Math.ceil((entry.timer() / entry.finishMS) * 100);
+	}
+
+	// Default policy from gapless' original version: if the last song finished
+	// loading, continue loading new songs. This tends to OOM browsers :)
+	var oomPolicy = function() {
+		if (that.loadQueue.length > 0)
+		{
+			var entry = that.loadQueue.shift();
+			that.loadingTrack = entry[0];
+			if (that.loadingTrack < that.sources.length)
+			{
+				//console.log("oomPolicy: loading track " + that.loadingTrack + ": " + entry[1]);
+				that.sources[that.loadingTrack].load(entry[1]);
+			}
+		}
+		else
+		{
+			that.loadingTrack = -1;
+		}
+	}
+
+
+	// PUBLIC METHODS
+	// Choose the effective policy in use. Some rules:
+	//    album: revert to "desktop" policy if used for shuffledPolicy
+        this.setPolicy = function(orderedPolicy, shuffledPolicy) {
+	 	that.orderedPolicy = orderedPolicy;
+		that.shuffledPolicy = shuffledPolicy;
+	}
+
+	this.getPolicy = function() {
+		if (parent.trk.shuffled() == true)
+		{
+			return shuffledPolicy;
+		}
+		else
+		{
+			return orderedPolicy;
+		}
+	}
+
+	// Based on a request management policy, determine how and when the next
+	// track should be loaded.
+	this.dequeueNextLoad = function() {
+		oomPolicy();
+	}
+}
+
+
 // A Gapless5FileList "class". Processes an array of JSON song objects, taking 
-// the "file" members out to constitute the sources[] in the Gapless5 player
+// the "file" members out to constitute the that.mgr.sources[] in the Gapless5 player
 var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
 	// OBJECT STATE
@@ -324,7 +443,7 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 	this.original = inPlayList;	// Starting JSON input
 	this.previous = {};		// Support double-toggle undo
 	this.current = {};		// Working playlist
-	this.previousItem = 0;		// to last list and last index
+	this.previousItem = 0;		// To last list and last index
 
 	this.startingTrack = inStartingTrack;
 	if ( inStartingTrack == null )
@@ -633,7 +752,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 	// Set displayed song number to whatever the current-plaing index is
 	this.trackNumber = this.original[this.startingTrack]._index;
 
-
 	// Create the current playing list, based on startingTrack and shuffleMode.
 	if ( shuffleMode == true )
 	{
@@ -692,10 +810,10 @@ if (context && gainNode)
 }
 
 // Playlist
-var loadingTrack = -1;
-var sources = [];	// Loaded as audio files
-this.tracks = null;	// Playlist manager object
+this.trk = null;	// Playlist manager object
 
+// Request manager for loading songs
+this.mgr = new Gapless5RequestManager(this);
 
 // Callback and Execution logic
 var inCallback = false;
@@ -720,18 +838,18 @@ this.onfinishedall = null;
 
 // INTERNAL HELPERS
 var getUIPos = function () {
-	var position = isScrubbing ? scrubPosition : sources[dispIndex()].getPosition();
-	return (position / sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
+	var position = isScrubbing ? scrubPosition : that.mgr.sources[dispIndex()].getPosition();
+	return (position / that.mgr.sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
 };
 
 var getSoundPos = function (uiPosition) {
-	return ((uiPosition / SCRUB_RESOLUTION) * sources[dispIndex()].getLength());
+	return ((uiPosition / SCRUB_RESOLUTION) * that.mgr.sources[dispIndex()].getLength());
 };
 
 var numTracks = function () {
 	// FileList object must be initiated
-	if ( that.tracks != null )
-		return that.tracks.current.length;
+	if ( that.trk != null )
+		return that.trk.current.length;
 	else
 		return 0;
 };
@@ -739,8 +857,8 @@ var numTracks = function () {
 // Index for calculating actual playlist location
 var index = function () {
 	// FileList object must be initiated
-	if ( that.tracks != null )
-		return that.tracks.get();
+	if ( that.trk != null )
+		return that.trk.get();
 	else
 		return -1;
 };
@@ -749,17 +867,17 @@ var index = function () {
 // track, suitable for use in update functions
 var dispIndex = function () {
 	if ( readyToRemake() )
-		return that.tracks.previousItem;
-	else if ( that.tracks != null )
-		return that.tracks.get();
+		return that.trk.previousItem;
+	else if ( that.trk != null )
+		return that.trk.get();
 	else
 		return -1;
 }
 
 var readyToRemake = function () {
 	// FileList object must be initiated
-	if ( that.tracks.readyToRemake() != null )
-		return that.tracks.readyToRemake();
+	if ( that.trk.readyToRemake() != null )
+		return that.trk.readyToRemake();
 	else
 		return false;
 };
@@ -779,13 +897,13 @@ var getFormattedTime = function (inMS) {
 
 var getTotalPositionText = function () {
 	var text = LOAD_TEXT;
-	var srcLength = sources[dispIndex()].getLength();
+	var srcLength = that.mgr.sources[dispIndex()].getLength();
 
 	if (numTracks() == 0)
 	{
 		text = getFormattedTime(0);
 	}
-	else if (sources[dispIndex()].getState() == Gapless5State.Error)
+	else if (that.mgr.sources[dispIndex()].getState() == Gapless5State.Error)
 	{
 		text = ERROR_TEXT;
 	}
@@ -811,11 +929,11 @@ var refreshTracks = function(newIndex) {
 	initialized = false;
 
 	that.removeAllTracks();
-	that.tracks.rebasePlayList(newIndex);
+	that.trk.rebasePlayList(newIndex);
 
 	for (var i = 0; i < numTracks() ; i++ )
 	{
-		that.addInitialTrack(that.tracks.files()[i]);
+		that.addInitialTrack(that.trk.files()[i]);
 	}
 
 	// re-enable GUI updates
@@ -874,7 +992,7 @@ this.setGain = function (uiPos) {
 	var normalized = uiPos / SCRUB_RESOLUTION;
 	//var power_range = Math.sin(normalized * 0.5*Math.PI);
 	gainNode.gain.value = normalized; //power_range;
-	sources[dispIndex()].setGain(normalized);
+	that.mgr.sources[dispIndex()].setGain(normalized);
 };
 
 this.scrub = function (uiPos) {
@@ -883,7 +1001,7 @@ this.scrub = function (uiPos) {
 	enableButton('prev', that.loop || (index() != 0 || scrubPosition != 0));
 	if (!isScrubbing)
 	{
-		sources[dispIndex()].setPosition(scrubPosition, true);
+		that.mgr.sources[dispIndex()].setPosition(scrubPosition, true);
 	}
 };
 
@@ -899,7 +1017,7 @@ this.setLoadedSpan = function(percent)
 this.onEndedCallback = function() {
 	// we've finished playing the track
 	resetPosition();
-	sources[dispIndex()].stop(true);
+	that.mgr.sources[dispIndex()].stop(true);
 	if (that.loop || index() < numTracks() - 1)
 	{
 		that.next(true);
@@ -912,23 +1030,6 @@ this.onEndedCallback = function() {
 	}
 };
 
-this.dequeueNextLoad = function() { 
-	if (that.loadQueue.length > 0)
-	{
-		var entry = that.loadQueue.shift();
-		loadingTrack = entry[0];
-		if (loadingTrack < sources.length)
-		{
-			//console.log("loading track " + loadingTrack + ": " + entry[1]);
-			sources[loadingTrack].load(entry[1]);
-		}
-	}
-	else
-	{
-		loadingTrack = -1;
-	}
-}
-
 this.onStartedScrubbing = function () {
 	isScrubbing = true;
 };
@@ -936,29 +1037,27 @@ this.onStartedScrubbing = function () {
 this.onFinishedScrubbing = function () {
 	isScrubbing = false;
 	var newPosition = scrubPosition;
-	if (sources[dispIndex()].inPlayState() && newPosition >= sources[dispIndex()].getLength())
+	if (that.mgr.sources[dispIndex()].inPlayState() && newPosition >= that.mgr.sources[dispIndex()].getLength())
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[dispIndex()].setPosition(newPosition, true);
+		that.mgr.sources[dispIndex()].setPosition(newPosition, true);
 	}
 };
 
-this.loadQueue = [];
-
 // Assume the FileList already accounts for this track, and just add it to the
-// loading queue. Until sources[] lives in the FileList object, this compromise
+// loading queue. Until that.mgr.sources[] lives in the FileList object, this compromise
 // ensures addTrack/removeTrack functions can modify the FileList object when
 // called by Gapless applications.
 this.addInitialTrack = function(audioPath) {
-	var next = sources.length;
-	sources[next] = new Gapless5Source(this, context, gainNode);
-	that.loadQueue.push([next, audioPath]);
-	if (loadingTrack == -1)
+	var next = that.mgr.sources.length;
+	that.mgr.sources[next] = new Gapless5Source(this, context, gainNode);
+	that.mgr.loadQueue.push([next, audioPath]);
+	if (that.mgr.loadingTrack == -1)
 	{
-		that.dequeueNextLoad();
+		that.mgr.dequeueNextLoad();
 	}
 	if (initialized)
 	{
@@ -967,14 +1066,15 @@ this.addInitialTrack = function(audioPath) {
 };
 
 this.addTrack = function (audioPath) {
-	var next = sources.length;
-	sources[next] = new Gapless5Source(this, context, gainNode);
+	var next = that.mgr.sources.length;
+	that.mgr.sources[next] = new Gapless5Source(this, context, gainNode);
 	// TODO: refactor to take an entire JSON object
-	that.tracks.add(next, audioPath);
-	that.loadQueue.push([next, audioPath]);
-	if (loadingTrack == -1)
+	// TODO: move this function to the fileList object
+	that.trk.add(next, audioPath);
+	that.mgr.loadQueue.push([next, audioPath]);
+	if (that.mgr.loadingTrack == -1)
 	{
-		that.dequeueNextLoad();
+		that.mgr.dequeueNextLoad();
 	}
 	if (initialized)
 	{
@@ -992,27 +1092,28 @@ this.insertTrack = function (point, audioPath) {
 	else
 	{
 		var oldPoint = point+1;
-		sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
+		that.mgr.sources.splice(point, 0, new Gapless5Source(this, context, gainNode));
 		// TODO: refactor to take an entire JSON object
-		that.tracks.add(point, audioPath);
+		// TODO: move this function to the fileList object
+		that.trk.add(point, audioPath);
 		//re-enumerate queue
-		for (var i in that.loadQueue)
+		for (var i in that.mgr.loadQueue)
 		{
-			var entry = that.loadQueue[i];
+			var entry = that.mgr.loadQueue[i];
 			if (entry[0] >= point)
 			{
 				entry[0] += 1;
 			}
 		}
-		that.loadQueue.splice(0,0,[point,audioPath]);
+		that.mgr.loadQueue.splice(0,0,[point,audioPath]);
 		updateDisplay();
 	}
 };
 
 this.removeTrack = function (point) {
-	if (point < 0 || point >= sources.length) return;
+	if (point < 0 || point >= that.mgr.sources.length) return;
 
-	var curSource = sources[point];
+	var curSource = that.mgr.sources[point];
 	var wasPlaying = false;
 
 	if (curSource.getState() == Gapless5State.Loading)
@@ -1026,9 +1127,9 @@ this.removeTrack = function (point) {
 	}
 	
 	var removeIndex = -1;
-	for (var i in that.loadQueue)
+	for (var i in that.mgr.loadQueue)
 	{
-		var entry = that.loadQueue[i];
+		var entry = that.mgr.loadQueue[i];
 		if (entry[0] == point)
 		{
 			removeIndex = i;
@@ -1040,16 +1141,17 @@ this.removeTrack = function (point) {
 	}
 	if (removeIndex >= 0)
 	{
-		that.loadQueue.splice(removeIndex,1);
+		that.mgr.loadQueue.splice(removeIndex,1);
 	}
-	sources.splice(point,1);
-	that.tracks.remove(point);
+	// TODO: move this functionality into the FileList object
+	that.mgr.sources.splice(point,1);
+	that.trk.remove(point);
 
-	if (loadingTrack == point)
+	if (that.mgr.loadingTrack == point)
 	{
-		that.dequeueNextLoad();
+		that.mgr.dequeueNextLoad();
 	}
-	if ( point == that.tracks.currentItem )
+	if ( point == that.trk.currentItem )
 	{
 		that.next();	// Don't stop after a delete
 		if ( wasPlaying )
@@ -1068,17 +1170,18 @@ this.replaceTrack = function (point, audioPath) {
 }
 
 this.removeAllTracks = function () {
-	for (var i in sources)
+	for (var i in that.mgr.sources)
 	{
-		if (sources[i].getState() == Gapless5State.Loading)
+		if (that.mgr.sources[i].getState() == Gapless5State.Loading)
 		{
-			sources[i].cancelRequest();
+			that.mgr.sources[i].cancelRequest();
 		}
-		sources[i].stop();
+		that.mgr.sources[i].stop();
 	}
-	loadingTrack = -1;
-	sources = [];
-	that.loadQueue = [];
+	that.mgr.loadingTrack = -1;
+	// TODO: move this function into the FileList object
+	that.mgr.sources = [];
+	that.mgr.loadQueue = [];
 	if (initialized)
 	{
 		updateDisplay();
@@ -1088,7 +1191,7 @@ this.removeAllTracks = function () {
 this.shuffleToggle = function() {
 	if (isShuffleActive == false) return;
 
-	that.tracks.shuffleToggle();
+	that.trk.shuffleToggle();
 
 	if (initialized)
 	{
@@ -1115,17 +1218,17 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	if (trackDiff == 0 && justRemade == false)
 	{
 		resetPosition();
-		if ((bForcePlay == true) || sources[index()].isPlayActive())
+		if ((bForcePlay == true) || that.mgr.sources[index()].isPlayActive())
 		{
-			sources[newIndex].play();
+			that.mgr.sources[newIndex].play();
 		}
 	}
 
 	// A shuffle or an unshuffle just occurred
 	else if ( justRemade == true ) {
-		that.tracks.set(newIndex);
-		sources[newIndex].load(that.tracks.files()[newIndex]);
-		sources[newIndex].play();
+		that.trk.set(newIndex);
+		that.mgr.sources[newIndex].load(that.trk.files()[newIndex]);
+		that.mgr.sources[newIndex].play();
 
 		updateDisplay();
 	}
@@ -1134,39 +1237,39 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 	else
 	{
 		var oldIndex = index();
-	        that.tracks.set(newIndex);
+	        that.trk.set(newIndex);
 		// Cancel any track that's in loading state right now
-		if (sources[oldIndex].getState() == Gapless5State.Loading)
+		if (that.mgr.sources[oldIndex].getState() == Gapless5State.Loading)
 		{
-			sources[oldIndex].cancelRequest();
+			that.mgr.sources[oldIndex].cancelRequest();
 			// TODO: better way to have just the file list?
-			that.loadQueue.push([oldIndex, that.tracks.files()[oldIndex]]);
+			that.mgr.loadQueue.push([oldIndex, that.trk.files()[oldIndex]]);
 		}
 
 		resetPosition(true); // make sure this comes after currentIndex has been updated
-		if (sources[newIndex].getState() == Gapless5State.None)
+		if (that.mgr.sources[newIndex].getState() == Gapless5State.None)
 		{
 			// TODO: better way to have just the file list?
-			sources[newIndex].load(that.tracks.files()[newIndex]);
+			that.mgr.sources[newIndex].load(that.trk.files()[newIndex]);
 
 			//re-sort queue so that this track is at the head of the list
-			for (var i in that.loadQueue)
+			for (var i in that.mgr.loadQueue)
 			{
-				var entry = that.loadQueue.shift();
+				var entry = that.mgr.loadQueue.shift();
 				if (entry[0] == newIndex)
 				{
 					break;
 				}
-				that.loadQueue.push(entry);
+				that.mgr.loadQueue.push(entry);
 			}
 		}
 		updateDisplay();
 		
-		if ((bForcePlay == true) || sources[oldIndex].isPlayActive())
+		if ((bForcePlay == true) || that.mgr.sources[oldIndex].isPlayActive())
 		{
-			sources[newIndex].play();
+			that.mgr.sources[newIndex].play();
 		}
-		sources[oldIndex].stop(); // call this last
+		that.mgr.sources[oldIndex].stop(); // call this last
 
 	}
 	enableButton('prev', that.loop || (newIndex > 0));
@@ -1174,7 +1277,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
 };
 
 this.prevtrack = function (e) {
-	if (sources.length == 0) return;
+	if (that.mgr.sources.length == 0) return;
 	if (index() > 0)
 	{
 		that.gotoTrack(index() - 1);
@@ -1188,14 +1291,14 @@ this.prevtrack = function (e) {
 };
 
 this.prev = function (e) {
-	if (sources.length == 0) return;
+	if (that.mgr.sources.length == 0) return;
 	if ( readyToRemake() == true )
 	{
 		// jump to start of track that's in a new position
 		// at the head of the re-made list.
 		that.gotoTrack(0);
 	}
-	else if (sources[index()].getPosition() > 0)
+	else if (that.mgr.sources[index()].getPosition() > 0)
 	{
 		// jump to start of track if we're not there
 		that.gotoTrack(index());
@@ -1213,7 +1316,7 @@ this.prev = function (e) {
 };
 
 this.next = function (e) {
-	if (sources.length == 0) return;
+	if (that.mgr.sources.length == 0) return;
 	var bForcePlay = (e == true);
 	if (index() < numTracks() - 1)
 	{
@@ -1228,14 +1331,14 @@ this.next = function (e) {
 };
 
 this.play = function (e) {
-	if (sources.length == 0) return;
-	if (sources[dispIndex()].audioFinished)
+	if (that.mgr.sources.length == 0) return;
+	if (that.mgr.sources[dispIndex()].audioFinished)
 	{
 		that.next(true);
 	}
 	else
 	{
-		sources[dispIndex()].play();
+		that.mgr.sources[dispIndex()].play();
 	}
 	runCallback(that.onplay);
 };
@@ -1252,7 +1355,7 @@ this.cue = function (e) {
 	{
 		that.prev(e);
 	}
-	else if (sources[dispIndex()].getPosition() > 0)
+	else if (that.mgr.sources[dispIndex()].getPosition() > 0)
 	{
 		that.prev(e);
 		that.play(e);
@@ -1264,15 +1367,15 @@ this.cue = function (e) {
 }
 
 this.pause = function (e) {
-	if (sources.length == 0) return;
-	sources[dispIndex()].stop();
+	if (that.mgr.sources.length == 0) return;
+	that.mgr.sources[dispIndex()].stop();
 	runCallback(that.onpause);
 };
 
 this.stop = function (e) {
-	if (sources.length == 0) return;
+	if (that.mgr.sources.length == 0) return;
 	resetPosition();
-	sources[dispIndex()].stop(true);
+	that.mgr.sources[dispIndex()].stop(true);
 	runCallback(that.onstop);
 };
 
@@ -1280,13 +1383,13 @@ this.stop = function (e) {
 // (PUBLIC) QUERIES AND CALLBACKS
 
 this.isPlaying = function () {
-	return sources[dispIndex()].inPlayState();
+	return that.mgr.sources[dispIndex()].inPlayState();
 };
 
 // INIT AND UI
 
 var resetPosition = function(forceScrub) {
-	if (!forceScrub && sources[dispIndex()].getPosition() == 0) return; // nothing else to do
+	if (!forceScrub && that.mgr.sources[dispIndex()].getPosition() == 0) return; // nothing else to do
 	that.scrub(0);
 	$("#transportbar" + that.id).val(0);
 };
@@ -1335,13 +1438,13 @@ var updateDisplay = function () {
 	}
 	else
 	{
-		$("#trackIndex" + that.id).html(that.tracks.trackNumber);
-		$("#tracks" + that.id).html(that.tracks.current.length);
+		$("#trackIndex" + that.id).html(that.trk.trackNumber);
+		$("#tracks" + that.id).html(that.trk.current.length);
 		$("#totalPosition" + that.id).html(getTotalPositionText());
-		enableButton('prev', that.loop || index() > 0 || sources[index()].getPosition() > 0);
+		enableButton('prev', that.loop || index() > 0 || that.mgr.sources[index()].getPosition() > 0);
 		enableButton('next', that.loop || index() < numTracks() - 1);
 
-		if (sources[dispIndex()].inPlayState())
+		if (that.mgr.sources[dispIndex()].inPlayState())
 		{
 			enableButton('play', false);
 			isPlayButton = false;
@@ -1351,7 +1454,7 @@ var updateDisplay = function () {
 			enableButton('play', true);
 			isPlayButton = true;
 
-			if (sources[dispIndex()].getState() == Gapless5State.Error)
+			if (that.mgr.sources[dispIndex()].getState() == Gapless5State.Error)
 			{
 				runCallback(that.onerror);
 			}
@@ -1359,30 +1462,30 @@ var updateDisplay = function () {
 
 		// Must have at least 3 tracks in order for shuffle button to work
 		// If so, permanently turn on the shuffle toggle
-		if (that.tracks.current.length > 2)
+		if (that.trk.current.length > 2)
 			isShuffleActive = true;
 
-		if (that.tracks.shuffled())
+		if (that.trk.shuffled())
 			shuffleButton('unshuffle', isShuffleActive);
 		else
 			shuffleButton('shuffle', isShuffleActive);
 
-		sources[index()].uiDirty = false;
+		that.mgr.sources[index()].uiDirty = false;
 	}
 };
 
 var Tick = function(tickMS) {
 	if (numTracks() > 0)
 	{
-		sources[dispIndex()].tick();
+		that.mgr.sources[dispIndex()].tick();
 
-		if (sources[dispIndex()].uiDirty)
+		if (that.mgr.sources[dispIndex()].uiDirty)
 		{
 			updateDisplay();
 		}
-		if (sources[dispIndex()].inPlayState())
+		if (that.mgr.sources[dispIndex()].inPlayState())
 		{
-			var soundPos = sources[dispIndex()].getPosition();
+			var soundPos = that.mgr.sources[dispIndex()].getPosition();
 			if (isScrubbing)
 			{
 				// playing track, update bar position
@@ -1523,8 +1626,8 @@ var Init = function(elem_id, options, tickMS) {
 			// shuffle mode doesn't make sense here.
 			var items = [{}];
 			items[0].file = options.tracks;
-			that.tracks = new Gapless5FileList(items, 0, false);
-			that.addInitialTrack(that.tracks.files()[0]);
+			that.trk = new Gapless5FileList(items, 0, false);
+			that.addInitialTrack(that.trk.files()[0]);
 		}
 		else if (typeof options.tracks[0] == 'string')
 		{
@@ -1535,15 +1638,15 @@ var Init = function(elem_id, options, tickMS) {
 				items[i] = {};
 				items[i].file = options.tracks[i];
 			}	
-			that.tracks = new Gapless5FileList(items, 0, shuffleInit);
-			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addInitialTrack(that.tracks.files()[i]);
+			that.trk = new Gapless5FileList(items, 0, shuffleInit);
+			for (var i = 0; i < that.trk.files().length ; i++)
+				that.addInitialTrack(that.trk.files()[i]);
 		}
 		else if (typeof options.tracks[0] == 'object')
 		{
-			that.tracks = new Gapless5FileList(options.tracks, that.startingTrack, shuffleInit);
-			for (var i = 0; i < that.tracks.files().length ; i++)
-				that.addInitialTrack(that.tracks.files()[i]);
+			that.trk = new Gapless5FileList(options.tracks, that.startingTrack, shuffleInit);
+			for (var i = 0; i < that.trk.files().length ; i++)
+				that.addInitialTrack(that.trk.files()[i]);
 		}
 	}
 
@@ -1552,9 +1655,9 @@ var Init = function(elem_id, options, tickMS) {
 
 	// autostart if desired
 	var playOnLoad = (options != undefined) && ('playOnLoad' in options) && (options.playOnLoad == true);
-	if (playOnLoad && (that.tracks.current.length > 0))
+	if (playOnLoad && (that.trk.current.length > 0))
 	{
-		sources[index()].play();
+		that.mgr.sources[index()].play();
 	}
 	Tick(tickMS);
 };
