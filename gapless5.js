@@ -202,10 +202,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 					window.clearTimeout(endedCallback);
 					endedCallback = null;
 				}
-				if (window.hasWebKit) 
-					source.noteOff(0);
-				else 
-					source.stop(0);
+				source.stop(0);
 			}
 		}
 		if (audio)
@@ -240,7 +237,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 			}
 			endedCallback = window.setTimeout(onEnded, restSec*1000);
 			if (window.hasWebKit)
-				source.noteGrainOn(0, offsetSec, restSec);
+				source.start(0, offsetSec, restSec);
 			else
 				source.start(0, offsetSec);
 			setState(Gapless5State.Play);
@@ -803,7 +800,7 @@ this.id = Math.floor((1 + Math.random()) * 0x10000);
 
 // WebAudio API
 var context = gapless5AudioContext;
-var gainNode = (window.hasWebKit) ? context.createGainNode() : (typeof AudioContext != "undefined") ? context.createGain() : null;
+var gainNode = (window.hasWebKit || (typeof AudioContext != "undefined")) ? context.createGain() : null;
 if (context && gainNode)
 {
 	gainNode.connect(context.destination);
