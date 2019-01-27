@@ -3,7 +3,7 @@ Gapless 5 &nbsp; <img src="https://ccrma.stanford.edu/~regosen/gapless5.gif" wid
 
 A gapless JavaScript/CSS audio player for HTML5
 
-**PROBLEM**: There are 2 modern API's for playing audio through the web, and both of them have problems:
+**PROBLEM**: There are 2 modern APIs for playing audio through the web, and both of them have problems:
 
 - **HTML5 Audio**: the last chunk of audio gets cut off, making gapless transitions impossible
 - **WebAudio**: can't play a file until it's fully loaded
@@ -47,10 +47,8 @@ Features
 Browser Support
 ---------------
 
-- Safari
-  - tested on OSX and iOS
-- Chrome
-  - not tested on Android yet
+- Safari (including iOS)
+- Chrome (including Android)
 - Firefox
 - *unsupported on IE*
   - can't seem to programmatically create audio objects
