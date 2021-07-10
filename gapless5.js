@@ -111,9 +111,9 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
   var onEnded = function () {
     if (state === Gapless5State.Play) {
-	    audioFinished = true;
-	    parent.onEndedCallback();
-		}
+      audioFinished = true;
+      parent.onEndedCallback();
+    }
   }
 
   var onPlayEvent = function () {
@@ -696,8 +696,8 @@ this.tickMS = 27; // fast enough for numbers to look real-time
 // UI
 const scrubSize = 65535;
 const statusText = {
-	loading:  "loading\u2026",
-	error: "error!",
+  loading:  "loading\u2026",
+  error: "error!",
 };
 var scrubWidth = 0;
 var scrubPosition = 0;
@@ -1252,7 +1252,7 @@ var enableShuffleButton = function (mode, bEnable) {
 };
 
 var updateDisplay = function () {
-	const { id, trk, loop} = that;
+  const { id, trk, loop} = that;
   if (numTracks() === 0) {
     $("#trackIndex" + id).html(0);
     $("#tracks" + id).html(0);
@@ -1283,7 +1283,7 @@ var updateDisplay = function () {
     // If so, permanently turn on the shuffle toggle
     if (that.trk.current.length > 2) {
       isShuffleActive = true;
-		}
+    }
     enableShuffleButton(that.trk.shuffled() ? 'unshuffle' : 'shuffle', isShuffleActive);
     that.mgr.sources[index()].uiDirty = false;
   }
@@ -1310,48 +1310,48 @@ var Tick = function(tickMS) {
 };
 
 var createGUI = function (playerHandle) {
-	const { id } = that;
+  const { id } = that;
   const playerWrapper = (player_html) => `
-		<div class="g5position">
-		  <span id="currentPosition${id}">00:00.00</span> |
-			<span id="totalPosition${id}">${statusText.loading}</span> |
-			<span id="trackIndex${id}">1</span>/<span id="tracks${id}">1</span>
-		</div>
-		<div class="g5inside">
-			${player_html}
-		</div>
-	`;
+    <div class="g5position">
+      <span id="currentPosition${id}">00:00.00</span> |
+      <span id="totalPosition${id}">${statusText.loading}</span> |
+      <span id="trackIndex${id}">1</span>/<span id="tracks${id}">1</span>
+    </div>
+    <div class="g5inside">
+      ${player_html}
+    </div>
+  `;
 
   if (typeof Audio === "undefined") {
-		return playerWrapper('This player is not supported by your browser.');
+    return playerWrapper('This player is not supported by your browser.');
   }
 
-	const volumeHtml = isMobileBrowser ? 
-		'<button class="g5button volumedisabled" />' :
+  const volumeHtml = isMobileBrowser ? 
+    '<button class="g5button volumedisabled" />' :
     `<input type="range" class="volume" name="gain" min="0" max="${scrubSize}" value="${scrubSize}" oninput="${playerHandle}.setGain(this.value);" />`;
   
-	return playerWrapper(`
-	<div class="g5transport">
-	  <div class="g5meter"><span id="loaded-span${id}" style="width: 0%"></span></div>
-		  <input type="range" class="transportbar" name="transportbar" id="transportbar${id}"
-		  min="0" max="${scrubSize}" value="0" oninput="${playerHandle}.scrub(this.value);"
-		  onmousedown="${playerHandle}.onStartedScrubbing();" ontouchstart="${playerHandle}.onStartedScrubbing();"
-		  onmouseup="${playerHandle}.onFinishedScrubbing();" ontouchend="${playerHandle}.onFinishedScrubbing();" />
-	  </div>
-  <div class="g5buttons" id="g5buttons${id}">
-	  <button class="g5button g5prev" id="prev${id}"/>
-	  <button class="g5button g5play" id="play${id}"/>
-	  <button class="g5button g5stop" id="stop${id}"/>
-	  <button class="g5button g5shuffle" id="shuffle${id}"/>
-	  <button class="g5button g5next" id="next${id}"/>
-		${volumeHtml}
-	</div>
-	`);
+  return playerWrapper(`
+    <div class="g5transport">
+      <div class="g5meter"><span id="loaded-span${id}" style="width: 0%"></span></div>
+        <input type="range" class="transportbar" name="transportbar" id="transportbar${id}"
+        min="0" max="${scrubSize}" value="0" oninput="${playerHandle}.scrub(this.value);"
+        onmousedown="${playerHandle}.onStartedScrubbing();" ontouchstart="${playerHandle}.onStartedScrubbing();"
+        onmouseup="${playerHandle}.onFinishedScrubbing();" ontouchend="${playerHandle}.onFinishedScrubbing();" />
+      </div>
+    <div class="g5buttons" id="g5buttons${id}">
+      <button class="g5button g5prev" id="prev${id}"/>
+      <button class="g5button g5play" id="play${id}"/>
+      <button class="g5button g5stop" id="stop${id}"/>
+      <button class="g5button g5shuffle" id="shuffle${id}"/>
+      <button class="g5button g5next" id="next${id}"/>
+      ${volumeHtml}
+    </div>
+  `);
 };
 
 var Init = function(gui_id, options, tickMS) {
   var element = $("#" + gui_id);
-	const { id } = that;
+  const { id } = that;
   gapless5Players[id] = that;
 
   if (element.length > 0) {
