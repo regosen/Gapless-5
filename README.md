@@ -41,6 +41,7 @@ Features
 - seamless transitions between tracks
   - pre-loading of subsequent tracks
   - files don't need to be fully loaded to start playback
+- GUI is optional
 - no Flash!
 
 
@@ -58,14 +59,16 @@ Browser Support
 Setup
 -----
 
-1. **HTML head**: reference the following
+1. **HTML head**: reference the following:
   - jQuery (1.0 or greater, must be referenced before Gapless5.js)
   - Gapless5.js
   - Gapless5.css
 2. **HTML body**
-  - create any element with a particular id
+  - (Optional): create any element with a particular id.
+    - If omitted, the built-in GUI won't render, but you can still use the player with key mappings, your own UI, or direct calls
 3. **JavaScript**
-  - create a Gapless5 object, passing the above id as a parameter
+  - create a Gapless5 object, passing the above id as a parameter.
+    - leave as empty string if you don't want the built-in GUI
   - add tracks using addTrack() or via options (see below)
   - optional stuff:
     - manipulate tracklist with insertTrack(), replaceTrack(), removeTrack(), and removeAllTracks() (see example)

@@ -3,7 +3,7 @@
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
 //
-// Version 0.6.0
+// Version 0.6.1
 // Copyright 2014 Rego Sen
 //
 //////////////
@@ -25,8 +25,8 @@ window.hasWebKit = ('webkitAudioContext' in window) && !('chrome' in window);
 // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
 var gapless5AudioContext = (window.hasWebKit) ? new webkitAudioContext() : (typeof AudioContext !== "undefined") ? new AudioContext() : null;
 
-var GAPLESS5_PLAYERS = {};
-var Gapless5State = {
+var gapless5Players = {};
+const Gapless5State = {
   "None"     : 0,
   "Loading"  : 1,
   "Play"     : 2,
@@ -35,24 +35,13 @@ var Gapless5State = {
   };
 
 // Request manager policies for downloading songs
-var Gapless5Policy = {
+const Gapless5Policy = {
   "OOM"     : 0,   // old Gapless behavior. Buffer tracks until OOM encountered :)
   "Mobile"  : 1,   // no more than 2 songs buffered ahead of current song
   "Desktop" : 2,   // no more than 5 songs buffered ahead of current song
   "Album"   : 3,   // buffer songs until the last song on an album
   "Memory"  : 4,   // use duration-based memory heuristic to limit memory use
   };
-
-// Request manager settings
-// For memory policy: # songs to grab in advance (-1 grabs as many as possible.)
-var Gapless5LookAhead = -1;
-
-// For memory policy: heuristic for uncompressed audio file size per minute
-// This is assuming 16-bit 44.1kHz audio
-var Gapless5MBPerMin = 10;
-
-// For memory policy: maximum amount of memory to use
-var Gapless5MaxMemory = 256;
 
 // A Gapless5Source "class" handles track-specific audio requests
 function Gapless5Source(parentPlayer, inContext, inOutputNode) {
@@ -94,7 +83,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
   this.getState = function () { return state; }
 
-  var setState = function (newState) {
+  const setState = function (newState) {
     state = newState;
     queuedState = Gapless5State.None;
   };
@@ -102,9 +91,8 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
   this.finished = function() { return audioFinished; }
 
   this.timer = function() {
-    var now = new Date().getTime();
-    var timerMS = now - initMS;
-    return timerMS;
+    const now = new Date().getTime();
+    return now - initMS;
   }
 
   this.cancelRequest = function (isError) {
@@ -122,9 +110,10 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
   }
 
   var onEnded = function () {
-    if (state !== Gapless5State.Play) return;
-    audioFinished = true;
-    parent.onEndedCallback();
+    if (state === Gapless5State.Play) {
+	    audioFinished = true;
+	    parent.onEndedCallback();
+		}
   }
 
   var onPlayEvent = function () {
@@ -158,6 +147,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
 
   var onLoadedHTML5Audio = function () {
     if (state !== Gapless5State.Loading) return;
+
     if (buffer !== null || !parent.useWebAudio) {
       parent.mgr.dequeueNextLoad();
     }
@@ -324,7 +314,6 @@ var Gapless5RequestManager = function(parentPlayer) {
   // the loading/progress state, and other metadata
   this.orderedPolicy = Gapless5Policy.OOM;
   this.shuffledPolicy = Gapless5Policy.OOM;
-  this.lookAhead = Gapless5LookAhead;
 
   // Values populated by Gapless5Player actions
   this.sources = [];    // List of Gapless5Sources
@@ -687,7 +676,6 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 }
 
 
-
 // parameters are optional.  options:
 //   tracks: path of file (or array of music file paths)
 //   playOnLoad (default = false): play immediately
@@ -706,12 +694,14 @@ this.tickMS = 27; // fast enough for numbers to look real-time
 // PRIVATE
 
 // UI
-var SCRUB_RESOLUTION = 65535;
-var SCRUB_WIDTH = 0;
+const scrubSize = 65535;
+const statusText = {
+	loading:  "loading\u2026",
+	error: "error!",
+};
+var scrubWidth = 0;
 var scrubPosition = 0;
 var isScrubbing = false;
-var LOAD_TEXT = "loading…";
-var ERROR_TEXT = "error!";
 
 // System
 var initialized = false;
@@ -757,11 +747,11 @@ this.onfinishedall = null;
 // INTERNAL HELPERS
 var getUIPos = function () {
   var position = isScrubbing ? scrubPosition : that.mgr.sources[dispIndex()].getPosition();
-  return (position / that.mgr.sources[dispIndex()].getLength()) * SCRUB_RESOLUTION;
+  return (position / that.mgr.sources[dispIndex()].getLength()) * scrubSize;
 };
 
 var getSoundPos = function (uiPosition) {
-  return ((uiPosition / SCRUB_RESOLUTION) * that.mgr.sources[dispIndex()].getLength());
+  return ((uiPosition / scrubSize) * that.mgr.sources[dispIndex()].getLength());
 };
 
 var numTracks = function () {
@@ -814,13 +804,13 @@ var getFormattedTime = function (inMS) {
 };
 
 var getTotalPositionText = function () {
-  var text = LOAD_TEXT;
+  var text = statusText.loading;
   var srcLength = that.mgr.sources[dispIndex()].getLength();
 
   if (numTracks() === 0) {
     text = getFormattedTime(0);
   } else if (that.mgr.sources[dispIndex()].getState() === Gapless5State.Error) {
-    text = ERROR_TEXT;
+    text = statusText.error;
   } else if (srcLength > 0) {
     text = getFormattedTime(srcLength);
   }
@@ -856,15 +846,13 @@ this.totalTracks = function() {
   return numTracks();
 }
 
-
 this.mapKeys = function (options) {
   for (var key in options) {
     var uppercode = options[key].toUpperCase().charCodeAt(0);
     var lowercode = options[key].toLowerCase().charCodeAt(0);
     var linkedfunc = null;
-    var player = GAPLESS5_PLAYERS[that.id];
-    switch (key)
-    {
+    var player = gapless5Players[that.id];
+    switch (key) {
       case "cue":
         linkedfunc = player.cue;
         break;
@@ -898,9 +886,8 @@ this.mapKeys = function (options) {
 };
 
 this.setGain = function (uiPos) {
-  var normalized = uiPos / SCRUB_RESOLUTION;
-  //var power_range = Math.sin(normalized * 0.5*Math.PI);
-  gainNode.gain.value = normalized; //power_range;
+  var normalized = uiPos / scrubSize;
+  gainNode.gain.value = normalized;
   that.mgr.sources[dispIndex()].setGain(normalized);
 };
 
@@ -914,7 +901,7 @@ this.scrub = function (uiPos) {
 };
 
 this.setLoadedSpan = function(percent) {
-  $("#loaded-span" + that.id).width(percent * SCRUB_WIDTH);
+  $("#loaded-span" + that.id).width(percent * scrubWidth);
   if (percent === 1) {
     $("#totalPosition" + that.id).html(getTotalPositionText());
   }
@@ -1248,7 +1235,7 @@ var enableButton = function (buttonId, bEnable) {
   }
 };
 
-var enableShuffle = function (mode, bEnable) {
+var enableShuffleButton = function (mode, bEnable) {
   var oldButtonClass = "";
   var newButtonClass = "";
   if (mode === "shuffle") {
@@ -1265,19 +1252,20 @@ var enableShuffle = function (mode, bEnable) {
 };
 
 var updateDisplay = function () {
+	const { id, trk, loop} = that;
   if (numTracks() === 0) {
-    $("#trackIndex" + that.id).html(0);
-    $("#tracks" + that.id).html(0);
-    $("#totalPosition" + that.id).html("00:00.00");
+    $("#trackIndex" + id).html(0);
+    $("#tracks" + id).html(0);
+    $("#totalPosition" + id).html("00:00.00");
     enableButton('prev', false);
-    enableShuffle('shuffle', false);
+    enableShuffleButton('shuffle', false);
     enableButton('next', false);
   } else {
-    $("#trackIndex" + that.id).html(that.trk.trackNumber);
-    $("#tracks" + that.id).html(that.trk.current.length);
-    $("#totalPosition" + that.id).html(getTotalPositionText());
-    enableButton('prev', that.loop || index() > 0 || that.mgr.sources[index()].getPosition() > 0);
-    enableButton('next', that.loop || index() < numTracks() - 1);
+    $("#trackIndex" + id).html(trk.trackNumber);
+    $("#tracks" + id).html(trk.current.length);
+    $("#totalPosition" + id).html(getTotalPositionText());
+    enableButton('prev', loop || index() > 0 || that.mgr.sources[index()].getPosition() > 0);
+    enableButton('next', loop || index() < numTracks() - 1);
 
     if (that.mgr.sources[dispIndex()].inPlayState()) {
       enableButton('play', false);
@@ -1293,14 +1281,10 @@ var updateDisplay = function () {
 
     // Must have at least 3 tracks in order for shuffle button to work
     // If so, permanently turn on the shuffle toggle
-    if (that.trk.current.length > 2)
+    if (that.trk.current.length > 2) {
       isShuffleActive = true;
-
-    if (that.trk.shuffled())
-      enableShuffle('unshuffle', isShuffleActive);
-    else
-      enableShuffle('shuffle', isShuffleActive);
-
+		}
+    enableShuffleButton(that.trk.shuffled() ? 'unshuffle' : 'shuffle', isShuffleActive);
     that.mgr.sources[index()].uiDirty = false;
   }
 };
@@ -1325,79 +1309,70 @@ var Tick = function(tickMS) {
   window.setTimeout(function () { Tick(tickMS); }, tickMS);
 };
 
-var createGUI = function(playerHandle) {
-  player_html = '<div class="g5position">';
-  player_html += '<span id="currentPosition' + that.id + '">00:00.00</span> | <span id="totalPosition' + that.id + '">' + LOAD_TEXT + '</span>';
-  player_html += ' | <span id="trackIndex' + that.id + '">1</span>/<span id="tracks' + that.id + '">1</span>';
-  player_html += '</div>';
-  
-  player_html += '<div class="g5inside">';
+var createGUI = function (playerHandle) {
+	const { id } = that;
+  const playerWrapper = (player_html) => `
+		<div class="g5position">
+		  <span id="currentPosition${id}">00:00.00</span> |
+			<span id="totalPosition${id}">${statusText.loading}</span> |
+			<span id="trackIndex${id}">1</span>/<span id="tracks${id}">1</span>
+		</div>
+		<div class="g5inside">
+			${player_html}
+		</div>
+	`;
+
   if (typeof Audio === "undefined") {
-    player_html += 'This player is not supported by your browser.';
-    player_html += '</div>';
-    return player_html;
+		return playerWrapper('This player is not supported by your browser.');
   }
-  player_html += '<div class="g5transport">';
-  player_html += '<div class="g5meter"><span id="loaded-span' + that.id + '" style="width: 0%"></span></div>';
 
-  player_html += '<input type="range" class="transportbar" name="transportbar" id="transportbar' + that.id + '" ';
-  player_html += 'min="0" max="' + SCRUB_RESOLUTION + '" value="0" oninput="' + playerHandle + '.scrub(this.value);" ';
-  player_html += 'onmousedown="' + playerHandle + '.onStartedScrubbing();" ontouchstart="' + playerHandle + '.onStartedScrubbing();" ';
-  player_html += 'onmouseup="'   + playerHandle + '.onFinishedScrubbing();" ontouchend="'  + playerHandle + '.onFinishedScrubbing();" />';
-
-  player_html += '</div>';
-  player_html += '<div class="g5buttons" id="g5buttons' + that.id + '">';
-  player_html += '<button class="g5button g5prev" id="prev' + that.id + '"/>';
-  player_html += '<button class="g5button g5play" id="play' + that.id + '"/>';
-  player_html += '<button class="g5button g5stop" id="stop' + that.id + '"/>';
-  player_html += '<button class="g5button g5shuffle" id="shuffle' + that.id + '"/>';
-  player_html += '<button class="g5button g5next" id="next' + that.id + '"/>';
-
-  if (isMobileBrowser) {
-    player_html += '<button class="g5button volumedisabled" />';
-    player_html += '</div>';
-  } else {
-    player_html += '<input type="range" class="volume" name="gain" min="0" max="' + SCRUB_RESOLUTION + '" value="' + SCRUB_RESOLUTION + '" oninput="' + playerHandle + '.setGain(this.value);" />';
-    player_html += '</div>';
-  }
-  player_html += '</div>';
-  return player_html;
+	const volumeHtml = isMobileBrowser ? 
+		'<button class="g5button volumedisabled" />' :
+    `<input type="range" class="volume" name="gain" min="0" max="${scrubSize}" value="${scrubSize}" oninput="${playerHandle}.setGain(this.value);" />`;
+  
+	return playerWrapper(`
+	<div class="g5transport">
+	  <div class="g5meter"><span id="loaded-span${id}" style="width: 0%"></span></div>
+		  <input type="range" class="transportbar" name="transportbar" id="transportbar${id}"
+		  min="0" max="${scrubSize}" value="0" oninput="${playerHandle}.scrub(this.value);"
+		  onmousedown="${playerHandle}.onStartedScrubbing();" ontouchstart="${playerHandle}.onStartedScrubbing();"
+		  onmouseup="${playerHandle}.onFinishedScrubbing();" ontouchend="${playerHandle}.onFinishedScrubbing();" />
+	  </div>
+  <div class="g5buttons" id="g5buttons${id}">
+	  <button class="g5button g5prev" id="prev${id}"/>
+	  <button class="g5button g5play" id="play${id}"/>
+	  <button class="g5button g5stop" id="stop${id}"/>
+	  <button class="g5button g5shuffle" id="shuffle${id}"/>
+	  <button class="g5button g5next" id="next${id}"/>
+		${volumeHtml}
+	</div>
+	`);
 };
 
-var Init = function(elem_id, options, tickMS) {
-  var element = $("#" + elem_id);
-  GAPLESS5_PLAYERS[that.id] = that;
+var Init = function(gui_id, options, tickMS) {
+  var element = $("#" + gui_id);
+	const { id } = that;
+  gapless5Players[id] = that;
 
   if (element.length > 0) {
-    var playerHandle = "GAPLESS5_PLAYERS[" + that.id + "]";
+    var playerHandle = `gapless5Players[${id}]`;
     element.html(createGUI(playerHandle));
 
     // css adjustments
     if (!isMobileBrowser && navigator.userAgent.indexOf('Mac OS X') === -1) {
-      $("#transportbar" + that.id).addClass("g5meter-1pxup");
-      $("#g5buttons" + that.id).addClass("g5buttons-1pxup");
+      $("#transportbar" + id).addClass("g5meter-1pxup");
+      $("#g5buttons" + id).addClass("g5buttons-1pxup");
     }
     if (isMobileBrowser) {
-      $("#transportbar" + that.id).addClass("g5transport-1pxup");
+      $("#transportbar" + id).addClass("g5transport-1pxup");
     }
 
     // set up button mappings
-    $('#prev' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].prev);
-    $('#play' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].playpause);
-    $('#stop' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].stop);
-    $('#shuffle' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].shuffleToggle);
-    $('#next' + that.id)[0].addEventListener("mousedown", GAPLESS5_PLAYERS[that.id].next);
-
-    // set up key mappings
-    if ((options !== null) && ('mapKeys' in options)) {
-      that.mapKeys(options['mapKeys']);
-    }
-    $(window).keydown(function(e) {
-      var keycode = e.keyCode;
-      if (keycode in keyMappings) {
-        keyMappings[keycode](e);
-      }
-    });
+    $('#prev' + id)[0].addEventListener("mousedown", gapless5Players[id].prev);
+    $('#play' + id)[0].addEventListener("mousedown", gapless5Players[id].playpause);
+    $('#stop' + id)[0].addEventListener("mousedown", gapless5Players[id].stop);
+    $('#shuffle' + id)[0].addEventListener("mousedown", gapless5Players[id].shuffleToggle);
+    $('#next' + id)[0].addEventListener("mousedown", gapless5Players[id].next);
 
     enableButton('play', true);
     enableButton('stop', true);
@@ -1411,9 +1386,9 @@ var Init = function(elem_id, options, tickMS) {
       $( ".g5meter" ).css("width", transSize);
       $( ".g5position" ).css("width", playSize);
       $( ".g5inside" ).css("width", playSize);
-      $( "#shuffle" + that.id).remove();
+      $( "#shuffle" + id).remove();
     }
-    SCRUB_WIDTH = $("#transportbar" + that.id).width();
+    scrubWidth = $("#transportbar" + id).width();
   }
 
   if (typeof Audio === "undefined") {
@@ -1430,6 +1405,17 @@ var Init = function(elem_id, options, tickMS) {
     }
   }
 
+  // set up key mappings
+  if ((options !== null) && ('mapKeys' in options)) {
+    that.mapKeys(options['mapKeys']);
+    $(window).keydown(function(e) {
+      var keycode = e.keyCode;
+      if (keycode in keyMappings) {
+        keyMappings[keycode](e);
+      }
+    });
+  }
+  
   // set up tracks into a FileList object
   if ( options !== null && 'tracks' in options) {
     var setupTracks = function(player) {
@@ -1442,17 +1428,19 @@ var Init = function(elem_id, options, tickMS) {
     
     var items = [];
     var startingTrack = 0;
-    if (typeof options.tracks === 'string') {
+    if (Array.isArray(options.tracks)) {
+      if (typeof options.tracks[0] === 'string') {
+        // convert array into JSON items
+        for (var i = 0; i < options.tracks.length; i++) {
+          items[i] = { file: options.tracks[i] };
+        }
+      } else if (typeof options.tracks[0] === 'object') {
+        items = options.tracks;
+        startingTrack = that.startingTrack;
+      }  
+    } else if (typeof options.tracks === 'string') {
       items[0] = { file: options.tracks };
-    } else if (typeof options.tracks[0] === 'string') {
-      // convert array into JSON items
-      for (var i = 0; i < options.tracks.length; i++) {
-        items[i] = { file: options.tracks[i] };
-      }
-    } else if (typeof options.tracks[0] === 'object') {
-      items = options.tracks;
-      startingTrack = that.startingTrack;
-    } 
+    }
     that.trk = new Gapless5FileList(items, startingTrack, shuffleOnInit);
     setupTracks(that);
   }
