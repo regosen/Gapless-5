@@ -41,7 +41,7 @@ Features
 - seamless transitions between tracks
   - pre-loading of subsequent tracks
   - files don't need to be fully loaded to start playback
-- GUI is optional
+- UI is optional
 - no Flash!
 
 
@@ -64,12 +64,11 @@ Setup
   - Gapless5.js
   - Gapless5.css
 2. **HTML body**
-  - (Optional): create any element with a particular id.
-    - If omitted, the built-in GUI won't render, but you can still use the player with key mappings, your own UI, or direct calls
+  - (Optional): if you want the built-in UI, create a `<div>` or `<span>` element with a particular id.
 3. **JavaScript**
-  - create a Gapless5 object, passing the above id as a parameter.
-    - leave as empty string if you don't want the built-in GUI
-  - add tracks using addTrack() or via options (see below)
+  - create a `Gapless5` object, with the above id and options if desired.
+    - id can be omitted or an empty string if you don't want the built-in UI
+  - add tracks using addTrack() or via options (see example below)
   - optional stuff:
     - manipulate tracklist with insertTrack(), replaceTrack(), removeTrack(), and removeAllTracks() (see example)
     - register callbacks (see below)
@@ -83,10 +82,10 @@ Example:
   <script src="gapless5.js" language="JavaScript" type="text/javascript"></script>
 </head>
 <body>
-  <div id="gapless5-block" />
+  <div id="gapless5-ui" />
   <script type="text/javascript"><!--
 
-    var player = new Gapless5("gapless5-block");
+    var player = new Gapless5("gapless5-ui");
     player.addTrack("audio/song1.mp3");
     player.addTrack("audio/song2.mp3");
 
@@ -120,7 +119,7 @@ Options
   - either an array index into the tracks array, or the string "random" for a random index
 - **shuffleButton**
   - default = true
-  - adds shuffle button to the player
+  - adds shuffle button to the player UI
 - **shuffle**
   - default = false
   - enables shuffle mode immediately after playlist load

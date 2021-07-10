@@ -3,7 +3,7 @@
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
 //
-// Version 0.6.1
+// Version 0.6.2
 // Copyright 2014 Rego Sen
 //
 //////////////
@@ -134,7 +134,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && (state === Gapless5State.Play)) {
       //console.log("switching from HTML5 to WebAudio");
       position = (new Date().getTime()) - startTime;
-      if (!window.hasWebKit) position -= parent.tickMS;
+      if (!window.hasWebKit) position -= tickMS;
       that.setPosition(position, true);
     }
     if (state === Gapless5State.Loading) {
@@ -675,25 +675,22 @@ var Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   }
 }
 
-
-// parameters are optional.  options:
-//   tracks: path of file (or array of music file paths)
-//   playOnLoad (default = false): play immediately
-//   useWebAudio (default = true)
-//   useHTML5Audio (default = false on mobile browsers, true otherwise)
-//   startingTrack (number or "random", default = 0)
-//   shuffle (true or false): start the jukebox in shuffle mode
-//   shuffleButton (default = true): whether shuffle button appears or not
-var Gapless5 = function(elem_id, options) {
+// parameters are optional.  
+//   elem_id: id of existing HTML element where UI should be rendered
+//   options:
+//     tracks: path of file (or array of music file paths)
+//     playOnLoad (default = false): play immediately
+//     useWebAudio (default = true)
+//     useHTML5Audio (default = false on mobile browsers, true otherwise)
+//     startingTrack (number or "random", default = 0)
+//     shuffle (true or false): start the jukebox in shuffle mode
+//     shuffleButton (default = true): whether shuffle button appears or not in UI
+var Gapless5 = function(elem_id = "", options = {}) {
 
 // MEMBERS AND CONSTANTS
 
-// PUBLIC
-this.tickMS = 27; // fast enough for numbers to look real-time
-
-// PRIVATE
-
 // UI
+const tickMS = 27; // fast enough for numbers to look real-time
 const scrubSize = 65535;
 const statusText = {
   loading:  "loading\u2026",
@@ -706,9 +703,9 @@ var isScrubbing = false;
 // System
 var initialized = false;
 var isMobileBrowser = window.mobilecheck();
-this.loop = (options !== null) && (options.loop);
-this.useWebAudio = ((options !== null) && ('useWebAudio' in options)) ? options.useWebAudio : true;
-this.useHTML5Audio = ((options !== null) && ('useHTML5Audio' in options)) ? options.useHTML5Audio : !isMobileBrowser;
+this.loop = ('loop' in options) && (options.loop);
+this.useWebAudio = ('useWebAudio' in options) ? options.useWebAudio : true;
+this.useHTML5Audio = ('useHTML5Audio' in options) ? options.useHTML5Audio : !isMobileBrowser;
 this.id = Math.floor((1 + Math.random()) * 0x10000);
 
 // WebAudio API
@@ -1289,7 +1286,7 @@ var updateDisplay = function () {
   }
 };
 
-var Tick = function(tickMS) {
+var Tick = function() {
   if (numTracks() > 0) {
     that.mgr.sources[dispIndex()].tick();
 
@@ -1306,7 +1303,7 @@ var Tick = function(tickMS) {
       $("#currentPosition" + that.id).html(getFormattedTime(soundPos));
     }
   }
-  window.setTimeout(function () { Tick(tickMS); }, tickMS);
+  window.setTimeout(function () { Tick(); }, tickMS);
 };
 
 var createGUI = function (playerHandle) {
@@ -1349,14 +1346,14 @@ var createGUI = function (playerHandle) {
   `);
 };
 
-var Init = function(gui_id, options, tickMS) {
-  var element = $("#" + gui_id);
+var Init = function(guiId, options) {
+  var guiElement = guiId ? $("#" + guiId) : [];
   const { id } = that;
   gapless5Players[id] = that;
 
-  if (element.length > 0) {
+  if (guiElement.length > 0) {
     var playerHandle = `gapless5Players[${id}]`;
-    element.html(createGUI(playerHandle));
+    guiElement.html(createGUI(playerHandle));
 
     // css adjustments
     if (!isMobileBrowser && navigator.userAgent.indexOf('Mac OS X') === -1) {
@@ -1378,7 +1375,7 @@ var Init = function(gui_id, options, tickMS) {
     enableButton('stop', true);
 
     // set up whether shuffleButton appears or not (default is visible)
-    if (( options !== null ) && ( 'shuffleButton' in options ) && !options.shuffleButton) {
+    if (( 'shuffleButton' in options ) && !options.shuffleButton) {
       // Style items per earlier Gapless versions
       var transSize = "111px";
       var playSize = "115px";
@@ -1397,7 +1394,7 @@ var Init = function(gui_id, options, tickMS) {
   }
 
   // set up starting track number
-  if ( options !== null && 'startingTrack' in options) {
+  if ('startingTrack' in options) {
     if (typeof options.startingTrack === 'number') {
       that.startingTrack = options.startingTrack;
     } else if ((typeof options.startingTrack === 'string') && (options.startingTrack === "random")) {
@@ -1406,7 +1403,7 @@ var Init = function(gui_id, options, tickMS) {
   }
 
   // set up key mappings
-  if ((options !== null) && ('mapKeys' in options)) {
+  if ('mapKeys' in options) {
     that.mapKeys(options['mapKeys']);
     $(window).keydown(function(e) {
       var keycode = e.keyCode;
@@ -1417,7 +1414,7 @@ var Init = function(gui_id, options, tickMS) {
   }
   
   // set up tracks into a FileList object
-  if ( options !== null && 'tracks' in options) {
+  if ('tracks' in options) {
     var setupTracks = function(player) {
       for (var i = 0; i < player.trk.files().length; i++) {
         player.addInitialTrack(player.trk.files()[i]);
@@ -1449,12 +1446,12 @@ var Init = function(gui_id, options, tickMS) {
   updateDisplay();
 
   // autostart if desired
-  var playOnLoad = (options !== undefined) && ('playOnLoad' in options) && options.playOnLoad;
+  var playOnLoad = ('playOnLoad' in options) && options.playOnLoad;
   if (playOnLoad && (that.trk.current.length > 0)) {
     that.mgr.sources[index()].play();
   }
-  Tick(tickMS);
+  Tick();
 };
 
-$(document).ready(Init(elem_id, options, this.tickMS));
+$(document).ready(Init(elem_id, options));
 };
