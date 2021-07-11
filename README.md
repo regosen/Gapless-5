@@ -17,7 +17,7 @@ A gapless JavaScript/CSS audio player for HTML5
 Getting Started
 -----
 Gapless 5 is a registered bower package, so installation is as simple as:
-```
+```shell
  $ bower install gapless5 --save
 ```
 
@@ -75,29 +75,40 @@ Setup
     - link keys to actions using mapKeys() or via options (see below)
 
 Example:
-```
+```html
 <head>
   <link href="gapless5.css" rel="stylesheet" type="text/css" />
   <script src="//code.jquery.com/jquery-1.10.2.min.js" language="JavaScript" type="text/javascript"></script>
   <script src="gapless5.js" language="JavaScript" type="text/javascript"></script>
 </head>
 <body>
-  <div id="gapless5-ui" />
+  <div id="gapless5-player-id" />
   <script type="text/javascript"><!--
 
-    var player = new Gapless5("gapless5-ui");
+    const player = new Gapless5("gapless5-player-id");
+
+    // You can add tracks by relative or absolute URL:
     player.addTrack("audio/song1.mp3");
-    player.addTrack("audio/song2.mp3");
+    player.addTrack("https://my-audio-site.org/song2.m4a");
+
+    // You can also add tracks from the file loader like this:
+    const files = Array.from($(":file")[0].files);
+    files.forEach(file => {
+      player.addTrack(URL.createObjectURL(file));
+    });
 
     // extra stuff to manipulate tracklist, indexes start at 0!
-    player.replaceTrack(0, "audio/song1_alt.mp3");
-    player.insertTrack(1, "audio/transition.mp3");
+    player.replaceTrack(0, "audio/song1_alt.flac");
+    player.insertTrack(1, "audio/transition.wav");
     player.removeTrack(2); // removes third track
     player.removeAllTracks(); // clear all tracks
 
     player.mapKeys({cue: "7", stop: "8", next: "9"});
 
   --></script>
+  <form>
+    <input type="file" accept="audio/*">
+  </form>
 </body>
 ```
 
@@ -106,7 +117,7 @@ Options
 -------
 
 - **tracks**
-  - path to audio file(s)
+  - path to audio file(s) or blob URL(s), see examples above
   - can be a single track as a string, an array, or a JSON object containing an array of JSON objects
 - **loop**
   - default = false
@@ -143,8 +154,8 @@ Options
 
 Example:
 
-```
-var player = new Gapless5("gapless5-block", {
+```js
+const player = new Gapless5("gapless5-player-id", {
   tracks: ["loop1.mp3", "loop2.mp3"],
   loop: true,
   playOnLoad: true,
@@ -166,12 +177,12 @@ Callbacks
 
 Example:
 
-```
+```js
 function prevCallback() {
   console.log("user clicked 'prev'");
 }
 
-player = new Gapless5('gapless5-block', {tracks: ["track1.mp3", "track2.mp3"]});
+const player = new Gapless5('gapless5-player-id', {tracks: ["track1.mp3", "track2.mp3"]});
 player.onprev = prevCallback;
 player.onnext = function () { console.log("user clicked 'next'"); };
 ```

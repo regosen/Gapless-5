@@ -271,27 +271,51 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
     }
     state = Gapless5State.Loading;
     if (parent.useWebAudio) {
-      request = new XMLHttpRequest();
-      request.open('get', inAudioPath, true);
-      request.responseType = 'arraybuffer';
-
-      request.onload = function () {
-        context.decodeAudioData(request.response,
-           function(incomingBuffer) {
-             onLoadedWebAudio(incomingBuffer);
-           }
-         );
+      var onLoadWebAudio = function() {
+        context.decodeAudioData(request.result,
+          function(incomingBuffer) {
+            onLoadedWebAudio(incomingBuffer);
+          }
+        );
       };
-      request.send();
+      if (inAudioPath.startsWith("blob:")) {
+        request = new FileReader();
+        request.onloadend = onLoadWebAudio;
+        fetch(inAudioPath).then(r => {
+          r.blob().then(blob => {
+            request.readAsArrayBuffer(blob);
+          });
+        });
+      } else {
+        request = new XMLHttpRequest();
+        request.open('get', inAudioPath, true);
+        request.responseType = 'arrayBuffer';
+        request.onload = onLoadWebAudio;
+        request.send();
+      }
     }
     if (parent.useHTML5Audio) {
-      audio = new Audio();
-      audio.controls = false;
-      audio.src = inAudioPath;
-       audio.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
-       audio.addEventListener('ended', onEnded, false);
-       audio.addEventListener('play', onPlayEvent, false);
-       // not using audio.networkState because it's not dependable on all browsers
+      var getHtml5Audio = function() {
+        var audioObj = new Audio();
+        audioObj.controls = false;
+        audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
+        audioObj.addEventListener('ended', onEnded, false);
+        audioObj.addEventListener('play', onPlayEvent, false);
+        // TODO: switch to audio.networkState, now that it's universally supported
+        return audioObj;
+      }
+      if (inAudioPath.startsWith("blob:")) {
+        // TODO: blob as srcObject is not supported on all browsers
+        fetch(inAudioPath).then(r => {
+          r.blob().then(blob => {
+            audio = getHtml5Audio();
+            audio.srcObject = blob;
+          });
+        });
+      } else {
+        audio = getHtml5Audio();
+        audio.src = inAudioPath;
+      }
     }
     // cancel if url doesn't exist, but don't download again
     $.ajax({
@@ -1433,8 +1457,8 @@ var Init = function(guiId, options) {
         }
       } else if (typeof options.tracks[0] === 'object') {
         items = options.tracks;
-        startingTrack = that.startingTrack;
-      }  
+        startingTrack = that.startingTrack || 0;
+      }
     } else if (typeof options.tracks === 'string') {
       items[0] = { file: options.tracks };
     }
