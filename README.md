@@ -51,8 +51,6 @@ Browser Support
 - Safari (including iOS)
 - Chrome (including Android)
 - Firefox
-- *unsupported on IE*
-  - can't seem to programmatically create audio objects
 
 *NOTE for Boostrap users: Bootstrap's css will mess up the player's look.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
@@ -96,14 +94,7 @@ Example:
     files.forEach(file => {
       player.addTrack(URL.createObjectURL(file));
     });
-
-    // extra stuff to manipulate tracklist, indexes start at 0!
-    player.replaceTrack(0, "audio/song1_alt.flac");
-    player.insertTrack(1, "audio/transition.wav");
-    player.removeTrack(2); // removes third track
-    player.removeAllTracks(); // clear all tracks
-
-    player.mapKeys({cue: "7", stop: "8", next: "9"});
+    player.play();
 
   --></script>
   <form>
@@ -113,6 +104,75 @@ Example:
 ```
 
 
+Functions
+---------
+
+Functions with parameters:
+- **addTrack(audioPath)**
+  - adds track to end of playlist
+  - `audioPath`: path to audio file(s) or blob URL(s), see examples above
+- **insertTrack(index, audioPath)**
+  - inserts track at location `index`
+  - `audioPath`: same as in addTrack
+- **replaceTrack(index, audioPath)**
+  - replaces track at location `index`
+  - `audioPath`: same as in addTrack
+- **gotoTrack(indexOrPath)**
+  - jumps to specified track
+  - indexOrPath can be the numerical index, or audio path
+- **removeTrack(indexOrPath)**
+  - removes specified track from playlist
+  - indexOrPath can be the numerical index, or audio path
+- **mapKeys**
+  - pressing specified key (case-insensitive) will trigger any Action function listed below.
+
+Functions that return the current state:
+- **isShuffled()**
+  - returns true if shuffled
+- **getTracks()**
+  - returns list of audioPaths in play order
+  - if shuffled, the shuffled order will be reflected here
+- **findTrack(audioPath)**
+  - returns index of track in playlist
+
+
+Actions (these can be mapped to keys via mapKeys):
+
+*These correspond to built-in UI buttons*
+- **prev()**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
+- **playpause()**: matches behavior of "play/pause" button
+- **toggleShuffle()**
+  - switches between shuffled and un-shuffled
+  - subsequent shuffles will be different each time
+- **stop()**: matches behavior of "stop" button
+- **next()**: matches behavior of "next" button
+
+*These do not correspond to built-in UI buttons*
+- **prevtrack()**: unlike "prev" button, this will always jump to the previous track
+- **cue()**: play from start
+- **play()**: non-togglable "play"
+- **pause()**: non-togglable "pause"
+- **removeAllTracks()**
+  - clears entire playlist
+
+Example:
+```js
+player.mapKeys({cue: "7", stop: "8", next: "9"});
+
+player.play();
+player.pause();
+
+// indexes start at 0
+player.replaceTrack(0, "audio/song1_alt.flac");
+player.insertTrack(1, "audio/transition.wav");
+
+player.gotoTrack(1);
+player.gotoTrack("audio/song1_alt.flac"); // can also goto track by path
+
+player.removeTrack(2); // removes third track
+player.removeTrack("audio/transition.wav"); // can also remove track by path
+player.removeAllTracks();
+```
 Options
 -------
 
@@ -140,17 +200,7 @@ Options
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
 - **mapKeys**
-  - pressing specified key (case-insensitive) will trigger specified action.
-  - actions that behave like the buttons:
-    - **prev**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
-    - **playpause**: matches behavior of "play/pause" button
-    - **stop**: matches behavior of "stop" button
-    - **next**: matches behavior of "next" button
-  - Actions that differ from the buttons:
-    - **prevtrack**: unlike "prev" button, this will always jump to the previous track
-    - **cue**: play from start
-    - **play**: non-togglable "play"
-    - **pause**: non-togglable "pause"
+  - pressing specified key (case-insensitive) will trigger any Action function listed above.
 
 Example:
 

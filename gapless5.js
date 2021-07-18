@@ -3,7 +3,7 @@
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
 //
-// Version 0.6.4
+// Version 0.6.5
 // Copyright 2014 Rego Sen
 //
 //////////////
@@ -512,7 +512,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   // Toggle shuffle mode or not, and prepare for rebasing the playlist
   // upon changing to the next available song. NOTE that each function here
   // changes flags, so the logic must exclude any logic if a revert occurs.
-  this.shuffleToggle = function() {
+  this.toggleShuffle = function() {
     if ( remakeList ) 
       return revertShuffle();  
 
@@ -538,7 +538,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
   // Are we in shuffle mode or not? If we just came out of shuffle mode,
   // the player object will want to know.
-  this.shuffled = function() {
+  this.isShuffled = function() {
     return shuffleMode;
   }
 
@@ -559,7 +559,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
   // Helper: find the given index in the current playlist
   this.getIndex = function(index) {
-    if ( that.shuffled() ) {
+    if ( that.isShuffled() ) {
       for ( let i=0; i < that.current.length; i++ )
         if ( that.current[i]._index === index )
           return i - 1;
@@ -674,6 +674,7 @@ let isScrubbing = false;
 // System
 let initialized = false;
 const isMobileBrowser = window.mobilecheck();
+
 this.loop = ('loop' in options) && (options.loop);
 this.useWebAudio = ('useWebAudio' in options) ? options.useWebAudio : true;
 this.useHTML5Audio = ('useHTML5Audio' in options) ? options.useHTML5Audio : !isMobileBrowser;
@@ -805,8 +806,9 @@ const refreshTracks = function(newIndex) {
   that.removeAllTracks(false);
   that.trk.rebasePlayList(newIndex);
 
-  for (let i = 0; i < that.trk.files().length; i++ ) {
-    that.addInitialTrack(that.trk.files()[i]);
+  const tracks = that.getTracks();
+  for (let i = 0; i < tracks.length; i++ ) {
+    that.addInitialTrack(tracks[i]);
   }
 
   // re-enable GUI updates
@@ -835,37 +837,12 @@ this.mapKeys = function (options) {
   for (let key in options) {
     const uppercode = options[key].toUpperCase().charCodeAt(0);
     const lowercode = options[key].toLowerCase().charCodeAt(0);
-    let linkedfunc = null;
     const player = gapless5Players[that.id];
-    switch (key) {
-      case "cue":
-        linkedfunc = player.cue;
-        break;
-      case "play":
-        linkedfunc = player.play;
-        break;
-      case "pause":
-        linkedfunc = player.pause;
-        break;
-      case "playpause":
-        linkedfunc = player.playpause;
-        break;
-      case "stop":
-        linkedfunc = player.stop;
-        break;
-      case "prevtrack":
-        linkedfunc = player.prevtrack;
-        break;
-      case "prev":
-        linkedfunc = player.prev;
-        break;
-      case "next":
-        linkedfunc = player.next;
-        break;
-    }
-    if (linkedfunc !== null) {
-      keyMappings[uppercode] = linkedfunc;
-      keyMappings[lowercode] = linkedfunc;
+    if (player.hasOwnProperty(key)) {
+      keyMappings[uppercode] = player[key];
+      keyMappings[lowercode] = player[key];
+    } else {
+      console.error(`Gapless5 mapKeys() error: no function named '${key}'`);
     }
   }
   $(window).keydown(function(e) {
@@ -977,7 +954,19 @@ this.insertTrack = function (point, audioPath) {
   }
 };
 
-this.removeTrack = function (point) {
+this.getTracks = function () {
+  return that.trk.files();
+};
+
+this.findTrack = function (path) {
+  return that.getTracks().indexOf(path);
+};
+
+this.removeTrack = function (pointOrPath) {
+  const point = (typeof pointOrPath === 'string') ?
+    that.findTrack(pointOrPath) :
+    pointOrPath;
+
   if (point < 0 || point >= that.sources.length) return;
 
   const curSource = that.sources[point];
@@ -1044,18 +1033,27 @@ this.removeAllTracks = function (flushPlaylist = true) {
   }
 };
 
-this.shuffleToggle = function() {
+this.isShuffled = function() { 
+  return that.trk.isShuffled();
+};
+
+this.toggleShuffle = function() {
   if (!isShuffleActive) return;
 
-  that.trk.shuffleToggle();
+  that.trk.toggleShuffle();
 
   if (initialized) {
     updateDisplay();
   }
 };
+// backwards-compatibility with previous function name
+this.shuffleToggle = this.toggleShuffle;
 
-this.gotoTrack = function (newIndex, bForcePlay) {
+this.gotoTrack = function (pointOrPath, bForcePlay) {
   if (inCallback) return;
+  const newIndex = (typeof pointOrPath === 'string') ?
+    that.findTrack(pointOrPath) :
+    pointOrPath;
 
   let justRemade = false;
 
@@ -1080,7 +1078,7 @@ this.gotoTrack = function (newIndex, bForcePlay) {
   // A shuffle or an unshuffle just occurred
   else if ( justRemade ) {
     that.trk.set(newIndex);
-    that.sources[newIndex].load(that.trk.files()[newIndex]);
+    that.sources[newIndex].load(that.getTracks()[newIndex]);
     that.sources[newIndex].play();
 
     updateDisplay();
@@ -1092,13 +1090,13 @@ this.gotoTrack = function (newIndex, bForcePlay) {
     if (that.sources[oldIndex].getState() === Gapless5State.Loading) {
       that.sources[oldIndex].cancelRequest();
       // TODO: better way to have just the file list?
-      that.loadQueue.push([oldIndex, that.trk.files()[oldIndex]]);
+      that.loadQueue.push([oldIndex, that.getTracks()[oldIndex]]);
     }
 
     resetPosition(true); // make sure this comes after currentIndex has been updated
     if (that.sources[newIndex].getState() === Gapless5State.None) {
       // TODO: better way to have just the file list?
-      that.sources[newIndex].load(that.trk.files()[newIndex]);
+      that.sources[newIndex].load(that.getTracks()[newIndex]);
 
       //re-sort queue so that this track is at the head of the list
       for (let i in that.loadQueue) {
@@ -1272,7 +1270,7 @@ const updateDisplay = function () {
     if (that.trk.current.length > 2) {
       isShuffleActive = true;
     }
-    enableShuffleButton(that.trk.shuffled() ? 'unshuffle' : 'shuffle', isShuffleActive);
+    enableShuffleButton(that.trk.isShuffled() ? 'unshuffle' : 'shuffle', isShuffleActive);
     that.sources[index()].uiDirty = false;
   }
 };
@@ -1359,7 +1357,7 @@ const Init = function(guiId, options) {
     $('#prev' + id)[0].addEventListener("mousedown", gapless5Players[id].prev);
     $('#play' + id)[0].addEventListener("mousedown", gapless5Players[id].playpause);
     $('#stop' + id)[0].addEventListener("mousedown", gapless5Players[id].stop);
-    $('#shuffle' + id)[0].addEventListener("mousedown", gapless5Players[id].shuffleToggle);
+    $('#shuffle' + id)[0].addEventListener("mousedown", gapless5Players[id].toggleShuffle);
     $('#next' + id)[0].addEventListener("mousedown", gapless5Players[id].next);
 
     enableButton('play', true);
@@ -1404,8 +1402,9 @@ const Init = function(guiId, options) {
   // set up tracks into a FileList object
   if ('tracks' in options) {
     const setupTracks = function(player) {
-      for (let i = 0; i < player.trk.files().length; i++) {
-        player.addInitialTrack(player.trk.files()[i]);
+      const tracks = player.getTracks();
+      for (let i = 0; i < tracks.length; i++) {
+        player.addInitialTrack(tracks[i]);
       }
     };
     
