@@ -92,7 +92,7 @@ Example:
     // You can also add tracks from the file loader like this:
     const files = Array.from($(":file")[0].files);
     files.forEach(file => {
-      player.addTrack(URL.createObjectURL(file));
+      player.addTrack(URL.createObjectURL(file)); // this creates a "blob://" URL
     });
     player.play();
 
@@ -119,12 +119,13 @@ Functions with parameters:
   - `audioPath`: same as in addTrack
 - **gotoTrack(indexOrPath)**
   - jumps to specified track
-  - indexOrPath can be the numerical index, or audio path
+  - `indexOrPath` can be the numerical index, or audio path
 - **removeTrack(indexOrPath)**
   - removes specified track from playlist
-  - indexOrPath can be the numerical index, or audio path
-- **mapKeys**
+  - `indexOrPath` can be the numerical index, or audio path
+- **mapKeys(jsonMapping)**
   - pressing specified key (case-insensitive) will trigger any Action function listed below.
+  - `jsonMapping` maps an action to a key, see example code below
 
 Functions that return the current state:
 - **isShuffled()**
@@ -169,7 +170,7 @@ player.insertTrack(1, "audio/transition.wav");
 player.gotoTrack(1);
 player.gotoTrack("audio/song1_alt.flac"); // can also goto track by path
 
-player.removeTrack(2); // removes third track
+player.removeTrack(2);
 player.removeTrack("audio/transition.wav"); // can also remove track by path
 player.removeAllTracks();
 ```
@@ -184,7 +185,8 @@ Options
   - loops the playlist
 - **playOnLoad**
   - default = false
-  - plays immediately when you open the page
+  - play immediately once first track is loaded
+  - *NOTE: user must have interacted with the page before we can autoplay (per browser policy)*
 - **startingTrack**
   - default: 0
   - either an array index into the tracks array, or the string "random" for a random index
@@ -201,14 +203,13 @@ Options
   - if you don't care about gapless playback, set useWebAudio to false for better performance
 - **mapKeys**
   - pressing specified key (case-insensitive) will trigger any Action function listed above.
-
+ 
 Example:
 
 ```js
 const player = new Gapless5("gapless5-player-id", {
   tracks: ["loop1.mp3", "loop2.mp3"],
   loop: true,
-  playOnLoad: true,
   mapKeys: {prev: "a", playpause: "s", stop: "d", next: "f"}
 });
 ```
