@@ -676,6 +676,8 @@ let initialized = false;
 const isMobileBrowser = window.mobilecheck();
 
 this.loop = ('loop' in options) && (options.loop);
+this.singleMode = ('singleMode' in options) && (options.singleMode);
+
 this.useWebAudio = ('useWebAudio' in options) ? options.useWebAudio : true;
 this.useHTML5Audio = ('useHTML5Audio' in options) ? options.useHTML5Audio : !isMobileBrowser;
 this.id = Math.floor((1 + Math.random()) * 0x10000);
@@ -879,7 +881,11 @@ this.onEndedCallback = function() {
   resetPosition();
   that.sources[dispIndex()].stop(true);
   if (that.loop || index() < numTracks() - 1) {
-    that.next(true);
+    if (that.singleMode) {
+      that.prev(true);
+    } else {
+      that.next(true);
+    }
     runCallback(that.onfinishedtrack);
   } else {
     runCallback(that.onfinishedtrack);
@@ -1115,49 +1121,63 @@ this.gotoTrack = function (pointOrPath, bForcePlay) {
     that.sources[oldIndex].stop(); // call this last
 
   }
-  enableButton('prev', that.loop || (newIndex > 0));
-  enableButton('next', that.loop || (newIndex < numTracks() - 1));
+  enableButton('prev', that.loop || (!that.singleMode && newIndex > 0));
+  enableButton('next', that.loop || (!that.singleMode && newIndex < numTracks() - 1));
 };
 
 this.prevtrack = function () {
   if (that.sources.length === 0) return;
+  let track = 0;
   if (index() > 0) {
-    that.gotoTrack(index() - 1);
-    runCallback(that.onprev);
+    track = index() - 1;
   } else if (that.loop) {
-    that.gotoTrack(numTracks() - 1);
-    runCallback(that.onprev);
+    track = numTracks() - 1;
+  } else {
+    return;
   }
+  that.gotoTrack(track);
+  runCallback(that.onprev);
 };
 
-this.prev = function () {
+this.prev = function (e) {
   if (that.sources.length === 0) return;
+  let wantsCallback = true;
+  let track = 0;
   if ( readyToRemake() ) {
     // jump to start of track that's in a new position
     // at the head of the re-made list.
-    that.gotoTrack(0);
+    wantsCallback = false
   } else if (that.sources[index()].getPosition() > 0) {
     // jump to start of track if we're not there
-    that.gotoTrack(index());
+    track = index();
+    wantsCallback = false;
+  } else if (that.singleMode && that.loop) {
+    track = index();
   } else if (index() > 0) {
-    that.gotoTrack(index() - 1);
-    runCallback(that.onprev);
+    track = index() - 1;
   } else if (that.loop) {
-    that.gotoTrack(numTracks() - 1);
+    track = numTracks() - 1;
+  } else {
+    return;
+  }
+  that.gotoTrack(track, e === true);
+  if (wantsCallback) {
     runCallback(that.onprev);
   }
 };
 
 this.next = function (e) {
   if (that.sources.length === 0) return;
-  const forcePlay = (e === true);
-  if (index() < numTracks() - 1) {
-    that.gotoTrack(index() + 1, forcePlay);
-    runCallback(that.onnext);
-  } else if (that.loop) {
-    that.gotoTrack(0, forcePlay);
-    runCallback(that.onnext);
+  let track = 0;
+  if (that.singleMode) {
+    track = index();
+  } else if (index() < numTracks() - 1) {
+    track = index() + 1;
+  } else if (!that.loop) {
+    return;
   }
+  that.gotoTrack(track, e === true);
+  runCallback(that.onnext);
 };
 
 this.play = function () {

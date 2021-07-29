@@ -182,7 +182,10 @@ Options
   - can be a single track as a string, an array, or a JSON object containing an array of JSON objects
 - **loop**
   - default = false
-  - loops the playlist
+  - loops after end of list/track
+- **singleMode**
+  - default = false
+  - plays/loops single track only
 - **playOnLoad**
   - default = false
   - play immediately once first track is loaded
