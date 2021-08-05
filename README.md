@@ -142,10 +142,10 @@ Actions (these can be mapped to keys via mapKeys):
 *These correspond to built-in UI buttons*
 - **prev()**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
 - **playpause()**: matches behavior of "play/pause" button
-- **toggleShuffle()**
+- **stop()**: matches behavior of "stop" button
+- **toggleShuffle()**:
   - switches between shuffled and un-shuffled
   - subsequent shuffles will be different each time
-- **stop()**: matches behavior of "stop" button
 - **next()**: matches behavior of "next" button
 
 *These do not correspond to built-in UI buttons*
@@ -153,6 +153,7 @@ Actions (these can be mapped to keys via mapKeys):
 - **cue()**: play from start
 - **play()**: non-togglable "play"
 - **pause()**: non-togglable "pause"
+- **shuffle()**: non-togglable shuffle, re-shuffles if previously shuffled
 - **removeAllTracks()**
   - clears entire playlist
 

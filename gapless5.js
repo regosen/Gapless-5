@@ -263,17 +263,19 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
     state = Gapless5State.Loading;
     if (parent.useWebAudio) {
       const onLoadWebAudio = function(data) {
-        context.decodeAudioData(data,
-          function(incomingBuffer) {
-            onLoadedWebAudio(incomingBuffer);
-          }
-        );
+        if (data) {
+          context.decodeAudioData(data,
+            function(incomingBuffer) {
+              onLoadedWebAudio(incomingBuffer);
+            }
+          );
+        }
       };
       if (inAudioPath.startsWith("blob:")) {
-        request = new FileReader();
-        request.onload = () => onLoadWebAudio(request.result);
         fetch(inAudioPath).then(r => {
           r.blob().then(blob => {
+            request = new FileReader();
+            request.onload = () => { if (request) onLoadWebAudio(request.result); };
             request.readAsArrayBuffer(blob);
           });
         });
@@ -281,7 +283,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
         request = new XMLHttpRequest();
         request.open('get', inAudioPath, true);
         request.responseType = 'arraybuffer';
-        request.onload = () => onLoadWebAudio(request.response);
+        request.onload = () => { if (request) onLoadWebAudio(request.response); };
         request.send();
       }
     }
@@ -512,9 +514,13 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   // Toggle shuffle mode or not, and prepare for rebasing the playlist
   // upon changing to the next available song. NOTE that each function here
   // changes flags, so the logic must exclude any logic if a revert occurs.
-  this.toggleShuffle = function() {
-    if ( remakeList ) 
+  this.toggleShuffle = function(forceReshuffle = false) {
+    if (forceReshuffle) {
+      return enableShuffle();
+    }
+    if ( remakeList ) {
       return revertShuffle();  
+    }
 
     return shuffleMode ? disableShuffle() : enableShuffle();
   }
@@ -699,7 +705,6 @@ this.loadingTrack = -1;    // What file to consume
 let inCallback = false;
 const that = this;
 let isPlayButton = true;
-let isShuffleActive = false;
 const keyMappings = {};
 
 // Callbacks
@@ -976,6 +981,9 @@ this.removeTrack = function (pointOrPath) {
   if (point < 0 || point >= that.sources.length) return;
 
   const curSource = that.sources[point];
+  if (!curSource) {
+    return;
+  }
   let wasPlaying = false;
 
   if (curSource.getState() === Gapless5State.Loading) {
@@ -1043,8 +1051,20 @@ this.isShuffled = function() {
   return that.trk.isShuffled();
 };
 
+// shuffles, re-shuffling if previously shuffled
+this.shuffle = function() {
+  if (!canShuffle()) return;
+
+  this.trk.toggleShuffle(true);
+
+  if (this.initialized) {
+    updateDisplay();
+  }
+};
+
+// toggles between shuffled and unshuffled
 this.toggleShuffle = function() {
-  if (!isShuffleActive) return;
+  if (!canShuffle()) return;
 
   that.trk.toggleShuffle();
 
@@ -1257,6 +1277,12 @@ const enableShuffleButton = function (mode, bEnable) {
   enableButton('shuffle', bEnable);
 };
 
+const canShuffle = function () {
+    // Must have at least 3 tracks in order for shuffle button to work
+    // If so, permanently turn on the shuffle toggle
+    return (that.trk.current.length > 2);
+};
+
 const updateDisplay = function () {
   const { id, trk, loop} = that;
   if (numTracks() === 0) {
@@ -1285,12 +1311,7 @@ const updateDisplay = function () {
       }
     }
 
-    // Must have at least 3 tracks in order for shuffle button to work
-    // If so, permanently turn on the shuffle toggle
-    if (that.trk.current.length > 2) {
-      isShuffleActive = true;
-    }
-    enableShuffleButton(that.trk.isShuffled() ? 'unshuffle' : 'shuffle', isShuffleActive);
+    enableShuffleButton(that.trk.isShuffled() ? 'unshuffle' : 'shuffle', canShuffle());
     that.sources[index()].uiDirty = false;
   }
 };
