@@ -143,8 +143,7 @@ Actions (these can be mapped to keys via mapKeys):
 - **prev()**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
 - **playpause()**: matches behavior of "play/pause" button
 - **stop()**: matches behavior of "stop" button
-- **toggleShuffle()**:
-  - switches between shuffled and un-shuffled
+- **toggleShuffle()**: switches between shuffled and un-shuffled
   - subsequent shuffles will be different each time
 - **next()**: matches behavior of "next" button
 
@@ -153,9 +152,9 @@ Actions (these can be mapped to keys via mapKeys):
 - **cue()**: play from start
 - **play()**: non-togglable "play"
 - **pause()**: non-togglable "pause"
-- **shuffle()**: non-togglable shuffle, re-shuffles if previously shuffled
-- **removeAllTracks()**
-  - clears entire playlist
+- **shuffle(preserveCurrent = true)**: non-togglable shuffle, re-shuffles if previously shuffled
+  - if **preserveCurrent** is false, it will shuffle all tracks (without preserving current track)
+- **removeAllTracks()**: clears entire playlist
 
 Example:
 ```js

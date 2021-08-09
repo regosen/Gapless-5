@@ -381,16 +381,19 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
       swapElements(outputList, k, n);
     }
 
-    // Reorder playlist array so that the chosen index comes first, 
-    // and gotoTrack isn't needed after Player object is remade.
-    outputList = reorder(outputList, index);
+    if (index !== -1) {
+      // Reorder playlist array so that the chosen index comes first, 
+      // and gotoTrack isn't needed after Player object is remade.
+      outputList = reorder(outputList, index);
 
-    // After shuffling, move the current-playing track to the 0th
-    // place in the index. So regardless of the next move, this track
-    // will be appropriately far away in the list
-    const swapIndex = this.lastIndex(index, this.current, outputList);
-    if ( swapIndex !== 0 )
-      swapElements(outputList, swapIndex, 0);
+      // After shuffling, move the current-playing track to the 0th
+      // place in the index. So regardless of the next move, this track
+      // will be appropriately far away in the list
+      const swapIndex = this.lastIndex(index, this.current, outputList);
+      if ( swapIndex !== 0 ) {
+        swapElements(outputList, swapIndex, 0);
+      }
+    }
 
     // If the list of indexes in the new list is the same as the last,
     // do a reshuffle. TOWRITE
@@ -409,12 +412,12 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
   // Going into shuffle mode. Tell the Player to remake the list
   // as soon as a new track is reached or chosen. 
-  const enableShuffle = () => {
+  const enableShuffle = (preserveCurrent = true) => {
     // Save old state in case we need to revert
     this.previous = clone(this.current);
     this.previousItem = this.currentItem;
 
-    this.current = shuffle(this.original, this.currentItem);
+    this.current = shuffle(this.original, preserveCurrent ? this.currentItem : -1);
     this.currentItem = 0;
   
     this.shuffleMode = true;
@@ -505,15 +508,15 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   // Toggle shuffle mode or not, and prepare for rebasing the playlist
   // upon changing to the next available song. NOTE that each function here
   // changes flags, so the logic must exclude any logic if a revert occurs.
-  this.toggleShuffle = (forceReshuffle = false) => {
+  this.toggleShuffle = (forceReshuffle = false, preserveCurrent = true) => {
     if (forceReshuffle) {
-      return enableShuffle();
+      return enableShuffle(preserveCurrent);
     }
     if ( this.remakeList ) {
       return revertShuffle();  
     }
 
-    return this.shuffleMode ? disableShuffle() : enableShuffle();
+    return this.shuffleMode ? disableShuffle() : enableShuffle(preserveCurrent);
   }
 
   // After toggling the list, the next/prev track action must trigger
@@ -689,7 +692,6 @@ this.loadQueue = [];    // List of files to consume
 this.loadingTrack = -1;    // What file to consume
 
 // Callback and Execution logic
-this.inCallback = false;
 this.isPlayButton = true;
 this.keyMappings = {};
 
@@ -785,11 +787,7 @@ const getTotalPositionText = () => {
 };
 
 const runCallback = (cb) => {
-  if (cb) {
-    this.inCallback = true;
-    cb();
-    this.inCallback = false;
-  }
+  if (cb) cb();
 };
 
 // after shuffle mode toggle and track change, re-grab the tracklist
@@ -1034,10 +1032,10 @@ this.removeAllTracks = (flushPlaylist = true) => {
 this.isShuffled = () => this.trk.isShuffled();
 
 // shuffles, re-shuffling if previously shuffled
-this.shuffle = () => {
+this.shuffle = (preserveCurrent = true) => {
   if (!canShuffle()) return;
 
-  this.trk.toggleShuffle(true);
+  this.trk.toggleShuffle(true, preserveCurrent);
 
   if (this.initialized) {
     updateDisplay();
@@ -1058,7 +1056,6 @@ this.toggleShuffle = () => {
 this.shuffleToggle = this.toggleShuffle;
 
 this.gotoTrack = (pointOrPath, bForcePlay) => {
-  if (this.inCallback) return;
   const newIndex = (typeof pointOrPath === 'string') ?
     this.findTrack(pointOrPath) :
     pointOrPath;
