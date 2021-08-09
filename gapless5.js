@@ -120,8 +120,10 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
       playAudioFile(true);
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && (state === Gapless5State.Play)) {
       //console.log("switching from HTML5 to WebAudio");
-      position = (new Date().getTime()) - startTime;
-      if (!window.hasWebKit) position -= tickMS;
+      position = new Date().getTime() - startTime;
+      if (!window.hasWebKit) {
+        position = position - this.tickMS;
+      }
       this.setPosition(position, true);
     }
     if (state === Gapless5State.Loading) {
