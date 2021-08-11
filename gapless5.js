@@ -3,23 +3,17 @@
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
 // (requires jQuery 1.x or greater)
 //
-// Version 0.6.5
+// Version 0.7.0
 // Copyright 2014 Rego Sen
 //
 //////////////
 
-// PROBLEM: We have 2 API's for playing audio through the web, and both of them have problems:
+// PROBLEM: We have 2 APIs for playing audio through the web, and both of them have problems:
 //  - HTML5 Audio: the last chunk of audio gets cut off, making gapless transitions impossible
 //  - WebAudio: can't play a file until it's fully loaded
 // SOLUTION: Use both!
 // If WebAudio hasn't loaded yet, start playback with HTML5 Audio.  Then seamlessly switch to WebAudio once it's loaded.
 
-// NOTE: Mobile browsers don't fully support Audio objects in js, so we're stuck with only WebAudio in that case.
-window.mobilecheck = () => {
-  // taken from http://detectmobilebrowsers.com
-  let check = false;
-  (function(a){if(/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od|ad)|iris|kindle|lge |maemo|midp|mmp|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows (ce|phone)|xda|xiino/i.test(a)||/1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0,4)))check = true})(navigator.userAgent||navigator.vendor||window.opera);
-  return check; }
 window.hasWebKit = ('webkitAudioContext' in window) && !('chrome' in window);
 
 // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
@@ -107,6 +101,10 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
     startTime = (new Date().getTime()) - position;
   }
 
+  const onError = () => {
+    this.cancelRequest(true);
+  }
+
   const onLoadedWebAudio = (inBuffer) => {
     if (!request) return;
     request = null;
@@ -173,7 +171,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
   const playAudioFile = () => {
     if (state === Gapless5State.Play) return;
     position = Math.max(position, 0);
-    if (position >= endpos) position = 0;
+    if (!Number.isFinite(position) || position >= endpos) position = 0;
 
     const offsetSec = position / 1000;
     startTime = (new Date().getTime()) - position;
@@ -271,6 +269,9 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
             request = new FileReader();
             request.onload = () => { if (request) onLoadWebAudio(request.result); };
             request.readAsArrayBuffer(blob);
+            if (request.error) {
+              onError();
+            }
           });
         });
       } else {
@@ -278,6 +279,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
         request.open('get', inAudioPath, true);
         request.responseType = 'arraybuffer';
         request.onload = () => { if (request) onLoadWebAudio(request.response); };
+        request.onerror = () => { if (request) onError(); };
         request.send();
       }
     }
@@ -288,6 +290,7 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
         audioObj.addEventListener('ended', onEnded, false);
         audioObj.addEventListener('play', onPlayEvent, false);
+        audioObj.addEventListener('error', onError, false);
         // TODO: switch to audio.networkState, now that it's universally supported
         return audioObj;
       }
@@ -297,11 +300,13 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
           r.blob().then(blob => {
             audio = getHtml5Audio();
             audio.srcObject = blob;
+            audio.load();
           });
         });
       } else {
         audio = getHtml5Audio();
         audio.src = inAudioPath;
+        audio.load();
       }
     }
     // cancel if url doesn't exist, but don't download again
@@ -650,7 +655,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 //     tracks: path of file (or array of music file paths)
 //     playOnLoad (default = false): play immediately
 //     useWebAudio (default = true)
-//     useHTML5Audio (default = false on mobile browsers, true otherwise)
+//     useHTML5Audio (default = true)
 //     startingTrack (number or "random", default = 0)
 //     shuffle (true or false): start the jukebox in shuffle mode
 //     shuffleButton (default = true): whether shuffle button appears or not in UI
@@ -671,13 +676,12 @@ this.isScrubbing = false;
 
 // System
 this.initialized = false;
-const isMobileBrowser = window.mobilecheck();
 
 this.loop = ('loop' in options) && (options.loop);
 this.singleMode = ('singleMode' in options) && (options.singleMode);
 
 this.useWebAudio = ('useWebAudio' in options) ? options.useWebAudio : true;
-this.useHTML5Audio = ('useHTML5Audio' in options) ? options.useHTML5Audio : !isMobileBrowser;
+this.useHTML5Audio = ('useHTML5Audio' in options) ? options.useHTML5Audio : true;
 this.id = Math.floor((1 + Math.random()) * 0x10000);
 
 // WebAudio API
@@ -1328,10 +1332,6 @@ const createGUI = (playerHandle) => {
     return playerWrapper('This player is not supported by your browser.');
   }
 
-  const volumeHtml = isMobileBrowser ? 
-    '<button class="g5button volumedisabled" />' :
-    `<input type="range" class="volume" name="gain" min="0" max="${scrubSize}" value="${scrubSize}" oninput="${playerHandle}.setGain(this.value);" />`;
-  
   return playerWrapper(`
     <div class="g5transport">
       <div class="g5meter"><span id="loaded-span${id}" style="width: 0%"></span></div>
@@ -1346,7 +1346,7 @@ const createGUI = (playerHandle) => {
       <button class="g5button g5stop" id="stop${id}"/>
       <button class="g5button g5shuffle" id="shuffle${id}"/>
       <button class="g5button g5next" id="next${id}"/>
-      ${volumeHtml}
+      <input type="range" class="volume" name="gain" min="0" max="${scrubSize}" value="${scrubSize}" oninput="${playerHandle}.setGain(this.value);" />
     </div>
   `);
 };
@@ -1361,12 +1361,8 @@ const Init = (guiId, options) => {
     guiElement.html(createGUI(playerHandle));
 
     // css adjustments
-    if (!isMobileBrowser && navigator.userAgent.indexOf('Mac OS X') === -1) {
+    if (navigator.userAgent.indexOf('macOS') === -1) {
       $("#transportbar" + id).addClass("g5meter-1pxup");
-      $("#g5buttons" + id).addClass("g5buttons-1pxup");
-    }
-    if (isMobileBrowser) {
-      $("#transportbar" + id).addClass("g5transport-1pxup");
     }
 
     // set up button mappings

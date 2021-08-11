@@ -11,8 +11,6 @@ A gapless JavaScript/CSS audio player for HTML5
 **SOLUTION**: Use both!
 
 - If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once loaded.
-- *NOTE: Most mobile browsers don't fully support HTML5 Audio objects in js, so we're stuck with only WebAudio in that case.*
-
 
 Getting Started
 -----
@@ -200,7 +198,7 @@ Options
   - default = false
   - enables shuffle mode immediately after playlist load
 - **useHTML5Audio**
-  - default = false on mobile browsers, true otherwise
+  - default = true
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
