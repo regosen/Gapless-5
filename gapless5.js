@@ -331,13 +331,12 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   this.current = [];    // Working playlist
   this.previousItem = 0;    // To last list and last index
 
-  this.startingTrack = inStartingTrack;
-  if ( inStartingTrack === null ) {
-    this.startingTrack = 0;
+  if (inStartingTrack === "random") {
+    this.startingTrack = Math.floor(Math.random() * this.original.length);
+  } else {
+    this.startingTrack = inStartingTrack || 0;
   }
-  if ( inStartingTrack === "random" ) {
-    this.startingTrack = Math.floor(Math.random()*this.original.length);
-  }  
+
   this.currentItem = this.startingTrack;
   this.trackNumber = this.startingTrack;  // Displayed track index in GUI
 
@@ -361,26 +360,17 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
     someList[destIndex] = tmp;
   }
 
-  // Add _index values to each member of the array, so we know what the
-  // original track was.
-  const addIndices = (inputList) => {
-    const temp = inputList.slice();
-    for ( let n = 0; n < temp.length ; n++)
-      temp[n]._index = n + 1;
-    return temp;
-  }
-
   // Reorder an array so that the outputList starts at the desiredIndex
   // of the inputList.
-  const reorder = (inputList, desiredIndex) => {
+  const reorderedCopy = (inputList, desiredIndex) => {
     const tempList = clone(inputList);
     return tempList.concat(tempList.splice(0, desiredIndex));
   }
 
   // Shuffle a playlist, making sure that the next track in the list
   // won't be the same as the current track being played.
-  const shuffle = (inputList, index) => {
-    let outputList = inputList.slice();
+  const shuffledCopy = (inputList, index) => {
+    let outputList = clone(inputList);
 
     // Shuffle the list
     for ( let n = 0; n < outputList.length - 1; n++ ) {
@@ -391,7 +381,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
     if (index !== -1) {
       // Reorder playlist array so that the chosen index comes first, 
       // and gotoTrack isn't needed after Player object is remade.
-      outputList = reorder(outputList, index);
+      outputList = reorderedCopy(outputList, index);
 
       // After shuffling, move the current-playing track to the 0th
       // place in the index. So regardless of the next move, this track
@@ -424,7 +414,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
     this.previous = clone(this.current);
     this.previousItem = this.currentItem;
 
-    this.current = shuffle(this.original, preserveCurrent ? this.currentItem : -1);
+    this.current = shuffledCopy(this.original, preserveCurrent ? this.currentItem : -1);
     this.currentItem = 0;
   
     this.shuffleMode = true;
@@ -441,7 +431,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
     // Find where current song is in original playlist, and make that
     // the head of the new unshuffled playlist
     const point = this.lastIndex(this.currentItem, this.current, this.original);
-    this.current = reorder(this.original, point);
+    this.current = reorderedCopy(this.original, point);
 
     this.currentItem = 0;  // Position to head of list
     this.shuffleMode = false;
@@ -530,9 +520,9 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
   // the list getting remade, with the next desired track as the head.
   // This function will remake the list as needed.
   this.rebasePlayList = (index) => {
-    if ( this.shuffleMode )
-      this.current = reorder(this.current, index);
-
+    if ( this.shuffleMode ) {
+      this.current = reorderedCopy(this.current, index);
+    }
     this.currentItem = 0;    // Position to head of the list
     this.remakeList = false;    // Rebasing is finished.
   }
@@ -629,7 +619,9 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
   if (this.original.length > 0) {
     // Add _index parameter to the JSON array of tracks
-    this.original = addIndices(this.original);
+    for ( let n = 0; n < this.original.length; n++) {
+      this.original[n]._index = n + 1;
+    }
 
     // Set displayed song number to whatever the current-playing index is
     this.trackNumber = this.original[this.startingTrack]._index;
@@ -641,7 +633,7 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
       enableShuffle();
     } else {
       // On object creation, make current list use startingTrack as head of list
-      this.current = reorder(this.original, this.startingTrack);
+      this.current = reorderedCopy(this.original, this.startingTrack);
     }
   } else {
     this.current = [];
