@@ -959,6 +959,7 @@ this.removeTrack = (pointOrPath) => {
     pointOrPath;
 
   if (point < 0 || point >= this.sources.length) return;
+  const deletedPlaying = point === this.trk.currentItem;
 
   const curSource = this.sources[point];
   if (!curSource) {
@@ -978,6 +979,7 @@ this.removeTrack = (pointOrPath) => {
     const entry = this.loadQueue[i];
     if (entry[0] === point) {
       removeIndex = i;
+      break;
     } else if (entry[0] > point) {
       entry[0] -= 1;
     }
@@ -992,10 +994,11 @@ this.removeTrack = (pointOrPath) => {
   if (this.loadingTrack === point) {
     this.dequeueNextLoad();
   }
-  if ( point === this.trk.currentItem ) {
+  if ( deletedPlaying ) {
     this.next();  // Don't stop after a delete
-    if ( wasPlaying )
+    if ( wasPlaying ) {
       this.play();
+    }
   }
 
   if (this.initialized) {
