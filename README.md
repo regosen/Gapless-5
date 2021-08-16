@@ -56,7 +56,6 @@ Setup
 -----
 
 1. **HTML head**: reference the following:
-  - jQuery (1.0 or greater, must be referenced before Gapless5.js)
   - Gapless5.js
   - Gapless5.css
 2. **HTML body**
@@ -74,7 +73,6 @@ Example:
 ```html
 <head>
   <link href="gapless5.css" rel="stylesheet" type="text/css" />
-  <script src="//code.jquery.com/jquery-1.10.2.min.js" language="JavaScript" type="text/javascript"></script>
   <script src="gapless5.js" language="JavaScript" type="text/javascript"></script>
 </head>
 <body>

@@ -1,9 +1,8 @@
 ////////////
 //
 // Gapless 5: Gapless JavaScript/CSS audio player for HTML5
-// (requires jQuery 1.x or greater)
 //
-// Version 0.7.0
+// Version 0.8.0
 // Copyright 2014 Rego Sen
 //
 //////////////
@@ -309,14 +308,6 @@ function Gapless5Source(parentPlayer, inContext, inOutputNode) {
         audio.load();
       }
     }
-    // cancel if url doesn't exist, but don't download again
-    const { cancelRequest } = this;
-    $.ajax({
-      url: inAudioPath,
-      type: "HEAD",
-    }).fail(() => { 
-      cancelRequest(true);
-    });
   }
 }
 
@@ -575,15 +566,12 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
     // Update the previous list too. If readyToRemake, that means
     // the last list is the opposite shuffleMode of the current.
-    if ( remakeList )
-      addFile(index, file, this.previous, !shuffleMode);
-    else
-      addFile(index, file, this.previous, shuffleMode);
+    addFile(index, file, this.previous, remakeList ? !shuffleMode : shuffleMode);
 
     // Shift currentItem if the insert file is earlier in the list
-    if ( index <= this.currentItem || this.currentItem === -1 )
+    if ( index <= this.currentItem || this.currentItem === -1 ) {
       this.currentItem = this.currentItem + 1;
-
+    }
     this.trackNumber = current[this.currentItem]._index;
   }
 
@@ -604,9 +592,10 @@ const Gapless5FileList = function(inPlayList, inStartingTrack, inShuffle) {
 
     // Stay at the same song index, unless currentItem is after the
     // removed index, or was removed at the edge of the list 
-    if (( index < this.currentItem ) || ( index >= this.previous.length - 1))
-      if ( this.currentItem > 0 )
-        this.currentItem = this.currentItem - 1;
+    if (this.currentItem > 0 && 
+      (( index < this.currentItem ) || ( index >= this.previous.length - 1))) {
+      this.currentItem = this.currentItem - 1;
+    }
 
     this.trackNumber = current[this.currentItem]._index;
   }
@@ -662,6 +651,7 @@ const statusText = {
   loading:  "loading\u2026",
   error: "error!",
 };
+this.hasGUI = false;
 this.scrubWidth = 0;
 this.scrubPosition = 0;
 this.isScrubbing = false;
@@ -805,6 +795,8 @@ const refreshTracks = (newIndex) => {
   this.initialized = true;
 };
 
+const getElement = (prefix) => document.getElementById(`${prefix}${this.id}`);
+
 // Determines how and when the next track should be loaded.
 this.dequeueNextLoad = () => {
   if (this.loadQueue.length > 0) {
@@ -835,9 +827,10 @@ this.mapKeys = (options) => {
       console.error(`Gapless5 mapKeys() error: no function named '${key}'`);
     }
   }
-  $(window).keydown((e) => {
-    if (e.keyCode in this.keyMappings) {
-      this.keyMappings[e.keyCode](e);
+  document.addEventListener('keydown', (e) => {
+    const keyCode = e.key.charCodeAt(0);
+    if (keyCode in this.keyMappings) {
+      this.keyMappings[keyCode](e);
     }
   });
 };
@@ -848,19 +841,26 @@ this.setGain = (uiPos) => {
   this.sources[dispIndex()].setGain(normalized);
 };
 
-this.scrub = (uiPos) => {
+this.scrub = (uiPos, updateTransport = false) => {
   this.scrubPosition = getSoundPos(uiPos);
-  $("#currentPosition" + this.id).html(getFormattedTime(this.scrubPosition));
-  enableButton('prev', this.loop || (index() !== 0 || this.scrubPosition !== 0));
+  if (this.hasGUI) {
+    getElement("currentPosition").innerText = getFormattedTime(this.scrubPosition);
+    enableButton('prev', this.loop || (index() !== 0 || this.scrubPosition !== 0));
+    if (updateTransport) {
+      getElement("transportbar").value = uiPos;
+    }
+  }
   if (!this.isScrubbing) {
     this.sources[dispIndex()].setPosition(this.scrubPosition, true);
   }
 };
 
 this.setLoadedSpan = (percent) => {
-  $("#loaded-span" + this.id).width(percent * this.scrubWidth);
-  if (percent === 1) {
-    $("#totalPosition" + this.id).html(getTotalPositionText());
+  if (this.hasGUI) {
+    getElement("loaded-span").style.width = percent * this.scrubWidth;
+    if (percent === 1) {
+      getElement("totalPosition").innerText = getTotalPositionText();
+    }
   }
 };
 
@@ -1227,30 +1227,27 @@ this.isPlaying = () => this.sources[dispIndex()].inPlayState();
 // INIT AND UI
 
 const resetPosition = (forceScrub) => {
-  if (!forceScrub && this.sources[dispIndex()].getPosition() === 0) return; // nothing else to do
-  this.scrub(0);
-  $("#transportbar" + this.id).val(0);
+  if (forceScrub || this.sources[dispIndex()].getPosition() > 0) {
+    this.scrub(0, true);
+  }
 };
 
 const enableButton = (buttonId, bEnable) => {
-  if (bEnable) {
-    $("#" + buttonId + this.id).removeClass('disabled');
-    $("#" + buttonId + this.id).addClass('enabled');
-  } else {
-    $("#" + buttonId + this.id).removeClass('enabled');
-    $("#" + buttonId + this.id).addClass('disabled');
+  if (this.hasGUI) {
+    const buttonClasses = getElement(buttonId).classList;
+    buttonClasses.remove(bEnable ? 'disabled' : 'enabled');
+    buttonClasses.add(bEnable ? 'enabled' : 'disabled');
   }
 };
 
 const enableShuffleButton = (mode, bEnable) => {
-  const isShuffle = mode === "shuffle";
-  const oldButtonClass = isShuffle ? "g5unshuffle" : "g5shuffle";
-  const newButtonClass = isShuffle ? "g5shuffle" : "g5unshuffle";
-
-  $("#" + "shuffle" + this.id).removeClass(oldButtonClass);
-  $("#" + "shuffle" + this.id).addClass(newButtonClass);
-
-  enableButton('shuffle', bEnable);
+  const elem = getElement('shuffle');
+  if (elem) {
+    const isShuffle = mode === "shuffle";
+    elem.classList.remove(isShuffle ? 'g5unshuffle' : 'g5shuffle');
+    elem.classList.add(isShuffle ? 'g5shuffle' : 'g5unshuffle');
+    enableButton('shuffle', bEnable);
+  }
 };
 
 // Must have at least 3 tracks in order for shuffle button to work
@@ -1258,18 +1255,21 @@ const enableShuffleButton = (mode, bEnable) => {
 const canShuffle = () => this.trk.current.length > 2;
 
 const updateDisplay = () => {
-  const { id, trk, loop} = this;
+  const { trk, loop, hasGUI } = this;
+  if (!hasGUI) {
+    return;
+  }
   if (numTracks() === 0) {
-    $("#trackIndex" + id).html(0);
-    $("#tracks" + id).html(0);
-    $("#totalPosition" + id).html("00:00.00");
+    getElement("trackIndex").innerText = '0';
+    getElement("tracks").innerText = '0';
+    getElement("totalPosition").innerText = "00:00.00";
     enableButton('prev', false);
     enableShuffleButton('shuffle', false);
     enableButton('next', false);
   } else {
-    $("#trackIndex" + id).html(trk.trackNumber);
-    $("#tracks" + id).html(trk.current.length);
-    $("#totalPosition" + id).html(getTotalPositionText());
+    getElement("trackIndex").innerText = trk.trackNumber;
+    getElement("tracks").innerText = trk.current.length;
+    getElement("totalPosition").innerText = getTotalPositionText();
     enableButton('prev', loop || index() > 0 || this.sources[index()].getPosition() > 0);
     enableButton('next', loop || index() < numTracks() - 1);
 
@@ -1303,8 +1303,10 @@ const Tick = () => {
         // playing track, update bar position
         soundPos = this.scrubPosition;
       }
-      $("#transportbar" + this.id).val(getUIPos());
-      $("#currentPosition" + this.id).html(getFormattedTime(soundPos));
+      if (this.hasGUI) {
+        getElement("transportbar").value = getUIPos();
+        getElement("currentPosition").innerText = getFormattedTime(soundPos);
+      }
     }
   }
   window.setTimeout(() => { Tick(); }, tickMS);
@@ -1313,12 +1315,12 @@ const Tick = () => {
 const createGUI = (playerHandle) => {
   const { id } = this;
   const playerWrapper = (player_html) => `
-    <div class="g5position">
+    <div class="g5position" id="g5position${id}">
       <span id="currentPosition${id}">00:00.00</span> |
       <span id="totalPosition${id}">${statusText.loading}</span> |
       <span id="trackIndex${id}">1</span>/<span id="tracks${id}">1</span>
     </div>
-    <div class="g5inside">
+    <div class="g5inside" id="g5inside${id}">
       ${player_html}
     </div>
   `;
@@ -1329,43 +1331,50 @@ const createGUI = (playerHandle) => {
 
   return playerWrapper(`
     <div class="g5transport">
-      <div class="g5meter"><span id="loaded-span${id}" style="width: 0%"></span></div>
+      <div class="g5meter" id="g5meter${id}"><span id="loaded-span${id}" style="width: 0%"></span></div>
         <input type="range" class="transportbar" name="transportbar" id="transportbar${id}"
         min="0" max="${scrubSize}" value="0" oninput="${playerHandle}.scrub(this.value);"
         onmousedown="${playerHandle}.onStartedScrubbing();" ontouchstart="${playerHandle}.onStartedScrubbing();"
         onmouseup="${playerHandle}.onFinishedScrubbing();" ontouchend="${playerHandle}.onFinishedScrubbing();" />
       </div>
     <div class="g5buttons" id="g5buttons${id}">
-      <button class="g5button g5prev" id="prev${id}"/>
-      <button class="g5button g5play" id="play${id}"/>
-      <button class="g5button g5stop" id="stop${id}"/>
-      <button class="g5button g5shuffle" id="shuffle${id}"/>
-      <button class="g5button g5next" id="next${id}"/>
+      <button class="g5button g5prev" id="prev${id}"></button>
+      <button class="g5button g5play" id="play${id}"></button>
+      <button class="g5button g5stop" id="stop${id}"></button>
+      <button class="g5button g5shuffle" id="shuffle${id}"></button>
+      <button class="g5button g5next" id="next${id}"></button>
       <input type="range" class="volume" name="gain" min="0" max="${scrubSize}" value="${scrubSize}" oninput="${playerHandle}.setGain(this.value);" />
     </div>
   `);
 };
 
 const Init = (guiId, options) => {
-  const guiElement = guiId ? $("#" + guiId) : [];
+  const guiElement = guiId ? document.getElementById(guiId) : null;
   const { id } = this;
   gapless5Players[id] = this;
 
-  if (guiElement.length > 0) {
-    const playerHandle = `gapless5Players[${id}]`;
-    guiElement.html(createGUI(playerHandle));
+  if (guiElement) {
+    this.hasGUI = true;
+    guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players[${id}]`));
 
     // css adjustments
     if (navigator.userAgent.indexOf('macOS') === -1) {
-      $("#transportbar" + id).addClass("g5meter-1pxup");
+      getElement("transportbar").classList.add("g5meter-1pxup");
     }
 
+    const onMouseDown = (elemId, cb) => {
+      const elem = getElement(elemId);
+      if (elem) {
+        elem.addEventListener("mousedown", cb);
+      }
+    };
+
     // set up button mappings
-    $('#prev' + id)[0].addEventListener("mousedown", gapless5Players[id].prev);
-    $('#play' + id)[0].addEventListener("mousedown", gapless5Players[id].playpause);
-    $('#stop' + id)[0].addEventListener("mousedown", gapless5Players[id].stop);
-    $('#shuffle' + id)[0].addEventListener("mousedown", gapless5Players[id].toggleShuffle);
-    $('#next' + id)[0].addEventListener("mousedown", gapless5Players[id].next);
+    onMouseDown('prev', gapless5Players[id].prev);
+    onMouseDown('play', gapless5Players[id].playpause);
+    onMouseDown('stop', gapless5Players[id].stop);
+    onMouseDown('shuffle', gapless5Players[id].toggleShuffle);
+    onMouseDown('next', gapless5Players[id].next);
 
     enableButton('play', true);
     enableButton('stop', true);
@@ -1375,13 +1384,13 @@ const Init = (guiId, options) => {
       // Style items per earlier Gapless versions
       const transSize = "111px";
       const playSize = "115px";
-      $( "input[type='range'].transportbar" ).css("width", transSize);
-      $( ".g5meter" ).css("width", transSize);
-      $( ".g5position" ).css("width", playSize);
-      $( ".g5inside" ).css("width", playSize);
-      $( "#shuffle" + id).remove();
+      getElement("transportbar").style.width = transSize;
+      getElement("g5meter").style.width = transSize;
+      getElement("g5position").style.width = playSize;
+      getElement("g5inside").style.width = playSize;
+      getElement("shuffle").remove();
     }
-    this.scrubWidth = $("#transportbar" + id).width();
+    this.scrubWidth = getElement("transportbar").style.width;
   }
 
   if (typeof Audio === "undefined") {
@@ -1447,5 +1456,5 @@ const Init = (guiId, options) => {
   Tick();
 };
 
-$(document).ready(Init(elem_id, options));
+Init(elem_id, options);
 };
