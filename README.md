@@ -56,18 +56,18 @@ Setup
 -----
 
 1. **HTML head**: reference the following:
-  - Gapless5.js
-  - Gapless5.css
+  - `Gapless5.js`
+  - _(Optional: if using built-in UI)_ `Gapless5.css`
 2. **HTML body**
-  - (Optional): if you want the built-in UI, create a `<div>` or `<span>` element with a particular id.
-3. **JavaScript**
-  - create a `Gapless5` object, with the above id and options if desired.
-    - id can be omitted or an empty string if you don't want the built-in UI
-  - add tracks using addTrack() or via options (see example below)
-  - optional stuff:
-    - manipulate tracklist with insertTrack(), replaceTrack(), removeTrack(), and removeAllTracks() (see example)
-    - register callbacks (see below)
-    - link keys to actions using mapKeys() or via options (see below)
+  - _(Optional: if using built-in UI)_ create a `<div>` or `<span>` element where you want the player to appear.  Give it a particular id.
+3. **JavaScript** (examples and full reference below)
+  - Create a `Gapless5` object, with the above id and options if desired.
+    - id can be omitted or an empty string if you don't want the built-in UI.
+  - Add tracks via options in constructor or `addTrack()`
+  - Optional stuff:
+    - Manipulate tracklist with `insertTrack()`, `removeTrack()`, and more.
+    - Register your own callbacks.
+    - Connect key presses to actions using `mapKeys()` or options in constructor.
 
 Example:
 ```html
@@ -86,7 +86,7 @@ Example:
     player.addTrack("https://my-audio-site.org/song2.m4a");
 
     // You can also add tracks from the file loader like this:
-    const files = Array.from($(":file")[0].files);
+    const files = document.getElementById("my-file-input").files;
     files.forEach(file => {
       player.addTrack(URL.createObjectURL(file)); // this creates a "blob://" URL
     });
@@ -94,7 +94,7 @@ Example:
 
   --></script>
   <form>
-    <input type="file" accept="audio/*">
+    <input type="file" id="my-file-input" accept="audio/*">
   </form>
 </body>
 ```
