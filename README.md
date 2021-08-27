@@ -182,6 +182,9 @@ Options
 - **singleMode**
   - default = false
   - plays/loops single track only
+- **exclusive**
+  - default = false
+  - stops other Gapless5 players when this one is playing
 - **playOnLoad**
   - default = false
   - play immediately once first track is loaded
@@ -221,6 +224,7 @@ Callbacks
 - onpause
 - onstop
 - onnext
+- onload
 - onerror
 - onfinishedtrack
 - onfinishedall
