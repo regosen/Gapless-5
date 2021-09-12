@@ -413,7 +413,7 @@ function Gapless5FileList(inShuffle) {
       this.sources[oldSourceIndex].cancelRequest();
     }
 
-    resetPosition(true); // make sure this comes after currentIndex has been updated
+    resetPosition(true);
     if (this.sources[newSourceIndex].state === Gapless5State.None) {
       this.sources[newSourceIndex].load();
     }
@@ -421,7 +421,7 @@ function Gapless5FileList(inShuffle) {
     if ((forcePlay) || this.sources[oldSourceIndex].isPlayActive()) {
       this.sources[newSourceIndex].play();
     }
-    this.sources[oldSourceIndex].stop(); // call this last
+    this.sources[oldSourceIndex].stop();
 
     return this.trackNumber;
   };
@@ -542,8 +542,6 @@ function Gapless5FileList(inShuffle) {
   };
 
   // Add a new song into the FileList object.
-  // TODO: this should take objects, not files, as input
-  //   Consider rewriting deshuffle to rely entirely on index vals
   this.add = (index, audioPath, player) => {
     this.sources.splice(index, 0, new Gapless5Source(player, audioPath));
 
