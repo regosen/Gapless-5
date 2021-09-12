@@ -205,7 +205,10 @@ Options
   - if you don't care about gapless playback, set useWebAudio to false for better performance
 - **mapKeys**
   - pressing specified key (case-insensitive) will trigger any Action function listed above.
- 
+- **logLevel**
+  - minimum logging level (default = `LogLevel.Info`)
+  - set this to `LogLevel.Debug` for more verbose logging
+
 Example:
 
 ```js
