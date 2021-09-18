@@ -12,14 +12,6 @@ A gapless JavaScript/CSS audio player for HTML5
 
 - If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once loaded.
 
-Getting Started
------
-Gapless 5 is a registered bower package, so installation is as simple as:
-```shell
- $ bower install gapless5 --save
-```
-
-
 Demos
 -----
 
@@ -52,14 +44,22 @@ Browser Support
 
 *NOTE for Boostrap users: Bootstrap's css will mess up the player's look.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
-Setup
+Getting Started
 -----
 
-1. **HTML head**: reference the following:
-  - `Gapless5.js`
-  - _(Optional: if using built-in UI)_ `Gapless5.css`
+1. Install Gapless-5, either through npm or by copying files directly.
+
+    A. Using [npm](https://www.npmjs.com/package/@regosen/gapless-5):
+    ```shell
+     $ npm install @regosen/gapless-5
+    ```
+    B. Directly copying and referencing the following from your **HTML head**:
+      - `Gapless5.js`
+      - _(Optional: if using built-in UI)_ `Gapless5.css`
+
 2. **HTML body**
   - _(Optional: if using built-in UI)_ create a `<div>` or `<span>` element where you want the player to appear.  Give it a particular id.
+
 3. **JavaScript** (examples and full reference below)
   - Create a `Gapless5` object, with the above id and options if desired.
     - id can be omitted or an empty string if you don't want the built-in UI.
@@ -69,7 +69,17 @@ Setup
     - Register your own callbacks.
     - Connect key presses to actions using `mapKeys()` or options in constructor.
 
-Example:
+Example using module:
+```js
+const { Gapless5 } = require('@regosen/gapless-5');
+
+const player = new Gapless5('gapless5-player-id');
+player.addTrack('audio/song1.mp3');
+player.addTrack('https://my-audio-site.org/song2.m4a');
+...
+```
+
+Example using direct HTML:
 ```html
 <head>
   <link href="gapless5.css" rel="stylesheet" type="text/css" />
@@ -79,16 +89,16 @@ Example:
   <div id="gapless5-player-id" />
   <script type="text/javascript"><!--
 
-    const player = new Gapless5("gapless5-player-id");
+    const player = new Gapless5('gapless5-player-id');
 
     // You can add tracks by relative or absolute URL:
-    player.addTrack("audio/song1.mp3");
-    player.addTrack("https://my-audio-site.org/song2.m4a");
+    player.addTrack('audio/song1.mp3');
+    player.addTrack('https://my-audio-site.org/song2.m4a');
 
     // You can also add tracks from the file loader like this:
-    const files = document.getElementById("my-file-input").files;
+    const files = document.getElementById('my-file-input').files;
     files.forEach(file => {
-      player.addTrack(URL.createObjectURL(file)); // this creates a "blob://" URL
+      player.addTrack(URL.createObjectURL(file)); // this creates a 'blob://' URL
     });
     player.play();
 
@@ -98,7 +108,6 @@ Example:
   </form>
 </body>
 ```
-
 
 Functions
 ---------
@@ -154,20 +163,20 @@ Actions (these can be mapped to keys via mapKeys):
 
 Example:
 ```js
-player.mapKeys({cue: "7", stop: "8", next: "9"});
+player.mapKeys({cue: '7', stop: '8', next: '9'});
 
 player.play();
 player.pause();
 
 // indexes start at 0
-player.replaceTrack(0, "audio/song1_alt.flac");
-player.insertTrack(1, "audio/transition.wav");
+player.replaceTrack(0, 'audio/song1_alt.flac');
+player.insertTrack(1, 'audio/transition.wav');
 
 player.gotoTrack(1);
-player.gotoTrack("audio/song1_alt.flac"); // can also goto track by path
+player.gotoTrack('audio/song1_alt.flac'); // can also goto track by path
 
 player.removeTrack(2);
-player.removeTrack("audio/transition.wav"); // can also remove track by path
+player.removeTrack('audio/transition.wav'); // can also remove track by path
 player.removeAllTracks();
 ```
 Options
@@ -212,10 +221,10 @@ Options
 Example:
 
 ```js
-const player = new Gapless5("gapless5-player-id", {
-  tracks: ["loop1.mp3", "loop2.mp3"],
+const player = new Gapless5('gapless5-player-id', {
+  tracks: ['loop1.mp3', 'loop2.mp3'],
   loop: true,
-  mapKeys: {prev: "a", playpause: "s", stop: "d", next: "f"}
+  mapKeys: {prev: 'a', playpause: 's', stop: 'd', next: 'f'},
 });
 ```
 
@@ -236,12 +245,12 @@ Example:
 
 ```js
 function prevCallback() {
-  console.log("user clicked 'prev'");
+  console.log('user clicked "prev"');
 }
 
-const player = new Gapless5('gapless5-player-id', {tracks: ["track1.mp3", "track2.mp3"]});
+const player = new Gapless5('gapless5-player-id', {tracks: ['track1.mp3', 'track2.mp3']});
 player.onprev = prevCallback;
-player.onnext = function () { console.log("user clicked 'next'"); };
+player.onnext = function () { console.log('user clicked "next"'); };
 ```
 
 License
