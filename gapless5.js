@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 0.9.0
+ * Version 0.9.1
  * Copyright 2014 Rego Sen
  *
 */
@@ -442,7 +442,9 @@ function Gapless5FileList(inShuffle) {
     // if shuffle happens to be identical to original list (more likely with fewer tracks),
     // swap another two tracks
     if (JSON.stringify(indices) === JSON.stringify(Array.from(Array(this.sources.length).keys()))) {
-      const subIndices = indices.filter((index) => { return index !== lastIndex; });
+      const subIndices = indices.filter((index) => {
+        return index !== lastIndex;
+      });
       const subIndex1 = Math.floor(Math.random() * (subIndices.length));
       const subIndex2 = (subIndex1 + 1) % subIndices.length;
       const index1 = indices[subIndices[subIndex1]];
@@ -1043,7 +1045,7 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
     if (this.hasGUI) {
       const elem = getElement(buttonId);
       if (elem) {
-        const {classList} = elem;
+        const { classList } = elem;
         classList.remove(bEnable ? 'disabled' : 'enabled');
         classList.add(bEnable ? 'enabled' : 'disabled');
       }
