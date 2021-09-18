@@ -343,17 +343,16 @@ function Gapless5Source(parentPlayer, inAudioPath) {
 function Gapless5FileList(inShuffle) {
   // OBJECT STATE
   // Playlist and Track Items
-  this.shuffledIndices = [];
+  this.sources = []; // List of Gapless5Sources
   this.startingTrack = 0;
   this.trackNumber = -1; // Displayed track index in GUI
 
   // If the tracklist ordering changes, after a pre/next song,
   // the playlist needs to be regenerated
+  this.shuffledIndices = [];
   this.shuffleMode = Boolean(inShuffle); // Ordered (false) or Shuffle (true)
   this.shuffleRequest = null;
   this.preserveCurrent = true;
-
-  this.sources = []; // List of Gapless5Sources
 
   // PRIVATE METHODS
 
@@ -602,6 +601,7 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
   // System
   this.initialized = false;
   this.uiDirty = true;
+  this.playlist = new Gapless5FileList(initOptions.shuffle);
 
   // Setup up minimum logging
   switch (initOptions.logLevel || LogLevel.Info) {
@@ -629,7 +629,6 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
   this.useHTML5Audio = initOptions.useHTML5Audio !== false;
   this.id = Math.floor((1 + Math.random()) * 0x10000);
 
-
   // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
   if (window.gapless5AudioContext === undefined) {
     if (window.hasWebKit) {
@@ -644,9 +643,6 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
   if (this.context && this.gainNode) {
     this.gainNode.connect(this.context.destination);
   }
-
-  // Playlist
-  this.playlist = null; // Playlist manager object
 
   // Callback and Execution logic
   this.isPlayButton = true;
@@ -1045,9 +1041,12 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
 
   const enableButton = (buttonId, bEnable) => {
     if (this.hasGUI) {
-      const buttonClasses = getElement(buttonId).classList;
-      buttonClasses.remove(bEnable ? 'disabled' : 'enabled');
-      buttonClasses.add(bEnable ? 'enabled' : 'disabled');
+      const elem = getElement(buttonId);
+      if (elem) {
+        const {classList} = elem;
+        classList.remove(bEnable ? 'disabled' : 'enabled');
+        classList.add(bEnable ? 'enabled' : 'disabled');
+      }
     }
   };
 
@@ -1141,6 +1140,7 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
     };
 
     if (typeof Audio === 'undefined') {
+      this.hasGUI = false;
       return playerWrapper('This player is not supported by your browser.');
     }
 
@@ -1201,13 +1201,20 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
 
       // set up whether shuffleButton appears or not (default is visible)
       if (options.shuffleButton === false) {
-      // Style items per earlier Gapless versions
+        // Style items per earlier Gapless versions
+        const setElementWidth = (elemId, width) => {
+          const elem = getElement(elemId);
+          if (elem) {
+            elem.style.width = width;
+          }
+        };
+
         const transSize = '111px';
         const playSize = '115px';
-        getElement('transportbar').style.width = transSize;
-        getElement('g5meter').style.width = transSize;
-        getElement('g5position').style.width = playSize;
-        getElement('g5inside').style.width = playSize;
+        setElementWidth('transportbar', transSize);
+        setElementWidth('g5meter', transSize);
+        setElementWidth('g5position', playSize);
+        setElementWidth('g5inside', playSize);
         getElement('shuffle').remove();
       }
       this.scrubWidth = getElement('transportbar').style.width;
@@ -1252,13 +1259,10 @@ function Gapless5(elementId = '', initOptions = {}) { // eslint-disable-line no-
       } else if (typeof options.tracks === 'string') {
         items[0] = options.tracks;
       }
-      this.playlist = new Gapless5FileList(options.shuffle);
       for (let i = 0; i < items.length; i++) {
         this.addTrack(items[i]);
       }
       this.playlist.setStartingTrack(startingTrack);
-    } else {
-      this.playlist = new Gapless5FileList(options.shuffle);
     }
 
     this.initialized = true;
