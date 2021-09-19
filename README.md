@@ -73,8 +73,8 @@ B. If using the built-in UI, add and reference `Gapless5.js` and `Gapless5.css`.
 
 ### How it Works
 
-1. Create a `Gapless5` object, proving a GUI id and options as parameters
-    - If you don't want the built-in UI, set the id to a blank string.
+1. Create a `Gapless5` object with an optional parameter object
+    - If you want the built-in UI, pass in the element ID as `guiId` under options.
 2. Add tracks via options in constructor or `addTrack()`
 3. Optional stuff:
     - Manipulate tracklist with `insertTrack()`, `removeTrack()`, and more.
@@ -82,7 +82,7 @@ B. If using the built-in UI, add and reference `Gapless5.js` and `Gapless5.css`.
     - Connect key presses to actions using `mapKeys()` or options in constructor.
 
 ```js
-const player = new Gapless5('gapless5-player-id');
+const player = new Gapless5({ guiId: 'gapless5-player-id' });
 
 // You can add tracks by relative or absolute URL:
 player.addTrack('audio/song1.mp3');
@@ -102,8 +102,11 @@ _If you want the user to upload tracks from a file loader, here's an example of 
 </form>
 ```
 ### Options
-These can be passed into a `Gapless5` constructor, or (with the exception of `tracks`) set later on the object.
+These can be passed into a `Gapless5` constructor, or (with the exception of `tracks` and `guiId`) set later on the object.
 
+- **guiId**
+  - id of existing element (i.e. `div` or `span`) where you want the player to appear.
+  - if empty or not provided, Gapless5 won't use built-in UI.
 - **tracks**
   - path to audio file(s) or blob URL(s), see examples above
   - can be a single track as a string, an array, or a JSON object containing an array of JSON objects
@@ -143,7 +146,7 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 Example:
 
 ```js
-const player = new Gapless5('gapless5-player-id', {
+const player = new Gapless5({
   tracks: ['loop1.mp3', 'loop2.mp3'],
   loop: true,
   mapKeys: {prev: 'a', playpause: 's', stop: 'd', next: 'f'},
@@ -239,7 +242,7 @@ function prevCallback() {
   console.log('user clicked "prev"');
 }
 
-const player = new Gapless5('gapless5-player-id', {tracks: ['track1.mp3', 'track2.mp3']});
+const player = new Gapless5({guiId: 'gapless5-player-id', tracks: ['track1.mp3', 'track2.mp3']});
 player.onprev = prevCallback;
 player.onnext = function () { console.log('user clicked "next"'); };
 ```
