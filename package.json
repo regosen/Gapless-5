@@ -1,8 +1,9 @@
 {
   "name": "@regosen/gapless-5",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A gapless JavaScript/CSS audio player for HTML5",
   "main": "gapless5.js",
+  "style": "gapless5.css",
   "scripts": {
     "lint": "eslint *.js",
     "test": "echo \"Error: no test specified\" && exit 1"
