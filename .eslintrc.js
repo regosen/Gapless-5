@@ -124,7 +124,7 @@ module.exports = exports = {
         "no-sync": WARN,
 
         // ECMAScript 6 support
-        "arrow-body-style": [ ERROR, "always" ],
+        "arrow-body-style": [ ERROR, "as-needed" ],
         "arrow-parens": [ ERROR, "always" ],
         "arrow-spacing": [ ERROR, { "before": true, "after": true }],
         "constructor-super": ERROR,
