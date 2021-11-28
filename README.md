@@ -130,9 +130,14 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
   - enables shuffle mode immediately after playlist load
 - **useHTML5Audio**
   - default = true
+  - if you don't care about immediate playback, set useHTML5Audio to false for lower memory usage
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
+- **loadLimit**
+  - default = no limit
+  - limits how many tracks can be loaded at once.  If you have a large playlist, set to a low number (like 2-5) to save on memory
+  - caveat: you will hear gaps/loading delays if you skip tracks quickly enough or jump to arbitrary tracks
 - **mapKeys**
   - pressing specified key (case-insensitive) will trigger any Action function listed above.
 - **logLevel**
@@ -145,6 +150,7 @@ Example:
 const player = new Gapless5({
   tracks: ['loop1.mp3', 'loop2.mp3'],
   loop: true,
+  loadLimit: 2,
   mapKeys: {prev: 'a', playpause: 's', stop: 'd', next: 'f'},
 });
 ```
