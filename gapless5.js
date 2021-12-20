@@ -19,9 +19,10 @@ const gapless5Players = {};
 const Gapless5State = {
   None     : 0,
   Loading  : 1,
-  Play     : 2,
-  Stop     : 3,
-  Error    : 4
+  Starting : 2,
+  Play     : 3,
+  Stop     : 4,
+  Error    : 5
 };
 
 const LogLevel = {
@@ -37,10 +38,10 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   this.audioPath = inAudioPath;
   const player = parentPlayer;
 
-  // Audio object version
+  // HTML5 Audio
   let audio = null;
 
-  // Buffer source version
+  // WebAudio
   let source = null;
   let buffer = null;
   let request = null;
@@ -114,7 +115,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
 
     if (queuedState === Gapless5State.Play && state === Gapless5State.Loading) {
       playAudioFile(true);
-    } else if ((audio !== null) && (queuedState === Gapless5State.None) && (state === Gapless5State.Play)) {
+    } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       console.debug(`switching from HTML5 to WebAudio: ${this.audioPath}`);
       position = new Date().getTime() - startTime;
       if (!window.hasWebKit) {
@@ -127,8 +128,10 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     }
 
     player.onload(this.audioPath);
-    // once we have WebAudio data loaded, we don't need the HTML5 audio stream anymore
-    audio = null;
+    if (!player.keepAliveHTML5Audio) {
+      // once we have WebAudio data loaded, we don't need the HTML5 audio stream anymore
+      audio = null;
+    }
     player.uiDirty = true;
   };
 
@@ -160,7 +163,8 @@ function Gapless5Source(parentPlayer, inAudioPath) {
         source.stop(0);
       }
     }
-    if (audio) {
+    // avoid "play() request was interrupted" by pausing after promise is returned
+    if (audio && state !== Gapless5State.Starting) {
       audio.pause();
     }
 
@@ -169,7 +173,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   };
 
   const playAudioFile = () => {
-    if (state === Gapless5State.Play) {
+    if (this.inPlayState(true)) {
       return;
     }
     position = Math.max(position, 0);
@@ -186,6 +190,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       source = player.context.createBufferSource();
       source.connect(player.gainNode);
       source.buffer = buffer;
+      source.playbackRate.value = player.playbackRate;
 
       const restSec = source.buffer.duration - offsetSec;
       if (endedCallback) {
@@ -197,22 +202,34 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       } else {
         source.start(0, offsetSec);
       }
+      player.onplay(this.audioPath);
       setState(Gapless5State.Play);
     } else if (audio !== null) {
       console.debug(`Playing HTML5 Audio: ${this.audioPath}`);
       audio.currentTime = offsetSec;
       audio.volume = player.gainNode.gain.value;
-      audio.play();
-      setState(Gapless5State.Play);
+      setState(Gapless5State.Starting);
+      audio.play().then(() => {
+        if (state === Gapless5State.Starting) {
+          setState(Gapless5State.Play);
+          player.onplay(this.audioPath);
+        } else {
+          // in case stop was requested while awaiting promise
+          audio.pause();
+        }
+      });
     }
     player.uiDirty = true;
   };
 
   // PUBLIC FUNCTIONS
 
-  this.inPlayState = () => (state === Gapless5State.Play);
+  this.inPlayState = (checkStarting) => (state === Gapless5State.Play ||
+    (checkStarting && state === Gapless5State.Starting));
 
-  this.isPlayActive = () => (this.inPlayState() || queuedState === Gapless5State.Play) && !this.audioFinished;
+  this.isPlayActive = (checkStarting) => (this.inPlayState(checkStarting) ||
+    queuedState === Gapless5State.Play) &&
+    !this.audioFinished;
 
   this.getPosition = () => position;
 
@@ -224,6 +241,15 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       queuedState = Gapless5State.Play;
     } else {
       playAudioFile(); // play immediately
+    }
+  };
+
+  this.setPlaybackRate = (rate) => {
+    if (source) {
+      source.playbackRate.value = rate;
+    }
+    if (audio) {
+      audio.playbackRate = rate;
     }
   };
 
@@ -307,6 +333,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       const getHtml5Audio = () => {
         const audioObj = new Audio();
         audioObj.controls = false;
+        audioObj.playbackRate = player.playbackRate;
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
         audioObj.addEventListener('ended', onEnded, false);
         audioObj.addEventListener('play', onPlayEvent, false);
@@ -376,11 +403,6 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
       this.findTrack(pointOrPath) :
       pointOrPath;
 
-    /*
-    if (this.trackNumber === newIndex) {
-      return restartTrack(); // don't actually instantiate shuffle yet
-    }
-    */
     const updateShuffle = (nextIndex) => {
       if (this.shuffleRequest !== null) {
         if (this.shuffleRequest) {
@@ -483,6 +505,12 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
       this.setStartingTrack(-1);
     }
     this.sources = [];
+  };
+
+  this.setPlaybackRate = (rate) => {
+    for (let i = 0; i < this.sources.length; i++) {
+      this.sources[i].setPlaybackRate(rate);
+    }
   };
 
   // Toggle shuffle mode or not, and prepare for rebasing the playlist
@@ -593,6 +621,7 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
 //     tracks: path of file (or array of music file paths)
 //     useWebAudio (default = true)
 //     useHTML5Audio (default = true)
+//     keepAliveHTML5Audio (default = false)
 //     startingTrack (number or "random", default = 0)
 //     loadLimit (max number of tracks loaded at one time, default = -1, no limit)
 //     logLevel (default = LogLevel.Info) minimum logging level
@@ -600,6 +629,7 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
 //     shuffleButton (default = true): whether shuffle button appears or not in UI
 //     loop (default = false): whether to return to first track after end of playlist
 //     singleMode (default = false): whether to treat single track as playlist
+//     playbackRate (default = 1.0): higher number = faster playback
 //     exclusive (default = false): whether to stop other gapless players when this is playing
 function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unused-vars
   // Backwards-compatibility with deprecated API
@@ -652,6 +682,8 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   // these default to true if not defined
   this.useWebAudio = options.useWebAudio !== false;
   this.useHTML5Audio = options.useHTML5Audio !== false;
+  this.keepAliveHTML5Audio = options.keepAliveHTML5Audio !== false;
+  this.playbackRate = options.playbackRate || 1.0;
   this.id = Math.floor((1 + Math.random()) * 0x10000);
   gapless5Players[this.id] = this;
 
@@ -676,14 +708,15 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   // Callbacks
   this.onprev = () => {};
-  this.onplay = () => {};
+  this.onplayrequest = () => {}; // play requested by user
+  this.onplay = () => {}; // play actually starts
   this.onpause = () => {};
   this.onstop = () => {};
   this.onnext = () => {};
 
   this.onerror = () => {};
-  this.onloadstart = () => {};
-  this.onload = () => {};
+  this.onloadstart = () => {}; // load started
+  this.onload = () => {}; // load completed
   this.onunload = () => {};
   this.onfinishedtrack = () => {};
   this.onfinishedall = () => {};
@@ -805,6 +838,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   this.onEndedCallback = () => {
     // we've finished playing the track
+    const { audioPath } = this.currentSource();
     this.currentSource().stop(true);
     resetPosition();
     if (this.loop || this.getIndex() < this.totalTracks() - 1) {
@@ -813,9 +847,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
       } else {
         this.next(true);
       }
-      this.onfinishedtrack();
+      this.onfinishedtrack(audioPath);
     } else {
-      this.onfinishedtrack();
+      this.onfinishedtrack(audioPath);
       this.onfinishedall();
     }
   };
@@ -872,7 +906,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
     if (curSource.state === Gapless5State.Loading) {
       curSource.unload();
-    } else if (curSource.state === Gapless5State.Play) {
+    } else if (curSource.inPlayState(true)) {
       wasPlaying = true;
       curSource.stop();
     }
@@ -922,6 +956,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   this.currentSource = () => this.playlist.sources[this.getIndex(true)];
 
+  this.setPlaybackRate = (rate) => {
+    this.playbackRate = rate;
+  };
+
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false) => {
     const newIndex = this.playlist.gotoTrack(pointOrPath, forcePlay, allowOverride, resetPosition);
     enableButton('prev', this.loop || (!this.singleMode && newIndex > 0));
@@ -941,8 +979,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     } else {
       return;
     }
+    const lastAudioPath = this.currentSource().audioPath;
     this.gotoTrack(track);
-    this.onprev();
+    this.onprev(lastAudioPath, this.currentSource().audioPath);
   };
 
   this.prev = (e) => {
@@ -965,9 +1004,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     } else {
       return;
     }
+
+    const lastAudioPath = this.currentSource().audioPath;
     this.gotoTrack(track, e === true);
     if (wantsCallback) {
-      this.onprev();
+      this.onprev(lastAudioPath, this.currentSource().audioPath);
     }
   };
 
@@ -984,8 +1025,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     } else if (!this.loop) {
       return;
     }
+    const lastAudioPath = this.currentSource().audioPath;
     this.gotoTrack(track, e === true, true);
-    this.onnext();
+    this.onnext(lastAudioPath, this.currentSource().audioPath);
   };
 
   this.play = () => {
@@ -1005,7 +1047,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         }
       }
     }
-    this.onplay();
+    this.onplayrequest(this.currentSource().audioPath);
   };
 
   this.playpause = (e) => {
@@ -1030,7 +1072,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.pause = () => {
     if (this.totalTracks() > 0) {
       this.currentSource().stop();
-      this.onpause();
+      this.onpause(this.currentSource().audioPath);
     }
   };
 
@@ -1038,7 +1080,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     if (this.totalTracks() > 0) {
       this.currentSource().stop(true);
       resetPosition();
-      this.onstop();
+      this.onstop(this.currentSource().audioPath);
     }
   };
 
@@ -1106,7 +1148,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         this.isPlayButton = true;
 
         if (this.currentSource().state === Gapless5State.Error) {
-          this.onerror();
+          this.onerror(this.currentSource().audioPath);
         }
       }
       enableShuffleButton(this.isShuffled() ? 'unshuffle' : 'shuffle', this.canShuffle());

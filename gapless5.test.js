@@ -117,20 +117,20 @@ describe('Gapless-5 object with tracklist', () => {
   it('triggers navigation callbacks', () => {
     player.onprev = jest.fn();
     player.onnext = jest.fn();
-    player.onplay = jest.fn();
+    player.onplayrequest = jest.fn();
     player.onpause = jest.fn();
     player.onstop = jest.fn();
 
     player.next();
-    expect(player.onnext).toHaveBeenCalled();
+    expect(player.onnext).toHaveBeenCalledWith(TRACKS[0], TRACKS[1]);
     player.prev();
-    expect(player.onprev).toHaveBeenCalled();
+    expect(player.onprev).toHaveBeenCalledWith(TRACKS[1], TRACKS[0]);
     player.play();
-    expect(player.onplay).toHaveBeenCalled();
+    expect(player.onplayrequest).toHaveBeenCalledWith(TRACKS[0]);
     player.pause();
-    expect(player.onpause).toHaveBeenCalled();
+    expect(player.onpause).toHaveBeenCalledWith(TRACKS[0]);
     player.stop();
-    expect(player.onstop).toHaveBeenCalled();
+    expect(player.onstop).toHaveBeenCalledWith(TRACKS[0]);
   });
 });
 

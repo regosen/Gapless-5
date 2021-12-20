@@ -131,6 +131,9 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **useHTML5Audio**
   - default = true
   - if you don't care about immediate playback, set useHTML5Audio to false for lower memory usage
+- **keepAliveHTML5Audio**
+  - default = false
+  - keep the HTML5 Audio object alive after switching to WebAudio.  Useful for Media Session API
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
@@ -225,28 +228,60 @@ player.removeTrack('audio/transition.wav'); // can also remove track by path
 player.removeAllTracks();
 ```
 ### Callbacks
-You can set these on a `Gapless5` object.
+You can set these on a `Gapless5` object.  All callbacks include the affected track's audio path except where indicated.
 
-- onprev
-- onplay
-- onpause
-- onstop
-- onnext
-- onload
-- onerror
-- onfinishedtrack
-- onfinishedall
+```ts
+// play requested by user
+onplayrequest = (track_path: string) => void
+
+// play actually starts
+onplay = (track_path: string) => void 
+
+// play is paused
+onpause = (track_path: string) => void
+
+// play is stopped
+onstop = (track_path: string) => void
+
+// prev track, where:
+//   from_track = track that we're switching from
+//   to_track = track that we're switching to
+onprev = (from_track: string, to_track: string) => void
+
+// next track, where:
+//   from_track = track that we're switching from
+//   to_track = track that we're switching to
+onnext = (from_track: string, to_track: string) => void
+
+// loading started
+onloadstart = (track_path: string) => void 
+
+// loading completed
+onload = (track_path: string) => void
+
+// track unloaded (to save memory)
+onunload = (track_path: string) => void
+
+// track failed to load or play
+onerror = (track_path: string) => void
+
+// track finished playing
+onfinishedtrack = (track_path: string) => void
+
+// entire playlist finished playing
+onfinishedall = () => void
+```
 
 Example:
 
 ```js
-function prevCallback() {
-  console.log('user clicked "prev"');
+function nextCallback(from_track, to_track) {
+  console.log(`User skipped to next track (from ${from_track} to ${to_track})`);
 }
 
 const player = new Gapless5({guiId: 'gapless5-player-id', tracks: ['track1.mp3', 'track2.mp3']});
-player.onprev = prevCallback;
-player.onnext = function () { console.log('user clicked "next"'); };
+player.onnext = nextCallback;
+player.onplay = function (track_path) { console.log(`Now playing ${track_path}`); };
 ```
 
 ## License
