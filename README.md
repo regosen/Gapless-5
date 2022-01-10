@@ -141,6 +141,11 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
   - default = no limit
   - limits how many tracks can be loaded at once.  If you have a large playlist, set to a low number (like 2-5) to save on memory
   - caveat: you will hear gaps/loading delays if you skip tracks quickly enough or jump to arbitrary tracks
+- **volume**
+  - default = 1.0 (0 = silent, 1.0 = loudest)
+- **playbackRate**
+  - default = 1.0
+  - multiplier for the playback speed, higher = plays faster, lower = plays slower
 - **mapKeys**
   - pressing specified key (case-insensitive) will trigger any Action function listed above.
 - **logLevel**
@@ -177,6 +182,10 @@ You can call these functions on `Gapless5` objects.
 - **removeTrack(indexOrPath)**
   - removes specified track from playlist
   - `indexOrPath` can be the numerical index, or audio path
+- **setVolume**
+  - updates the volume in real time (between 0 and 1)
+- **setPlaybackRate**
+  - updates the playback speed in real time (see `playbackRate` option)
 - **mapKeys(jsonMapping)**
   - pressing specified key (case-insensitive) will trigger any Action function listed below.
   - `jsonMapping` maps an action to a key, see example code below

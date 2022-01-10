@@ -1,6 +1,5 @@
 // Mocks
 window = {
-  hasWebKit        : false,
   clearTimeout     : jest.fn(),
   setTimeout       : jest.fn(),
 };
@@ -20,6 +19,11 @@ const audioMockClass = () => ({
   play: jest.fn(),
 });
 Audio = jest.fn().mockImplementation(audioMockClass);
+
+const audioContextMockClass = () => ({
+  createGain: jest.fn(),
+});
+AudioContext = jest.fn().mockImplementation(audioContextMockClass);
 
 const { Gapless5, LogLevel } = require('./gapless5.js');
 
