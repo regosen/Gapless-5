@@ -949,6 +949,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.currentSource = () => this.playlist.sources[this.getIndex(true)];
 
   this.setPlaybackRate = (rate) => {
+    tick(); // tick once here before changing the playback rate, to maintain correct position
     this.playbackRate = rate;
     this.playlist.setPlaybackRate(rate);
   };
