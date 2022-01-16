@@ -45,6 +45,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   let request = null;
 
   // states
+  let lastTick = 0;
   let position = 0;
   let endpos = 0;
   let queuedState = Gapless5State.None;
@@ -59,6 +60,9 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   };
 
   const setState = (newState) => {
+    if (state !== newState && newState === Gapless5State.Play) {
+      lastTick = new Date().getTime();
+    }
     state = newState;
     queuedState = Gapless5State.None;
     player.uiDirty = true;
@@ -86,10 +90,6 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     }
   };
 
-  const onPlayEvent = () => {
-    startTime = (new Date().getTime()) - position;
-  };
-
   const onError = () => {
     this.unload(true);
   };
@@ -114,10 +114,6 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     }
 
     player.onload(this.audioPath);
-    if (!player.keepAliveHTML5Audio) {
-      // once we have WebAudio data loaded, we don't need the HTML5 audio stream anymore
-      audio = null;
-    }
     player.uiDirty = true;
   };
 
@@ -175,9 +171,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     if (!Number.isFinite(position) || position >= this.getLength()) {
       position = 0;
     }
-
     const offsetSec = position / 1000;
-    startTime = (new Date().getTime()) - position;
 
     if (buffer !== null) {
       console.debug(`Playing WebAudio: ${this.audioPath}`);
@@ -246,7 +240,10 @@ function Gapless5Source(parentPlayer, inAudioPath) {
 
   this.tick = () => {
     if (state === Gapless5State.Play) {
-      position = position + (player.tickMS * player.playbackRate);
+      const nextTick = new Date().getTime();
+      const elapsed = nextTick - lastTick;
+      position = position + (elapsed * player.playbackRate);
+      lastTick = nextTick;
     }
 
     if (loadedPercent < 1) {
@@ -329,7 +326,6 @@ function Gapless5Source(parentPlayer, inAudioPath) {
         audioObj.mozPreservesPitch = false;
         audioObj.webkitPreservesPitch = false;
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
-        audioObj.addEventListener('play', onPlayEvent, false);
         audioObj.addEventListener('error', onError, false);
         // TODO: switch to audio.networkState, now that it's universally supported
         return audioObj;
@@ -614,7 +610,6 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
 //     tracks: path of file (or array of music file paths)
 //     useWebAudio (default = true)
 //     useHTML5Audio (default = true)
-//     keepAliveHTML5Audio (default = false)
 //     startingTrack (number or "random", default = 0)
 //     loadLimit (max number of tracks loaded at one time, default = -1, no limit)
 //     logLevel (default = LogLevel.Info) minimum logging level
@@ -675,7 +670,6 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   // these default to true if not defined
   this.useWebAudio = options.useWebAudio !== false;
   this.useHTML5Audio = options.useHTML5Audio !== false;
-  this.keepAliveHTML5Audio = options.keepAliveHTML5Audio !== false;
   this.playbackRate = options.playbackRate || 1.0;
   this.id = Math.floor((1 + Math.random()) * 0x10000);
   gapless5Players[this.id] = this;
