@@ -132,9 +132,6 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **useHTML5Audio**
   - default = true
   - if you don't care about immediate playback, set useHTML5Audio to false for lower memory usage
-- **keepAliveHTML5Audio**
-  - default = false
-  - keep the HTML5 Audio object alive after switching to WebAudio.  Useful for Media Session API
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
