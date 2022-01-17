@@ -1,6 +1,5 @@
 # Gapless 5 &nbsp; <img src="https://ccrma.stanford.edu/~regosen/gapless5.gif" width="123" height="51">
 
-
 A gapless JavaScript/CSS audio player for HTML5
 
 **PROBLEM**: There are 2 modern APIs for playing audio through the web, and both of them have problems:
@@ -14,33 +13,35 @@ A gapless JavaScript/CSS audio player for HTML5
 
 ## Demos
 
-The following sites utilize Gapless-5.  If you'd like to be featured here, please contact the repo owner or start a new issue!
+The following sites utilize Gapless 5.  If you'd like to be featured here, please contact the repo owner or start a new issue!
 
-- Gapless 5 demonstration page.  It utilizes key mappings for cueing and other transport bar features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
+- <b>Gapless 5 Demonstration Page:</b> utilizes key mappings for cueing and other transport bar features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
 
-- THE402: an electronic music looping experience. <br/>https://the402.wertstahl.de/player
+- <b>THE402:</b> an electronic music looping experience. <br/>https://the402.wertstahl.de/player
 
-- Listening page for Zen Finger Painting's latest album.  It utilizes several callbacks to interact with the rest of the page. <br/>http://www.zenfingerpainting.com
+- <b>Bernardo.fm:</b> featuring electronic and hip-hop artists. <br/>https://beta.bernardo.fm/#!page=music
 
+- <b>This is Nerdpop:</b> Interactive listening page for Zen Finger Painting's indie pop album. <br/>http://www.zenfingerpainting.com
 
 ## Features
 
-- player can have multiple tracks
-- page can have multiple players
-- seamless transitions between tracks
-  - pre-loading of subsequent tracks
-  - files don't need to be fully loaded to start playback
-- UI is optional
-- no Flash!
-
+- Players can have multiple tracks
+- Pages can have multiple players
+- Memory management (see `loadLimit` under options)
+- Seamless transitions between tracks
+  - Pre-loading of subsequent tracks
+  - Files don't need to be fully loaded to start playback
+- Track shuffling during playback
+- Optional built-in UI
 
 ## Browser Support
 
 - Safari (including iOS)
 - Chrome (including Android)
 - Firefox
+- Other browers (UI untested, but they probably work as well)
 
-*NOTE for Boostrap users: Bootstrap's css will mess up the player's look.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
+*NOTE for Boostrap users: Bootstrap's CSS will mess up the optional built-in UI.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
 ## Getting Started
 ### Using npm
@@ -102,6 +103,7 @@ _If you want the user to upload tracks from a file loader, here's an example of 
   <input type="file" id="my-file-input" accept="audio/*">
 </form>
 ```
+
 ### Options
 These can be passed into a `Gapless5` constructor, or (with the exception of `tracks` and `guiId`) set later on the object.
 
