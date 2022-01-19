@@ -272,7 +272,7 @@ onload = (track_path: string) => void
 onunload = (track_path: string) => void
 
 // track failed to load or play
-onerror = (track_path: string) => void
+onerror = (track_path: string, error?: Error | string) => void
 
 // track finished playing
 onfinishedtrack = (track_path: string) => void

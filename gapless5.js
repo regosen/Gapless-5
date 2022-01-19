@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.1
+ * Version 1.3.2
  * Copyright 2014 Rego Sen
  *
 */
@@ -90,7 +90,8 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     }
   };
 
-  const onError = () => {
+  const onError = (error) => {
+    player.onerror(this.audioPath, error);
     this.unload(true);
   };
 
@@ -268,6 +269,20 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     }
   };
 
+  const fetchBlob = (audioPath, loader) => {
+    fetch(audioPath).then((r) => {
+      if (r.ok) {
+        r.blob().then((blob) => {
+          loader(blob);
+        });
+      } else {
+        onError(r.statusText);
+      }
+    }).catch((e) => {
+      onError(e);
+    });
+  };
+
   this.load = () => {
     if (state === Gapless5State.Loading) {
       return;
@@ -286,19 +301,17 @@ function Gapless5Source(parentPlayer, inAudioPath) {
         }
       };
       if (audioPath.startsWith('blob:')) {
-        fetch(audioPath).then((r) => {
-          r.blob().then((blob) => {
-            request = new FileReader();
-            request.onload = () => {
-              if (request) {
-                onLoadWebAudio(request.result);
-              }
-            };
-            request.readAsArrayBuffer(blob);
-            if (request.error) {
-              onError();
+        fetchBlob(audioPath, (blob) => {
+          request = new FileReader();
+          request.onload = () => {
+            if (request) {
+              onLoadWebAudio(request.result);
             }
-          });
+          };
+          request.readAsArrayBuffer(blob);
+          if (request.error) {
+            onError(request.error);
+          }
         });
       } else {
         request = new XMLHttpRequest();
@@ -311,7 +324,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
         };
         request.onerror = () => {
           if (request) {
-            onError();
+            onError('HttpRequest error');
           }
         };
         request.send();
@@ -332,12 +345,10 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       };
       if (audioPath.startsWith('blob:')) {
         // TODO: blob as srcObject is not supported on all browsers
-        fetch(audioPath).then((r) => {
-          r.blob().then((blob) => {
-            audio = getHtml5Audio();
-            audio.srcObject = blob;
-            audio.load();
-          });
+        fetchBlob(audioPath, (blob) => {
+          audio = getHtml5Audio();
+          audio.srcObject = blob;
+          audio.load();
         });
       } else {
         audio = getHtml5Audio();
