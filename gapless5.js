@@ -685,10 +685,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.id = Math.floor((1 + Math.random()) * 0x10000);
   gapless5Players[this.id] = this;
 
-  // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
-  if ((window.gapless5AudioContext === undefined) && (typeof AudioContext !== 'undefined')) {
+  let AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (window.gapless5AudioContext === undefined)
     window.gapless5AudioContext = new AudioContext();
-  }
+
   this.context = window.gapless5AudioContext;
   this.gainNode = (this.context !== undefined) ? this.context.createGain() : null;
   if (this.context && this.gainNode) {
