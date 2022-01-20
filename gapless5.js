@@ -85,6 +85,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   };
 
   const onEnded = () => {
+    this.tick();
     if (state === Gapless5State.Play) {
       player.onEndedCallback();
     }
@@ -107,8 +108,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       playAudioFile(true);
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       console.debug(`switching from HTML5 to WebAudio: ${this.audioPath}`);
-      position = audio.position;
-      this.setPosition(position, true);
+      this.setPosition(audio.position, true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -183,10 +183,10 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       source.playbackRate.value = player.playbackRate;
       source.loop = player.loop && (player.singleMode || player.totalTracks() === 1);
 
-      setEndedCallbackTime(source.buffer.duration - offsetSec);
       source.start(0, offsetSec);
       player.onplay(this.audioPath);
       setState(Gapless5State.Play);
+      setEndedCallbackTime(source.buffer.duration - offsetSec);
     } else if (audio !== null) {
       console.debug(`Playing HTML5 Audio: ${this.audioPath}`);
       audio.currentTime = offsetSec;
@@ -194,12 +194,12 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       audio.loop = player.loop && (player.singleMode || player.totalTracks() === 1);
       audio.playbackRate = player.playbackRate;
 
-      setEndedCallbackTime(audio.duration - offsetSec);
       setState(Gapless5State.Starting);
       audio.play().then(() => {
         if (state === Gapless5State.Starting) {
           setState(Gapless5State.Play);
           player.onplay(this.audioPath);
+          setEndedCallbackTime(audio.duration - offsetSec);
         } else {
           // in case stop was requested while awaiting promise
           audio.pause();
@@ -361,7 +361,9 @@ function Gapless5Source(parentPlayer, inAudioPath) {
 
 // A Gapless5FileList "class". Processes an array of JSON song objects, taking
 // the "file" members out to constitute the this.playlist.sources[] in the Gapless5 player
-function Gapless5FileList(inShuffle, inLoadLimit = -1) {
+function Gapless5FileList(parentPlayer, inShuffle, inLoadLimit = -1) {
+  const player = parentPlayer;
+
   // OBJECT STATE
   // Playlist and Track Items
   this.sources = []; // List of Gapless5Sources
@@ -388,11 +390,11 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
     this.trackNumber = this.startingTrack;
   };
 
-  this.gotoTrack = (pointOrPath, forcePlay, allowOverride, resetPosition) => {
+  this.gotoTrack = (pointOrPath, forcePlay, allowOverride) => {
     const oldSourceIndex = this.getSourceIndex(this.trackNumber);
     const wasPlaying = this.sources[oldSourceIndex].isPlayActive();
     const restartTrack = () => {
-      resetPosition(true);
+      player.scrub(0, true);
       if (forcePlay || wasPlaying) {
         this.sources[oldSourceIndex].play();
       }
@@ -426,7 +428,7 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
       return restartTrack();
     }
 
-    resetPosition(true);
+    player.scrub(0, true);
 
     this.sources[oldSourceIndex].stop();
     if (forcePlay || wasPlaying) {
@@ -584,7 +586,7 @@ function Gapless5FileList(inShuffle, inLoadLimit = -1) {
   };
 
   // Add a new song into the FileList object.
-  this.add = (index, audioPath, player) => {
+  this.add = (index, audioPath) => {
     const source = new Gapless5Source(player, audioPath);
     this.sources.splice(index, 0, source);
 
@@ -655,7 +657,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.tickMS = 27; // fast enough for numbers to look real-time
   this.initialized = false;
   this.uiDirty = true;
-  this.playlist = new Gapless5FileList(options.shuffle, options.loadLimit);
+  this.playlist = new Gapless5FileList(this, options.shuffle, options.loadLimit);
 
   // Setup up minimum logging
   switch (options.logLevel || LogLevel.Info) {
@@ -686,8 +688,8 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   gapless5Players[this.id] = this;
 
   // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
-  if ((window.gapless5AudioContext === undefined) && (typeof AudioContext !== 'undefined')) {
-    window.gapless5AudioContext = new AudioContext();
+  if ((window.gapless5AudioContext === undefined) && ((typeof AudioContext !== 'undefined') || (typeof webkitAudioContext !== 'undefined'))) {
+    window.gapless5AudioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
   this.context = window.gapless5AudioContext;
   this.gainNode = (this.context !== undefined) ? this.context.createGain() : null;
@@ -815,17 +817,17 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.setVolume(uiPos / scrubSize);
   };
 
-  this.scrub = (uiPos, updateTransport = false) => {
-    this.scrubPosition = getSoundPos(uiPos);
+  this.scrub = (uiPos, updateTransport = false, endReached = false) => {
     if (this.hasGUI) {
+      this.scrubPosition = getSoundPos(uiPos);
       getElement('currentPosition').innerText = getFormattedTime(this.scrubPosition);
       enableButton('prev', this.loop || (this.getIndex() !== 0 || this.scrubPosition !== 0));
       if (updateTransport) {
         getElement('transportbar').value = uiPos;
       }
-    }
-    if (!this.isScrubbing) {
-      this.currentSource().setPosition(this.scrubPosition, true);
+      if (!this.isScrubbing && !endReached) {
+        this.currentSource().setPosition(this.scrubPosition, true);
+      }
     }
   };
 
@@ -841,7 +843,6 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.onEndedCallback = () => {
     // we've finished playing the track
     const { audioPath } = this.currentSource();
-    resetPosition();
     if (this.loop || this.getIndex() < this.totalTracks() - 1) {
       if (this.singleMode || this.totalTracks() === 1) {
         this.prev(true);
@@ -872,7 +873,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   this.addTrack = (audioPath) => {
     const next = this.playlist.sources.length;
-    this.playlist.add(next, audioPath, this);
+    this.playlist.add(next, audioPath);
     this.uiDirty = true;
   };
 
@@ -882,7 +883,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     if (safePoint === trackCount) {
       this.addTrack(audioPath);
     } else {
-      this.playlist.add(safePoint, audioPath, this);
+      this.playlist.add(safePoint, audioPath);
     }
     this.uiDirty = true;
   };
@@ -966,7 +967,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   };
 
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false) => {
-    const newIndex = this.playlist.gotoTrack(pointOrPath, forcePlay, allowOverride, resetPosition);
+    const newIndex = this.playlist.gotoTrack(pointOrPath, forcePlay, allowOverride);
     enableButton('prev', this.loop || (!this.singleMode && newIndex > 0));
     enableButton('next', this.loop || (!this.singleMode && newIndex < this.totalTracks() - 1));
     this.uiDirty = true;
@@ -1080,7 +1081,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.stop = () => {
     if (this.totalTracks() > 0) {
       this.currentSource().stop(true);
-      resetPosition();
+      if (this.currentSource().getPosition() > 0) {
+        this.scrub(0, true);
+      }
       this.onstop(this.currentSource().audioPath);
     }
   };
@@ -1091,12 +1094,6 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.isPlaying = () => this.currentSource().inPlayState();
 
   // INIT AND UI
-
-  const resetPosition = (forceScrub) => {
-    if (forceScrub || this.currentSource().getPosition() > 0) {
-      this.scrub(0, true);
-    }
-  };
 
   const enableButton = (buttonId, bEnable) => {
     if (this.hasGUI) {

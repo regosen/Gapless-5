@@ -1,22 +1,22 @@
 .g5position {
   font-family: Arial, Helvetica, Geneva, sans-serif;
   font-size: 9px;
-  color:#888;
-  text-align:center;
-  width:135px;
-  padding:2px;
+  color: #888;
+  text-align: center;
+  width: 135px;
+  padding: 2px;
 }
 
 .g5inside {
   font-family: Arial, Helvetica, Geneva, sans-serif;
   font-size: 9px;
-  background-color: #EEE;
-  border:1px;
-  border-color:gray;
-  border-style:solid;
-  width:135px;
-  height:30px;
-  padding:3px;
+  background-color: #eee;
+  border: 1px;
+  border-color: gray;
+  border-style: solid;
+  width: 135px;
+  height: 30px;
+  padding: 3px;
   overflow: hidden;
 }
 
@@ -27,7 +27,7 @@
 
 input[type='range'].transportbar, input[type='range'].volume {
   outline: none;
-  vertical-align:middle;
+  vertical-align: middle;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
   -ms-appearance: none !important;
@@ -36,7 +36,7 @@ input[type='range'].transportbar, input[type='range'].volume {
 }
 
 input[type='range'].transportbar::-webkit-slider-thumb, input[type='range'].volume::-webkit-slider-thumb {
-  vertical-align:middle;
+  vertical-align: middle;
   -webkit-appearance: none !important;
 }
 
@@ -44,8 +44,8 @@ input[type='range'].transportbar {
   margin-top: -17px;
   margin-left: 2px;
   padding: 0;
-  height:4px;
-  width:130px;
+  height: 4px;
+  width: 130px;
   background: transparent; 
 }
 
@@ -53,35 +53,35 @@ input[type='range'].transportbar {
   margin: 3px 2px 2px 2px;
   padding: 0;
   height: 4px;
-  width:130px;
-  background-image: -webkit-linear-gradient(#DDD, #AAA);
-  background-image: -moz-linear-gradient(#DDD, #AAA);
-  background-image: -ms-linear-gradient(#DDD, #AAA);
-  background-image: -o-linear-gradient(#DDD, #AAA);
+  width: 130px;
+  background-image: -webkit-linear-gradient(#ddd, #aaa);
+  background-image: -moz-linear-gradient(#ddd, #aaa);
+  background-image: -ms-linear-gradient(#ddd, #aaa);
+  background-image: -o-linear-gradient(#ddd, #aaa);
 }
 
 .g5meter > span {
   display: block;
   padding: 0;
   height: 100%;
-  background-image: -webkit-linear-gradient(#BBB, #888);
-  background-image: -moz-linear-gradient(#BBB, #888);
-  background-image: -ms-linear-gradient(#BBB, #888);
-  background-image: -o-linear-gradient(#BBB, #888);
+  background-image: -webkit-linear-gradient(#bbb, #888);
+  background-image: -moz-linear-gradient(#bbb, #888);
+  background-image: -ms-linear-gradient(#bbb, #888);
+  background-image: -o-linear-gradient(#bbb, #888);
 }
 
 input[type='range'].transportbar::-webkit-slider-thumb {
-  height:8px;
-  width:4px;
-  background-image: -webkit-linear-gradient(#AAA, #666);
+  height: 10px;
+  width: 4px;
+  background-image: -webkit-linear-gradient(#aaa, #666);
 }
 
 input[type='range'].transportbar::-moz-range-thumb {
   -moz-appearance: none !important;
-  height:8px;
-  width:4px;
-  background-image: -moz-linear-gradient(#AAA, #666);
-  border:0px;
+  height: 10px;
+  width: 4px;
+  background-image: -moz-linear-gradient(#aaa, #666);
+  border: 0;
 }
 
 .g5transport-1pxup::-webkit-slider-thumb {
@@ -102,9 +102,9 @@ input[type='range'].volume {
 }
 
 input[type='range'].volume::-webkit-slider-thumb {
-  background:#BBB;
-  height:15px;
-  width:4px;
+  background: #bbb;
+  height: 15px;
+  width: 4px;
 }
 
 input[type='range'].transportbar::-moz-range-track, input[type='range'].volume::-moz-range-track {
@@ -113,11 +113,11 @@ input[type='range'].transportbar::-moz-range-track, input[type='range'].volume::
 }
 
 input[type='range'].volume::-moz-range-thumb {
-  vertical-align:middle;
+  vertical-align: middle;
   -moz-appearance: none !important;
-  background:#BBB;
-  height:13px;
-  width:4px;
+  background: #bbb;
+  height: 13px;
+  width: 4px;
   border: 0;
 }
 
@@ -125,9 +125,8 @@ input[type='range'].volume::-moz-range-thumb {
   input[type='range'].transportbar {
     margin-top: -20px;  
   }
-
   .g5meter-1pxup {
-     margin-top: -22px !important;  
+    margin-top: -22px !important;  
   }
 }
 
@@ -138,7 +137,7 @@ input[type='range'].volume::-moz-range-thumb {
 .g5button {
   outline: none;
   float: left;
-  border: 0px;
+  border: 0;
   width: 15px;
   height: 15px;
   background-repeat: no-repeat;
