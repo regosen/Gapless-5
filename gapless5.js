@@ -85,8 +85,8 @@ function Gapless5Source(parentPlayer, inAudioPath) {
   };
 
   const onEnded = () => {
-    this.tick();
     if (state === Gapless5State.Play) {
+      setEndedCallbackTime(endpos / 1000);
       player.onEndedCallback();
     }
   };
@@ -164,6 +164,8 @@ function Gapless5Source(parentPlayer, inAudioPath) {
     endedCallback = window.setTimeout(onEnded, restSec * 1000 / player.playbackRate);
   };
 
+  const isLooping = () => player.loop && (player.singleMode || player.totalTracks() === 1);
+
   const playAudioFile = () => {
     if (this.inPlayState(true)) {
       return;
@@ -181,7 +183,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       source.connect(player.gainNode);
       source.buffer = buffer;
       source.playbackRate.value = player.playbackRate;
-      source.loop = player.loop && (player.singleMode || player.totalTracks() === 1);
+      source.loop = isLooping();
 
       source.start(0, offsetSec);
       player.onplay(this.audioPath);
@@ -191,7 +193,7 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       console.debug(`Playing HTML5 Audio: ${this.audioPath}`);
       audio.currentTime = offsetSec;
       audio.volume = player.gainNode.gain.value;
-      audio.loop = player.loop && (player.singleMode || player.totalTracks() === 1);
+      audio.loop = isLooping();
       audio.playbackRate = player.playbackRate;
 
       setState(Gapless5State.Starting);
@@ -245,6 +247,12 @@ function Gapless5Source(parentPlayer, inAudioPath) {
       const elapsed = nextTick - lastTick;
       position = position + (elapsed * player.playbackRate);
       lastTick = nextTick;
+      if (source) {
+        source.loop = isLooping();
+      }
+      if (audio) {
+        audio.loop = isLooping();
+      }
     }
 
     if (loadedPercent < 1) {
@@ -688,8 +696,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   gapless5Players[this.id] = this;
 
   // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
-  if ((window.gapless5AudioContext === undefined) && ((typeof AudioContext !== 'undefined') || (typeof webkitAudioContext !== 'undefined'))) {
-    window.gapless5AudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (window.gapless5AudioContext === undefined) {
+    const MaybeContext = window.AudioContext || window.webkitAudioContext;
+    if (MaybeContext) {
+      window.gapless5AudioContext = new MaybeContext();
+    }
   }
   this.context = window.gapless5AudioContext;
   this.gainNode = (this.context !== undefined) ? this.context.createGain() : null;
@@ -999,6 +1010,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     let playlistIndex = this.getIndex();
     if (this.currentSource().getPosition() > 0) {
       // jump to start of track if we're not there
+      this.currentSource().setPosition(0);
       track = playlistIndex;
       wantsCallback = false;
     } else if (this.singleMode && this.loop) {
