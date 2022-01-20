@@ -656,6 +656,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.initialized = false;
   this.uiDirty = true;
   this.playlist = new Gapless5FileList(options.shuffle, options.loadLimit);
+  this.nextIndex = null;
 
   // Setup up minimum logging
   switch (options.logLevel || LogLevel.Info) {
@@ -1029,6 +1030,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     let playlistIndex = this.getIndex();
     if (this.singleMode) {
       track = playlistIndex;
+    } else if (this.nextIndex !== null) {
+      track = this.nextIndex;
+      this.nextIndex = null;
     } else if (playlistIndex < this.totalTracks() - 1) {
       track = playlistIndex + 1;
     } else if (!this.loop) {
@@ -1038,6 +1042,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.gotoTrack(track, e === true, true);
     this.onnext(lastAudioPath, this.currentSource().audioPath);
   };
+
+  this.nextTrack = (index) => {
+    this.nextIndex = index;
+  }
 
   this.play = () => {
     if (this.totalTracks() === 0) {
