@@ -409,9 +409,7 @@ function Gapless5FileList(parentPlayer, inShuffle, inLoadLimit = -1) {
       return this.trackNumber;
     };
 
-    const newIndex = (typeof pointOrPath === 'string') ?
-      this.findTrack(pointOrPath) :
-      pointOrPath;
+    const newIndex = this.indexFromTrack(pointOrPath);
 
     const updateShuffle = (nextIndex) => {
       if (this.shuffleRequest !== null) {
@@ -552,6 +550,9 @@ function Gapless5FileList(parentPlayer, inShuffle, inLoadLimit = -1) {
     return tracks;
   };
 
+  this.indexFromTrack = (pointOrPath) => (typeof pointOrPath === 'string') ?
+    this.findTrack(pointOrPath) : pointOrPath;
+
   this.findTrack = (path) => this.getTracks().indexOf(path);
 
   this.getSourceIndex = (index) => this.shuffleMode ? this.shuffledIndices[index] : index;
@@ -559,28 +560,31 @@ function Gapless5FileList(parentPlayer, inShuffle, inLoadLimit = -1) {
   this.getPlaylistIndex = (index) => this.shuffleMode ? this.shuffledIndices.indexOf(index) : index;
 
   // inclusive start, exclusive end
-  const generateIntRange = (first, last) => Array.from({ length: (1 + last - first) }, (_v, k) => k + first);
+  const generateIntRangeSet = (first, last) => new Set(Array.from({ length: (1 + last - first) }, (_v, k) => k + first));
 
-  // returns actual indices (not shuffled)
+  // returns set of actual indices (not shuffled)
   this.loadableTracks = () => {
     if (this.loadLimit === -1) {
-      return generateIntRange(0, this.sources.length);
+      return generateIntRangeSet(0, this.sources.length);
     }
     // loadable tracks are a range where size=loadLimit, centered around current track
     const startTrack = Math.round(Math.max(0, this.trackNumber - ((this.loadLimit - 1) / 2)));
     const endTrack = Math.round(Math.min(this.sources.length, this.trackNumber + (this.loadLimit / 2)));
-    const loadableIndices = generateIntRange(startTrack, endTrack);
-
+    const loadableIndices = generateIntRangeSet(startTrack, endTrack);
+    if (player.queuedTrack) {
+      const index = this.indexFromTrack(player.queuedTrack);
+      loadableIndices.add(index);
+    }
     console.debug(`loadable playlist: ${JSON.stringify(loadableIndices)}`);
     return loadableIndices;
   };
 
   this.updateLoading = () => {
-    const loadable = this.loadableTracks();
+    const loadableSet = this.loadableTracks();
 
     for (const [ index, source ] of this.sources.entries()) {
       const playlistIndex = this.getPlaylistIndex(index);
-      const shouldLoad = loadable.includes(playlistIndex);
+      const shouldLoad = loadableSet.has(playlistIndex);
       if (shouldLoad === (source.getState() === Gapless5State.None)) {
         if (shouldLoad) {
           console.debug(`Loading track ${playlistIndex}: ${source.audioPath}`);
@@ -687,6 +691,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.loop = options.loop || false;
   this.singleMode = options.singleMode || false;
   this.exclusive = options.exclusive || false;
+  this.queuedTrack = null;
 
   // these default to true if not defined
   this.useWebAudio = options.useWebAudio !== false;
@@ -854,7 +859,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.onEndedCallback = () => {
     // we've finished playing the track
     const { audioPath } = this.currentSource();
-    if (this.loop || this.getIndex() < this.totalTracks() - 1) {
+    if (this.queuedTrack) {
+      this.gotoTrack(this.queuedTrack);
+      this.queuedTrack = null;
+    } else if (this.loop || this.getIndex() < this.totalTracks() - 1) {
       if (this.singleMode || this.totalTracks() === 1) {
         this.prev(true);
       } else {
@@ -904,9 +912,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.findTrack = (path) => this.playlist.findTrack(path);
 
   this.removeTrack = (pointOrPath) => {
-    const point = (typeof pointOrPath === 'string') ?
-      this.findTrack(pointOrPath) :
-      pointOrPath;
+    const point = this.playlist.indexFromTrack(pointOrPath);
 
     if (point < 0 || point >= this.playlist.numTracks()) {
       return;
@@ -975,6 +981,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     tick(); // tick once here before changing the playback rate, to maintain correct position
     this.playbackRate = rate;
     this.playlist.setPlaybackRate(rate);
+  };
+
+  this.queueTrack = (pointOrPath) => {
+    this.queuedTrack = pointOrPath;
+    this.playlist.updateLoading();
   };
 
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false) => {
