@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.4
+ * Version 1.3.5
  * Copyright 2014 Rego Sen
  *
 */
@@ -92,8 +92,23 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     }
   };
 
+  const parseError = (error) => {
+    if (error) {
+      if (error.message) {
+        return error.message;
+      }
+      if (error.target && error.target.error && error.target.error.message) {
+        return error.target.error.message;
+      }
+      return error;
+    }
+    return 'Error playing Gapless 5 audio';
+  };
+
   const onError = (error) => {
-    player.onerror(this.audioPath, error);
+    const message = parseError(error);
+    log.error(message);
+    player.onerror(this.audioPath, message);
     this.unload(true);
   };
 
@@ -307,7 +322,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (player.useWebAudio) {
       const onLoadWebAudio = (data) => {
         if (data) {
-          player.context.decodeAudioData(data,
+          player.context.decodeAudioData(data).then(
             (incomingBuffer) => {
               onLoadedWebAudio(incomingBuffer);
             }
@@ -338,7 +353,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         };
         request.onerror = () => {
           if (request) {
-            onError('HttpRequest error');
+            onError('Failed to load audio track');
           }
         };
         request.send();
