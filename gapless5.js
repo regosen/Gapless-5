@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.5
+ * Version 1.3.6
  * Copyright 2014 Rego Sen
  *
 */
@@ -123,7 +123,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (queuedState === Gapless5State.Play && state === Gapless5State.Loading) {
       playAudioFile(true);
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
-      log.debug(`switching from HTML5 to WebAudio: ${this.audioPath}`);
+      log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
       this.setPosition(audio.position, true);
     }
     if (state === Gapless5State.Loading) {
@@ -179,7 +179,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     // a) neither will trigger when looped
     // b) AudioBufferSourceNode version triggers on stop() as well
     const restSec = restSecNormalized / player.playbackRate;
-    log.debug(`onEnded will be called in ${restSec.toFixed(2)} sec`);
+    log.debug(`onEnded() will be called in ${restSec.toFixed(2)} sec`);
     endedCallback = window.setTimeout(onEnded, restSec * 1000);
   };
 
@@ -195,20 +195,26 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     const looped = player.isSingleLoop();
 
     if (buffer !== null) {
-      log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath}`);
-      player.context.resume();
-      source = player.context.createBufferSource();
-      source.connect(player.gainNode);
-      source.buffer = buffer;
-      source.playbackRate.value = player.playbackRate;
-      source.loop = looped;
+      setState(Gapless5State.Starting);
+      player.context.resume().then(() => {
+        if (state === Gapless5State.Starting) {
+          log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath}`);
+          source = player.context.createBufferSource();
+          source.buffer = buffer;
+          source.playbackRate.value = player.playbackRate;
+          source.loop = looped;
 
-      source.start(0, offsetSec);
-      player.onplay(this.audioPath);
-      setState(Gapless5State.Play);
-      setEndedCallbackTime(source.buffer.duration - offsetSec);
+          source.connect(player.gainNode);
+          source.start(0, offsetSec);
+          setState(Gapless5State.Play);
+          player.onplay(this.audioPath);
+          setEndedCallbackTime(source.buffer.duration - offsetSec);
+        } else {
+          // in case stop was requested while awaiting promise
+          source.stop();
+        }
+      });
     } else if (audio !== null) {
-      log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath}`);
       audio.currentTime = offsetSec;
       audio.volume = player.gainNode.gain.value;
       audio.loop = looped;
@@ -217,6 +223,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       setState(Gapless5State.Starting);
       audio.play().then(() => {
         if (state === Gapless5State.Starting) {
+          log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath}`);
           setState(Gapless5State.Play);
           player.onplay(this.audioPath);
           setEndedCallbackTime(audio.duration - offsetSec);
@@ -241,6 +248,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
   this.getLength = () => endpos;
 
   this.play = () => {
+    player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
@@ -594,7 +602,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1) 
     if (player.queuedTrack) {
       loadableIndices.add(this.indexFromTrack(player.queuedTrack));
     }
-    log.debug(`loadable indices: ${JSON.stringify([ ...loadableIndices ])}`);
+    log.debug(`Loadable indices: ${JSON.stringify([ ...loadableIndices ])}`);
     return loadableIndices;
   };
 
@@ -717,6 +725,23 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.singleMode = options.singleMode || false;
   this.exclusive = options.exclusive || false;
   this.queuedTrack = null;
+
+  // This is a hack to activate WebAudio on certain iOS versions
+  const silenceWavData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+  let playAllowed = false; // true after user initiates action
+  const stubAudio = new Audio();
+  stubAudio.controls = false;
+  stubAudio.loop = true;
+  stubAudio.src = silenceWavData;
+  stubAudio.load();
+  this.onPlayAllowed = () => {
+    if (!playAllowed) {
+      playAllowed = true;
+      stubAudio.play().then(() => {
+        stubAudio.pause();
+      });
+    }
+  };
 
   // these default to true if not defined
   this.useWebAudio = options.useWebAudio !== false;

@@ -16,7 +16,7 @@ const audioMockClass = () => ({
   addEventListener: jest.fn(),
   load: jest.fn(),
   pause: jest.fn(),
-  play: jest.fn(),
+  play: jest.fn(() => Promise.resolve(jest.fn())),
 });
 Audio = jest.fn().mockImplementation(audioMockClass);
 
