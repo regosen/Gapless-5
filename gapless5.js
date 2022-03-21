@@ -617,8 +617,8 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1) 
           log.debug(`Loading track ${playlistIndex}: ${source.audioPath}`);
           source.load();
         } else {
-          log.debug(`Unloading track ${playlistIndex}: ${source.audioPath}`);
           source.unload();
+          log.debug(`Unloaded track ${playlistIndex}: ${source.audioPath}`);
         }
       }
     }
