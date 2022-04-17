@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.8
+ * Version 1.3.9
  * Copyright 2014 Rego Sen
  *
 */
@@ -126,7 +126,8 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       playAudioFile(true);
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
-      this.setPosition(audio.currentTime * 1000, true);
+      setState(Gapless5State.Stop);
+      this.play(true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -185,7 +186,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     endedCallback = window.setTimeout(onEnded, restSec * 1000);
   };
 
-  const playAudioFile = () => {
+  const playAudioFile = (syncPosition) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -193,7 +194,6 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (!Number.isFinite(position) || position >= this.getLength()) {
       position = 0;
     }
-    const offsetSec = position / 1000;
     const looped = player.isSingleLoop();
 
     if (buffer !== null) {
@@ -205,18 +205,23 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.buffer = buffer;
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
-
           source.connect(player.gainNode);
+
+          const offsetSec = (syncPosition && audio) ? audio.currentTime : (position / 1000);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
           player.onplay(this.audioPath);
           setEndedCallbackTime(source.buffer.duration - offsetSec);
+          if (audio) {
+            audio.pause();
+          }
         } else {
           // in case stop was requested while awaiting promise
           source.stop();
         }
       });
     } else if (audio !== null) {
+      const offsetSec = position / 1000;
       audio.currentTime = offsetSec;
       audio.volume = player.gainNode.gain.value;
       audio.loop = looped;
@@ -249,13 +254,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = () => {
+  this.play = (syncPosition) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(); // play immediately
+      playAudioFile(syncPosition); // play immediately
     }
   };
 
