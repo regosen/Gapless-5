@@ -310,7 +310,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       this.stop();
       position = newPosition;
       this.play();
-    } else { 
+    } else {
       position = newPosition;
     }
   };
@@ -377,7 +377,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           if (request && isErrorStatus(request.status)) {
             onError('Failed to load audio track');
           }
-        }
+        };
         request.send();
       }
     }
