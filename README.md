@@ -184,9 +184,11 @@ You can call these functions on `Gapless5` objects.
 - **removeTrack(indexOrPath)**
   - removes specified track from playlist
   - `indexOrPath` can be the numerical index, or audio path
-- **setVolume**
+- **setPosition(position)**
+  - updates the current position (in milliseconds)
+- **setVolume(volume)**
   - updates the volume in real time (between 0 and 1)
-- **setPlaybackRate**
+- **setPlaybackRate(playbackRate)**
   - updates the playback speed in real time (see `playbackRate` option)
 - **mapKeys(jsonMapping)**
   - pressing specified key (case-insensitive) will trigger any Action function listed below.

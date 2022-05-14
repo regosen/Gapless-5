@@ -1,6 +1,6 @@
 {
   "name": "@regosen/gapless-5",
-  "version": "1.3.9",
+  "version": "1.3.10",
   "description": "A gapless JavaScript/CSS audio player for HTML5",
   "main": "gapless5.js",
   "style": "gapless5.css",
