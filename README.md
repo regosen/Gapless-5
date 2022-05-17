@@ -200,6 +200,10 @@ You can call these functions on `Gapless5` objects.
 - **getTracks()**
   - returns list of audioPaths in play order
   - if shuffled, the shuffled order will be reflected here
+- **getIndex()**
+  - returns current index in the playlist
+- **getPosition()**
+  - returns current play position in milliseconds
 - **findTrack(audioPath)**
   - returns index of track in playlist
 
