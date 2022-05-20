@@ -385,10 +385,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       const getHtml5Audio = () => {
         const audioObj = new Audio();
         audioObj.controls = false;
-        // no pitch preservation, to be consistent with WebAudio:
-        audioObj.preservesPitch = false;
-        audioObj.mozPreservesPitch = false;
-        audioObj.webkitPreservesPitch = false;
+        audioObj.preservesPitch = player.preservePitchHTML5;
+        audioObj.mozPreservesPitch = player.preservePitchHTML5;
+        audioObj.webkitPreservesPitch = player.preservePitchHTML5;
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
         audioObj.addEventListener('error', onError, false);
         // TODO: switch to audio.networkState, now that it's universally supported
@@ -760,6 +759,13 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   // these default to true if not defined
   this.useWebAudio = options.useWebAudio !== false;
   this.useHTML5Audio = options.useHTML5Audio !== false;
+  // no pitch preservation by default because WebAudio doesn't support it
+  this.preservePitchHTML5 = options.preservePitchHTML5Only !== false;
+  if (this.preservePitchHTML5) {
+    // since pitch preservation is unsupported in WebAudio, this forces exclusive HTML5Audio
+    this.useWebAudio = false;
+    this.useHTML5Audio = true;
+  }
   this.playbackRate = options.playbackRate || 1.0;
   this.id = Math.floor((1 + Math.random()) * 0x10000);
   gapless5Players[this.id] = this;

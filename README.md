@@ -131,6 +131,10 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **shuffle**
   - default = false
   - enables shuffle mode immediately after playlist load
+- **preservePitchHTML5Only**
+  - default = false
+  - HTML5Audio only: preserves pitch when playbackRate is changed.
+  - Warning: Since pitch preservation is unsupported in WebAudio, this forces WebAudio off.
 - **useHTML5Audio**
   - default = true
   - if you don't care about immediate playback, set useHTML5Audio to false for lower memory usage
