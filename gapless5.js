@@ -760,7 +760,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.useWebAudio = options.useWebAudio !== false;
   this.useHTML5Audio = options.useHTML5Audio !== false;
   // no pitch preservation by default because WebAudio doesn't support it
-  this.preservePitchHTML5 = options.preservePitchHTML5Only !== false;
+  this.preservePitchHTML5 = options.preservePitchHTML5Only === true;
   if (this.preservePitchHTML5) {
     // since pitch preservation is unsupported in WebAudio, this forces exclusive HTML5Audio
     this.useWebAudio = false;
