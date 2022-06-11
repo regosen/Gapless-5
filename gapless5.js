@@ -1430,6 +1430,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         for (let i = 0; i < options.tracks.length; i++) {
           items[i] = options.tracks[i];
         }
+        startingTrack = this.startingTrack || 0;
       } else if (typeof options.tracks[0] === 'object') {
         // convert JSON items into array
         for (let i = 0; i < options.tracks.length; i++) {
