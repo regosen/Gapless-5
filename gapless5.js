@@ -412,7 +412,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
 // A Gapless5FileList "class". Processes an array of JSON song objects, taking
 // the "file" members out to constitute the this.playlist.sources[] in the Gapless5 player
-function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1) {
+function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, inTracks = [], inStartingTrack = 0) {
   const player = parentPlayer;
   const log = parentLog;
 
@@ -670,6 +670,16 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1) 
     }
     this.updateLoading();
   };
+
+  // process inputs from constructor
+  if (inTracks.length > 0) {
+    for (let i = 0; i < inTracks.length; i++) {
+      this.sources.push(new Gapless5Source(player, log, inTracks[i]));
+      this.shuffledIndices.splice(Math.floor(Math.random() * this.numTracks()), 0, this.numTracks() - 1);
+    }
+    this.setStartingTrack(inStartingTrack);
+    this.updateLoading();
+  }
 }
 
 // parameters are optional.
@@ -734,7 +744,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     break;
   /* eslint-enable no-fallthrough */
   }
-  this.playlist = new Gapless5FileList(this, log, options.shuffle, options.loadLimit);
+  this.playlist = null;
   this.loop = options.loop || false;
   this.singleMode = options.singleMode || false;
   this.exclusive = options.exclusive || false;
@@ -1441,10 +1451,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     } else if (typeof options.tracks === 'string') {
       items[0] = options.tracks;
     }
-    for (let i = 0; i < items.length; i++) {
-      this.addTrack(items[i]);
-    }
-    this.playlist.setStartingTrack(startingTrack);
+    this.playlist = new Gapless5FileList(this, log, options.shuffle, options.loadLimit, items, startingTrack);
+  } else {
+    this.playlist = new Gapless5FileList(this, log, options.shuffle, options.loadLimit);
   }
 
   this.initialized = true;
