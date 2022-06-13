@@ -60,6 +60,12 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     }
   };
 
+  this.setPan = (pan) => {
+    if (audio !== null) {
+      audio.pan = pan;
+    }
+  };
+
   const setState = (newState) => {
     if (state !== newState && newState === Gapless5State.Play) {
       lastTick = new Date().getTime();
@@ -205,7 +211,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.buffer = buffer;
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
-          source.connect(player.gainNode);
+          source.connect(player.gainNode).connect(player.pannerNode);
 
           const offsetSec = (syncPosition && audio) ? audio.currentTime : (position / 1000);
           source.start(0, offsetSec);
@@ -224,6 +230,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       const offsetSec = position / 1000;
       audio.currentTime = offsetSec;
       audio.volume = player.gainNode.gain.value;
+      audio.pan = player.pannerNode.pan.value;
       audio.loop = looped;
       audio.playbackRate = player.playbackRate;
 
@@ -783,9 +790,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   }
   this.context = window.gapless5AudioContext;
   this.gainNode = (this.context !== undefined) ? this.context.createGain() : null;
-  if (this.context && this.gainNode) {
+  this.pannerNode = (this.context !== undefined) ? this.context.createStereoPanner() : null;
+  if (this.context && this.gainNode && this.pannerNode) {
     this.gainNode.gain.value = options.volume !== undefined ? options.volume : 1.0;
-    this.gainNode.connect(this.context.destination);
+    this.pannerNode.pan.value = options.pan !== undefined ? options.pan : 0;
+    this.gainNode.connect(this.pannerNode).connect(this.context.destination);
   }
 
   // Callback and Execution logic
@@ -917,6 +926,16 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
     if (this.hasGUI) {
       getElement('volume').value = scrubSize * volume;
+    }
+  };
+
+  this.setPan = (pan) => {
+    this.pannerNode.pan.value = pan;
+    if (this.currentSource()) {
+      this.currentSource().setPan(pan);
+    }
+    if (this.hasGUI) {
+      getElement('pan').value = scrubSize * pan;
     }
   };
 

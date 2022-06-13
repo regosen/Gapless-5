@@ -143,6 +143,8 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
   - caveat: you will hear gaps/loading delays if you skip tracks quickly enough or jump to arbitrary tracks
 - **volume**
   - default = 1.0 (0 = silent, 1.0 = loudest)
+- **pan**
+  - default = 0 (0 = center, -1.0 = 100% left, 1.0 = 100% right)
 - **playbackRate**
   - default = 1.0
   - multiplier for the playback speed, higher = plays faster, lower = plays slower
@@ -188,6 +190,8 @@ You can call these functions on `Gapless5` objects.
   - updates the current position (in milliseconds)
 - **setVolume(volume)**
   - updates the volume in real time (between 0 and 1)
+- **setPan(pan)**
+  - updates the pan in real time (between -1 and 1)
 - **setPlaybackRate(playbackRate)**
   - updates the playback speed in real time (see `playbackRate` option)
 - **mapKeys(jsonMapping)**
