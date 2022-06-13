@@ -15,13 +15,15 @@ A gapless JavaScript/CSS audio player for HTML5
 
 The following sites utilize Gapless 5.  If you'd like to be featured here, please contact the repo owner or start a new issue!
 
-- <b>Gapless 5 Demonstration Page:</b> Utilizes key mappings for cueing and other features. <br/>https://ccrma.stanford.edu/~regosen/gapless5
+- [Gapless 5 Demonstration Page](https://ccrma.stanford.edu/~regosen/gapless5): Utilizes key mappings for cueing and other features.
 
-- <b>THE402:</b> An electronic music looping experience. <br/>https://the402.wertstahl.de/player
+- [THE402](https://the402.wertstahl.de/player): An electronic music looping experience.
 
-- <b>Bernardo.fm:</b> Featuring electronic and hip-hop artists. <br/>https://beta.bernardo.fm/#!page=music
+- [Woodhelm](https://solemensis.github.io/Woodhelm/): A live ambience mixing website.
 
-- <b>This is Nerdpop:</b> Interactive listening page for Zen Finger Painting's indie pop album. <br/>http://www.zenfingerpainting.com
+- [Bernardo.fm](https://beta.bernardo.fm/#!page=music): Featuring electronic and hip-hop artists.
+
+- [This is Nerdpop](http://www.zenfingerpainting.com): Interactive listening page for Zen Finger Painting's indie pop album.
 
 ## Features
 
