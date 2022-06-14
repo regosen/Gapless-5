@@ -104,10 +104,10 @@ module.exports = exports = {
         "no-shadow": WARN,
         // We require all vars to be initialized (see init-declarations)
         // If we NEED a var to be initialized to undefined, it needs to be explicit
-        "no-undef-init": OFF,
+        "no-undef-init": ERROR,
         "no-undef": OFF,
         "no-undefined": OFF,
-        "no-unused-vars": WARN,
+        "no-unused-vars": ERROR,
         // Disallow hoisting - let & const don't allow hoisting anyhow
         "no-use-before-define": OFF,
 
@@ -120,7 +120,7 @@ module.exports = exports = {
         // Use path.concat instead
         "no-path-concat": ERROR,
         "no-process-exit": ERROR,
-        "no-restricted-modules": OFF,
+        "no-restricted-modules": ERROR,
         "no-sync": WARN,
 
         // ECMAScript 6 support
@@ -164,8 +164,8 @@ module.exports = exports = {
         "new-cap": WARN,
         "new-parens": WARN,
         "no-array-constructor": WARN,
-        "no-bitwise": OFF,
-        "no-continue": OFF,
+        "no-bitwise": ERROR,
+        "no-continue": ERROR,
         "no-inline-comments": OFF,
         "no-lonely-if": WARN,
         "no-mixed-spaces-and-tabs": WARN,
@@ -189,7 +189,7 @@ module.exports = exports = {
         "require-jsdoc": OFF,
         "semi-spacing": [ WARN, { "before": false, "after": true }],
         "semi": [ ERROR, "always" ],
-        "sort-vars": OFF,
+        "sort-vars": ERROR,
         "keyword-spacing": ["error", { "before": true, "after": true }],
         "space-before-blocks": [ WARN, "always" ],
         "space-before-function-paren": [ WARN, "never" ],

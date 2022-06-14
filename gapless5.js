@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.13
+ * Version 1.3.14
  * Copyright 2014 Rego Sen
  *
 */
@@ -877,7 +877,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.isSingleLoop = () => this.loop && (this.singleMode || this.totalTracks() === 1);
 
   this.mapKeys = (keyOptions) => {
-    for (let key in keyOptions) {
+    for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
       const lowercode = keyOptions[key].toLowerCase().charCodeAt(0);
       const player = gapless5Players[this.id];
@@ -961,11 +961,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         if (this.singleMode || this.totalTracks() === 1) {
           this.prev(!this.loop);
         } else {
-          source.stop(true);
+          source.stop();
           this.next(true);
         }
       } else {
-        source.stop(true);
+        source.stop();
         this.scrub(0, true);
         finishedAll = true;
       }
@@ -1201,15 +1201,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   };
 
   this.cue = () => {
-    const source = this.currentSource();
-    if (source && source.inPlayState(true)) {
+    if (this.currentPosition() > 0) {
       this.prev(true);
-    } else if (this.currentPosition() > 0) {
-      this.prev(true);
-      this.play();
-    } else {
-      this.play();
     }
+    this.play();
   };
 
   this.pause = () => {
@@ -1223,7 +1218,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.stop = () => {
     const source = this.currentSource();
     if (source) {
-      source.stop(true);
+      source.stop();
       if (source.getPosition() > 0) {
         this.scrub(0, true);
       }
