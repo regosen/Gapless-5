@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.15
+ * Version 1.3.16
  * Copyright 2014 Rego Sen
  *
 */
@@ -215,7 +215,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           if (audio) {
             audio.pause();
           }
-        } else {
+        } else if (source) {
           // in case stop was requested while awaiting promise
           source.stop();
         }
@@ -959,7 +959,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         this.queuedTrack = null;
       } else if (this.loop || this.getIndex() < this.totalTracks() - 1) {
         if (this.singleMode || this.totalTracks() === 1) {
-          this.prev(null, !this.loop);
+          if (this.loop) {
+            this.prev(null, false);
+          }
         } else {
           source.stop();
           this.next(null, true);
@@ -1274,7 +1276,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
       enableShuffleButton('shuffle', false);
       enableButton('next', false);
     } else {
-      getElement('trackIndex').innerText = this.playlist.trackNumber;
+      getElement('trackIndex').innerText = this.playlist.trackNumber + 1;
       getElement('tracks').innerText = numTracks;
       getElement('totalPosition').innerText = getTotalPositionText();
       enableButton('prev', this.loop || this.getIndex() > 0 || this.currentPosition() > 0);
