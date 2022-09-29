@@ -1,6 +1,7 @@
-.g5position {
+.g5positionbar {
   font-family: Arial, Helvetica, Geneva, sans-serif;
   font-size: 9px;
+  white-space: nowrap;
   color: #888;
   text-align: center;
   width: 135px;
@@ -22,6 +23,7 @@
 
 .g5transport {
   height: 12px;
+  position: absolute;
   overflow: hidden;
 }
 
@@ -35,7 +37,7 @@ input[type='range'].transportbar, input[type='range'].volume {
   appearance: none !important;
 }
 
-input[type='range'].transportbar::-webkit-slider-thumb, input[type='range'].volume::-webkit-slider-thumb {
+input[type='range'].volume::-webkit-slider-thumb {
   vertical-align: middle;
   -webkit-appearance: none !important;
 }
@@ -44,7 +46,7 @@ input[type='range'].transportbar {
   margin-top: -17px;
   margin-left: 2px;
   padding: 0;
-  height: 4px;
+  height: 15px;
   width: 130px;
   background: transparent; 
 }
@@ -71,31 +73,28 @@ input[type='range'].transportbar {
 }
 
 input[type='range'].transportbar::-webkit-slider-thumb {
-  height: 10px;
+  height: 25px;
   width: 4px;
+  margin-top: -15px;
+  padding: 0;
+  -webkit-appearance: none !important;
   background-image: -webkit-linear-gradient(#aaa, #666);
 }
 
 input[type='range'].transportbar::-moz-range-thumb {
   -moz-appearance: none !important;
-  height: 10px;
+  height: 25px;
   width: 4px;
+  margin-top: -15px;
+  padding: 0;
   background-image: -moz-linear-gradient(#aaa, #666);
   border: 0;
-}
-
-.g5transport-1pxup::-webkit-slider-thumb {
-  margin-top: -3px !important;
-}
-
-.g5meter-1pxup::-webkit-slider-thumb {
-  margin-top: -2px !important;
 }
 
 input[type='range'].volume {
   width: 35px;
   height: 15px;
-  margin: 2px;
+  margin: 2px 2px 20px 2px;
   padding: 0;
   background-repeat: no-repeat;
   background-image: url(data:image/gif;base64,R0lGODlhIwAPAMQAAAAAAP///8DAwLCwsK6urqampp2dnZWVlYyMjICAgH9/f319fXp6end3d3Z2dnV1dXR0dHNzc3JycnFxcXBwcP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACH5BAEAABUALAAAAAAjAA8AAAVWoCCOZGmeaKqubOu+sKPALaFQ1DLRacFQk4QwEeGVCrfIcFk0+ijKpbT5MkQoEqlWSF0dJtitmLhCQB/jdJf0gzTS8MSONEg6HIy8fs/vMyYHRoKDLCEAOw==);
@@ -125,13 +124,12 @@ input[type='range'].volume::-moz-range-thumb {
   input[type='range'].transportbar {
     margin-top: -20px;  
   }
-  .g5meter-1pxup {
-    margin-top: -22px !important;  
-  }
 }
 
 .g5buttons {
   height: 15px;
+  position: absolute;
+  margin-top: 12px;
 }
 
 .g5button {

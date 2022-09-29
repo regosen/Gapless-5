@@ -33,6 +33,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 - Seamless transitions between tracks
   - Pre-loading of subsequent tracks
   - Files don't need to be fully loaded to start playback
+- Cross-fade support
 - Track shuffling during playback
 - Optional built-in UI
 
@@ -126,7 +127,7 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
   - stops other Gapless5 players when this one is playing
 - **startingTrack**
   - default: 0
-  - either an array index into the tracks array, or the string "random" for a random index
+  - either an array index into the tracks array, or the string `random` for a random index
 - **shuffleButton**
   - default = true
   - adds shuffle button to the player UI
@@ -145,6 +146,16 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
   - caveat: you will hear gaps/loading delays if you skip tracks quickly enough or jump to arbitrary tracks
 - **volume**
   - default = 1.0 (0 = silent, 1.0 = loudest)
+- **crossfade**
+  - crossfade amount in milliseconds
+  - note: crossfades only while transitioning between tracks, not when you start playback
+- **crossfadeShape**
+  - `CrossfadeShape.None` (plays both tracks at full volume)
+  - `CrossfadeShape.Linear`
+  - `CrossfadeShape.EqualPower` (default)
+- **skipNativeLookahead**
+  - Gapless5 has an internal lookahead estimator for seamless transitions, set this to true if you don't want it
+  - (you can implement your own lookahead using `crossfade` with `crossfadeShape` set to `CrossfadeShape.None`)
 - **playbackRate**
   - default = 1.0
   - multiplier for the playback speed, higher = plays faster, lower = plays slower
@@ -190,6 +201,10 @@ You can call these functions on `Gapless5` objects.
   - updates the current position (in milliseconds)
 - **setVolume(volume)**
   - updates the volume in real time (between 0 and 1)
+- **setCrossfade(duration)**
+  - sets the crossfade amount in milliseconds
+- **setCrossfadeShape(shape)**
+  - sets the crossfade curve shape
 - **setPlaybackRate(playbackRate)**
   - updates the playback speed in real time (see `playbackRate` option)
 - **mapKeys(jsonMapping)**
@@ -302,6 +317,33 @@ const player = new Gapless5({guiId: 'gapless5-player-id', tracks: ['track1.mp3',
 player.onnext = nextCallback;
 player.onplay = function (track_path) { console.log(`Now playing ${track_path}`); };
 ```
+
+### GUI Customization
+
+While Gapless provides its own GUI, you can also customize it in CSS, or even create your own spans of text controlled by Gapless5.
+- `.g5positionbar` by class will affect the entire text above all Gapless5 players on your page
+- `#g5positionbar-[ID]` by id (where `[ID]` of the guiId you provided) will also customize the entire text for the current player
+- a span with `#g5position-[ID]` will be set to the current position (e.g. "04:04.95") 
+- a span with `#g5duration-[ID]` will be set to the track's duration
+- a span with `#g5index-[ID]` will be set to the track's index in the playlist
+- a span with `#g5numtracks-[ID]` will be set to the number of tracks in the playlist
+- a span with `#g5trackname-[ID]` will be set to the current track name (filename without extension)
+
+Example:
+in CSS, hide the built-in gapless5 text:
+```
+  #g5positionbar-MyID {
+    display: none;
+  }
+```
+and then create your own elements to be controlled by Gapless5:
+```
+<p>
+  Now Playing: <span id="#g5trackname-MyID"><span> 
+  (<span id="#g5position-MyID"><span>)
+</p>
+```
+See an example of customized player text [here](http://www.zenfingerpainting.com).
 
 ## License
 
