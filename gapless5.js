@@ -81,15 +81,12 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
   };
 
   this.calcFadeAmount = (percent) => {
-    // only do fades on user crossfade, not the native one
-    if (player.crossfade > 0) {
-      const clamped = Math.max(0, Math.min(1, percent));
-      if (player.crossfadeShape === CrossfadeShape.Linear) {
-        return 1 - clamped;
-      }
-      if (player.crossfadeShape === CrossfadeShape.EqualPower) {
-        return 1 - Math.sqrt(clamped);
-      }
+    const clamped = Math.max(0, Math.min(1, percent));
+    if (player.crossfadeShape === CrossfadeShape.Linear) {
+      return 1 - clamped;
+    }
+    if (player.crossfadeShape === CrossfadeShape.EqualPower) {
+      return 1 - Math.sqrt(clamped);
     }
     return 0;
   };
@@ -587,9 +584,8 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
       prevSource.stop(true);
     }
     if (forcePlay || wasPlaying) {
-      const crossfadeAmt = player.getTotalCrossfade();
-      const crossfadeIn = crossfadeEnabled ? crossfadeAmt : 0;
-      const crossfadeOut = crossfadeEnabled && !this.isLastTrack(nextIndex) ? crossfadeAmt : 0;
+      const crossfadeIn = crossfadeEnabled ? player.crossfade : 0;
+      const crossfadeOut = crossfadeEnabled && !this.isLastTrack(nextIndex) ? player.crossfade : 0;
       nextSource.setCrossfade(crossfadeIn, crossfadeOut);
       nextSource.play();
     }
@@ -891,12 +887,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.fadingTrack = null;
   this.volume = options.volume !== undefined ? options.volume : 1.0;
   this.crossfade = options.crossfade || 0;
-  this.crossfadeShape = options.crossfadeShape || CrossfadeShape.EqualPower;
-  // Adding imperceptible native crossfade to bridge the gap between tracks.
-  // Unfortunately, the gap varies between browsers and audio compression formats,
-  // and AudioContext.baseLatency is not enough.  User's crossfade is added to this.
-  this.skipNativeLookahed = options.skipNativeLookahed || false;
-  this.getTotalCrossfade = () => this.skipNativeLookahed ? 0 : (this.crossfade + this.context.baseLatency + (this.tickMS * 2));
+  this.crossfadeShape = options.crossfadeShape || CrossfadeShape.None;
 
   // This is a hack to activate WebAudio on certain iOS versions
   const silenceWavData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
@@ -1126,7 +1117,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
           this.fadingTrack = this.getIndex();
           window.setTimeout(() => {
             tryStopFadingTrack();
-          }, this.getTotalCrossfade());
+          }, this.crossfade);
           this.next(null, true, true);
         }
       } else {
@@ -1255,7 +1246,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.setCrossfade = (duration) => {
     this.crossfade = duration;
     if (this.isPlaying()) {
-      const totalCrossfade = this.getTotalCrossfade();
+      const totalCrossfade = this.crossfade;
       this.playlist.setCrossfade(totalCrossfade, totalCrossfade);
     }
   };
@@ -1315,7 +1306,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
       // jump to start of track if we're not there
       this.scrub(0, true);
       currentSource.setPosition(0, forceReset || Boolean(uiEvent));
-      this.playlist.setCrossfade(0, this.getTotalCrossfade());
+      this.playlist.setCrossfade(0, this.crossfade);
       track = playlistIndex;
       wantsCallback = false;
     } else if (this.singleMode && this.loop) {
@@ -1359,7 +1350,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     if (!source) {
       return;
     }
-    this.playlist.setCrossfade(0, this.getTotalCrossfade());
+    this.playlist.setCrossfade(0, this.crossfade);
     source.play();
     if (this.exclusive) {
       const { id } = this;
@@ -1664,8 +1655,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     factory(mod.exports);
     global.Gapless5 = mod.exports.Gapless5;
     global.LogLevel = mod.exports.LogLevel;
+    global.CrossfadeShape = mod.exports.CrossfadeShape;
   }
 }(this, (exports) => {
   exports.Gapless5 = Gapless5;
   exports.LogLevel = LogLevel;
+  exports.CrossfadeShape = CrossfadeShape;
 }));

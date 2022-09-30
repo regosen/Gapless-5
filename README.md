@@ -1,6 +1,29 @@
 # Gapless 5 &nbsp; <img src="https://ccrma.stanford.edu/~regosen/gapless5.gif" width="123" height="51">
 
-A gapless JavaScript/CSS audio player for HTML5
+A gapless JavaScript audio player using HTML5 and WebAudio.
+
+<!-- vscode-markdown-toc -->
+* 1. [Demos](#Demos)
+* 2. [Features](#Features)
+	* 2.1. [Browser Support](#BrowserSupport)
+* 3. [Installation](#Installation)
+	* 3.1. [Using npm](#Usingnpm)
+	* 3.2. [Using direct HTML](#UsingdirectHTML)
+* 4. [Usage](#Usage)
+	* 4.1. [Options](#Options)
+	* 4.2. [Functions](#Functions)
+		* 4.2.1. [Parameterized Functions](#ParameterizedFunctions)
+		* 4.2.2. [Accessors](#Accessors)
+		* 4.2.3. [Actions](#Actions)
+	* 4.3. [Callbacks](#Callbacks)
+	* 4.4. [GUI Customization](#GUICustomization)
+* 5. [License](#License)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->
 
 **PROBLEM**: There are 2 modern APIs for playing audio through the web, and both of them have problems:
 
@@ -11,7 +34,7 @@ A gapless JavaScript/CSS audio player for HTML5
 
 - If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once loaded.
 
-## Demos
+##  1. <a name='Demos'></a>Demos
 
 The following sites utilize Gapless 5.  If you'd like to be featured here, please contact the repo owner or start a new issue!
 
@@ -25,11 +48,11 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 
 - [This is Nerdpop](http://www.zenfingerpainting.com): Interactive listening page for Zen Finger Painting's indie pop album.
 
-## Features
+##  2. <a name='Features'></a>Features
 
 - Players can have multiple tracks
 - Pages can have multiple players
-- Memory management (see `loadLimit` under options)
+- Memory management (see `loadLimit` under [Options](#Options))
 - Seamless transitions between tracks
   - Pre-loading of subsequent tracks
   - Files don't need to be fully loaded to start playback
@@ -37,7 +60,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 - Track shuffling during playback
 - Optional built-in UI
 
-## Browser Support
+###  2.1. <a name='BrowserSupport'></a>Browser Support
 
 - Safari (including iOS)
 - Chrome (including Android)
@@ -46,8 +69,9 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 
 *NOTE for Boostrap users: Bootstrap's CSS will mess up the optional built-in UI.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
-## Getting Started
-### Using npm
+##  3. <a name='Installation'></a>Installation
+
+###  3.1. <a name='Usingnpm'></a>Using npm
 
 1. Install the [npm package](https://www.npmjs.com/package/@regosen/gapless-5):
 ```shell
@@ -59,7 +83,7 @@ $ npm install @regosen/gapless-5
 const { Gapless5 } = require('@regosen/gapless-5');
 ```
 
-### Using direct HTML
+###  3.2. <a name='UsingdirectHTML'></a>Using direct HTML
 
 A. If not using built-in UI, just add and reference `Gapless5.js` from your HTML head.
 ```html
@@ -76,12 +100,14 @@ B. If using the built-in UI, add and reference `Gapless5.js` and `Gapless5.css`.
 <div id="gapless5-player-id" />
 ```
 
-### How it Works
+##  4. <a name='Usage'></a>Usage
 
 1. Create a `Gapless5` object with an optional parameter object
     - If you want the built-in UI, pass in the element ID as `guiId` under options.
 2. Add tracks via options in constructor or `addTrack()`
 3. Optional stuff:
+    - Add a cross-fade between tracks using `crossfade` under options.
+      - TIP: try setting this between 25 and 50 ms if you still hear gaps between your tracks.  Gap sizes depend on the audio format, browser, etc.
     - Manipulate tracklist with `insertTrack()`, `removeTrack()`, and more.
     - Register your own callbacks.
     - Connect key presses to actions using `mapKeys()` or options in constructor.
@@ -107,7 +133,7 @@ _If you want the user to upload tracks from a file loader, here's an example of 
 </form>
 ```
 
-### Options
+###  4.1. <a name='Options'></a>Options
 These can be passed into a `Gapless5` constructor, or (with the exception of `tracks` and `guiId`) set later on the object.
 
 - **guiId**
@@ -147,15 +173,12 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **volume**
   - default = 1.0 (0 = silent, 1.0 = loudest)
 - **crossfade**
-  - crossfade amount in milliseconds
-  - note: crossfades only while transitioning between tracks, not when you start playback
+  - crossfade duration in milliseconds
+  - note: crossfades happen only when transitioning between tracks, not when you start playback
 - **crossfadeShape**
-  - `CrossfadeShape.None` (plays both tracks at full volume)
+  - `CrossfadeShape.None` (default, overlaps both tracks at full volume)
   - `CrossfadeShape.Linear`
-  - `CrossfadeShape.EqualPower` (default)
-- **skipNativeLookahead**
-  - Gapless5 has an internal lookahead estimator for seamless transitions, set this to true if you don't want it
-  - (you can implement your own lookahead using `crossfade` with `crossfadeShape` set to `CrossfadeShape.None`)
+  - `CrossfadeShape.EqualPower` (curved, louder than linear)
 - **playbackRate**
   - default = 1.0
   - multiplier for the playback speed, higher = plays faster, lower = plays slower
@@ -176,10 +199,10 @@ const player = new Gapless5({
 });
 ```
 
-### Functions
+###  4.2. <a name='Functions'></a>Functions
 You can call these functions on `Gapless5` objects.
 
-#### Parameterized Functions:
+####  4.2.1. <a name='ParameterizedFunctions'></a>Parameterized Functions
 - **addTrack(audioPath)**
   - adds track to end of playlist
   - `audioPath`: path to audio file(s) or blob URL(s), see examples above
@@ -202,7 +225,7 @@ You can call these functions on `Gapless5` objects.
 - **setVolume(volume)**
   - updates the volume in real time (between 0 and 1)
 - **setCrossfade(duration)**
-  - sets the crossfade amount in milliseconds
+  - sets the crossfade duration in milliseconds
 - **setCrossfadeShape(shape)**
   - sets the crossfade curve shape
 - **setPlaybackRate(playbackRate)**
@@ -211,7 +234,7 @@ You can call these functions on `Gapless5` objects.
   - pressing specified key (case-insensitive) will trigger any Action function listed below.
   - `jsonMapping` maps an action to a key, see example code below
 
-#### Accessors:
+####  4.2.2. <a name='Accessors'></a>Accessors
 - **isShuffled()**
   - returns true if shuffled
 - **getTracks()**
@@ -224,7 +247,9 @@ You can call these functions on `Gapless5` objects.
 - **findTrack(audioPath)**
   - returns index of track in playlist
 
-#### Actions (can be mapped to keys via `mapKeys`):
+####  4.2.3. <a name='Actions'></a>Actions
+
+All actions can be mapped to keys via `mapKeys`.
 
 *These correspond to built-in UI buttons*
 - **prev()**: matches behavior of "prev" button (scrubs to start if you've progressed into a track)
@@ -261,7 +286,7 @@ player.removeTrack(2);
 player.removeTrack('audio/transition.wav'); // can also remove track by path
 player.removeAllTracks();
 ```
-### Callbacks
+###  4.3. <a name='Callbacks'></a>Callbacks
 You can set these on a `Gapless5` object.  All callbacks include the affected track's audio path except where indicated.
 
 ```ts
@@ -318,7 +343,7 @@ player.onnext = nextCallback;
 player.onplay = function (track_path) { console.log(`Now playing ${track_path}`); };
 ```
 
-### GUI Customization
+###  4.4. <a name='GUICustomization'></a>GUI Customization
 
 While Gapless provides its own GUI, you can also customize it in CSS, or even create your own spans of text controlled by Gapless5.
 - `.g5positionbar` by class will affect the entire text above all Gapless5 players on your page
@@ -345,6 +370,6 @@ and then create your own elements to be controlled by Gapless5:
 ```
 See an example of customized player text [here](http://www.zenfingerpainting.com).
 
-## License
+##  5. <a name='License'></a>License
 
 Licensed under the MIT License.
