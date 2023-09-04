@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.3.16
+ * Version 1.4.2
  * Copyright 2014 Rego Sen
  *
 */
@@ -20,7 +20,7 @@ const Gapless5State = {
   Starting : 2,
   Play     : 3,
   Stop     : 4,
-  Error    : 5
+  Error    : 5,
 };
 
 const LogLevel = {
@@ -59,7 +59,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
   let endpos = 0;
   let queuedState = Gapless5State.None;
   let state = Gapless5State.None;
-  let loadedPercent = 0;
+  let seekablePercent = 0;
   let endedCallback = null;
   let volume = 1; // source-specific volume (for cross-fading)
   let crossfadeIn = 0;
@@ -127,6 +127,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     buffer = null;
     position = 0;
     endpos = 0;
+    seekablePercent = 0;
     if (gainNode) {
       gainNode.disconnect();
       gainNode = null;
@@ -156,8 +157,8 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
   const onError = (error) => {
     const message = parseError(error);
     log.error(message);
-    player.onerror(this.audioPath, message);
     this.unload(true);
+    player.onerror(this.audioPath, message);
   };
 
   const isErrorStatus = (status) => status / 100 >= 4;
@@ -186,8 +187,8 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
     }
-
     player.onload(this.audioPath);
+    player.playlist.updateLoading();
     player.uiDirty = true;
   };
 
@@ -195,7 +196,6 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (state !== Gapless5State.Loading) {
       return;
     }
-
     state = Gapless5State.Stop;
     endpos = audio.duration * 1000;
 
@@ -203,6 +203,11 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       this.setCrossfade(crossfadeIn, crossfadeOut); // re-clamp, now that endpos is reset
       playAudioFile(true);
     }
+
+    if (!player.useWebAudio) { // don't call onload twice for the same track
+      player.onload(this.audioPath);
+    }
+    player.playlist.updateLoading();
     player.uiDirty = true;
   };
 
@@ -382,19 +387,23 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       }
     }
 
-    if (loadedPercent < 1) {
-      let newPercent = 1;
-      if (state === Gapless5State.Loading) {
-        newPercent = 0;
-      } else if (audio && audio.seekable.length > 0) {
-        newPercent = (audio.seekable.end(0) / audio.duration);
-      }
-      if (loadedPercent !== newPercent) {
-        loadedPercent = newPercent;
+    if (seekablePercent < 1) {
+      const { Starting, Play, Stop } = Gapless5State;
+      if (player.useWebAudio && [ Starting, Play, Stop ].includes(state)) {
+        seekablePercent = 1;
+      } else if (player.useHTML5Audio && audio !== null && audio.seekable.length > 0) {
+        seekablePercent = audio.seekable.end(audio.seekable.length - 1) / audio.duration;
+        if (!Number.isFinite(seekablePercent)) {
+          seekablePercent = 0;
+        }
+      } else {
+        seekablePercent = 0;
       }
     }
-    return loadedPercent;
+    return seekablePercent;
   };
+
+  this.getSeekablePercent = () => seekablePercent;
 
   this.setPosition = (newPosition, bResetPlay) => {
     if (bResetPlay && this.inPlayState()) {
@@ -421,7 +430,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
   };
 
   this.load = () => {
-    if (state === Gapless5State.Loading) {
+    if (state !== Gapless5State.None) {
       return;
     }
     const { audioPath } = this;
@@ -549,7 +558,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
 
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride, crossfadeEnabled) => {
     const { index: prevIndex, source: prevSource } = this.getSourceIndexed(this.trackNumber);
-    // TODO: why is this requrning false when queuedState was Play?
+    // TODO: why is this returning false when queuedState was Play?
     const wasPlaying = prevSource.isPlayActive(true);
     const requestedIndex = this.indexFromTrack(pointOrPath);
     this.stopAllTracks(true, crossfadeEnabled ? [ player.fadingTrack ] : []);
@@ -574,7 +583,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
     const { index: nextIndex, source: nextSource } = this.getSourceIndexed(this.trackNumber);
 
     if (prevIndex === nextIndex) {
-      if (forcePlay || (wasPlaying && !player.isSingleLoop())) {
+      if (forcePlay || wasPlaying) {
         prevSource.stop();
         prevSource.play();
       }
@@ -748,16 +757,25 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   this.updateLoading = () => {
     const loadableSet = this.loadableTracks();
 
-    for (const [ index, source ] of this.sources.entries()) {
-      const playlistIndex = this.getPlaylistIndex(index);
-      const shouldLoad = loadableSet.has(playlistIndex);
-      if (shouldLoad === (source.getState() === Gapless5State.None)) {
-        if (shouldLoad) {
-          log.debug(`Loading track ${playlistIndex}: ${source.audioPath}`);
-          source.load();
-        } else {
-          source.unload();
-          log.debug(`Unloaded track ${playlistIndex}: ${source.audioPath}`);
+    // make sure to load current track before surrounding tracks
+    const curSourceIndex = this.getPlaylistIndex(this.trackNumber);
+    const curSource = this.sources[curSourceIndex];
+    if (loadableSet.has(curSourceIndex) && (curSource.getState() === Gapless5State.None)) {
+      log.debug(`Loading track ${curSourceIndex}: ${curSource.audioPath}`);
+      curSource.load();
+    } else {
+      for (const [ index, source ] of this.sources.entries()) {
+        const playlistIndex = this.getPlaylistIndex(index);
+        const shouldLoad = loadableSet.has(playlistIndex);
+        const hasLoaded = source.getState() !== Gapless5State.None;
+        if (shouldLoad !== hasLoaded) {
+          if (shouldLoad) {
+            log.debug(`Loading track ${playlistIndex}: ${source.audioPath}`);
+            source.load();
+          } else {
+            source.unload();
+            log.debug(`Unloaded track ${playlistIndex}: ${source.audioPath}`);
+          }
         }
       }
     }
@@ -1092,6 +1110,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  this.getSeekablePercent = () => {
+    const source = this.currentSource();
+    return source ? source.getSeekablePercent() : 0;
+  };
+
   this.onEndedCallback = () => {
     // we've finished playing the track
     let finishedAll = false;
@@ -1166,6 +1189,8 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   };
 
   this.getTracks = () => this.playlist.getTracks();
+
+  this.getTrack = () => this.currentSource() ? this.currentSource().audioPath : None;
 
   this.findTrack = (path) => this.playlist.findTrack(path);
 
@@ -1402,7 +1427,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   // (PUBLIC) QUERIES AND CALLBACKS
 
-  this.isPlaying = () => this.currentSource() && this.currentSource().inPlayState();
+  this.isPlaying = () => this.currentSource() && this.currentSource().inPlayState() || false;
 
   // INIT AND UI
 

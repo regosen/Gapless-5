@@ -240,10 +240,14 @@ You can call these functions on `Gapless5` objects.
 - **getTracks()**
   - returns list of audioPaths in play order
   - if shuffled, the shuffled order will be reflected here
+- **getTrack()**
+  - returns current track's audioPath (None if unavailable)
 - **getIndex()**
-  - returns current index in the playlist
+  - returns current index in the playlist (-1 if unavailable)
 - **getPosition()**
   - returns current play position in milliseconds
+- **getSeekablePercent()**
+  - returns percent of current track that's seekable (0-1)
 - **findTrack(audioPath)**
   - returns index of track in playlist
 
