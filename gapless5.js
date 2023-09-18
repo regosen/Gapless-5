@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.4.2
+ * Version 1.4.3
  * Copyright 2014 Rego Sen
  *
 */
@@ -69,8 +69,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     crossfadeIn = amountIn;
     crossfadeOut = amountOut;
     if (endpos > 0) {
-      if (crossfadeIn + crossfadeOut > endpos) {
-        log.warn(`Crossfades add up to longer than duration (${crossfadeIn + crossfadeOut} > ${endpos}), clamping`);
+      const totalFade = crossfadeIn + crossfadeOut;
+      if (totalFade > endpos) {
+        log.warn(`Crossfade total exceeds duration (${totalFade} > ${endpos}), clamping for ${this.audioPath}`);
         crossfadeIn = Math.min(amountIn, endpos / 2);
         crossfadeOut = Math.min(amountOut, endpos / 2);
       }
@@ -187,7 +188,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
     }
-    player.onload(this.audioPath);
+    player.onload(this.audioPath, true);
     player.playlist.updateLoading();
     player.uiDirty = true;
   };
@@ -204,9 +205,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       playAudioFile(true);
     }
 
-    if (!player.useWebAudio) { // don't call onload twice for the same track
-      player.onload(this.audioPath);
-    }
+    player.onload(this.audioPath, false);
     player.playlist.updateLoading();
     player.uiDirty = true;
   };
@@ -321,7 +320,8 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         }
       }).catch((e) => {
         if (e.name !== 'AbortError') {
-          log.warn(e.message);
+          // Known HTML5 Audio issue on iOS Safari: user must interact separately for loading vs playing
+          log.warn(`Failed to play ${this.audioPath}: ${e.message}`);
         }
       });
     }

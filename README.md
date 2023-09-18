@@ -166,10 +166,12 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **useWebAudio**
   - default = true
   - if you don't care about gapless playback, set useWebAudio to false for better performance
+  - see NOTE below
 - **loadLimit**
   - default = no limit
   - limits how many tracks can be loaded at once.  If you have a large playlist, set to a low number (like 2-5) to save on memory
   - caveat: you will hear gaps/loading delays if you skip tracks quickly enough or jump to arbitrary tracks
+  - see NOTE below
 - **volume**
   - default = 1.0 (0 = silent, 1.0 = loudest)
 - **crossfade**
@@ -198,6 +200,8 @@ const player = new Gapless5({
   mapKeys: {prev: 'a', playpause: 's', stop: 'd', next: 'f'},
 });
 ```
+
+_NOTE: if you set `loadLimit` with `useWebAudio` set to false, Safari on iOS may fail to play subsequent tracks.  This is due to user interaction requirements, and JS console will show a warning if this happens._
 
 ###  4.2. <a name='Functions'></a>Functions
 You can call these functions on `Gapless5` objects.
@@ -320,7 +324,9 @@ onnext = (from_track: string, to_track: string) => void
 onloadstart = (track_path: string) => void 
 
 // loading completed
-onload = (track_path: string) => void
+//   fully_loaded = true for WebAudio data, false for HTML5 Audio data
+//   NOTE: this triggers twice per track when both WebAudio and HTML5 are enabled
+onload = (track_path: string, fully_loaded: boolean) => void
 
 // track unloaded (to save memory)
 onunload = (track_path: string) => void
