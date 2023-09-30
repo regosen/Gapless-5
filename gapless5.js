@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.4.3
+ * Version 1.4.4
  * Copyright 2014 Rego Sen
  *
 */
@@ -246,14 +246,14 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
       // a) neither will trigger when looped
       // b) AudioBufferSourceNode version triggers on stop() as well
       log.debug(`onEnded() will be called on ${this.audioPath} in ${restSec.toFixed(2)} sec`);
-      endedCallback = window.setTimeout(onEnded, (restSec * 1000), player.context.baseLatency);
+      endedCallback = window.setTimeout(onEnded, (restSec * 1000));
     }
   };
 
-  const getStartOffsetMS = (syncPosition) => {
+  const getStartOffsetMS = (syncPosition, syncLatencySec) => {
     if (syncPosition && audio) {
-      // not an exact science
-      return (audio.currentTime * 1000) + player.tickMS + (player.context.baseLatency * 2);
+      // offset will fall behind by a tick, factor this in when syncing position
+      return audio.currentTime ? ((audio.currentTime + syncLatencySec) * 1000) + player.avgTickMS : 0;
     }
     return position;
   };
@@ -285,7 +285,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.loop = looped;
           source.connect(gainNode);
 
-          const offsetSec = getStartOffsetMS(syncPosition) / 1000;
+          const offsetSec = getStartOffsetMS(syncPosition, player.context.baseLatency) / 1000;
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
@@ -874,6 +874,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   // System
   let tickCallback = null;
   this.tickMS = 27; // fast enough for numbers to look real-time
+  this.avgTickMS = this.tickMS;
   this.initialized = false;
   this.uiDirty = true;
   const log = {
@@ -1500,7 +1501,15 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return null;
   };
 
+  let lastTick = -1;
   const tick = () => {
+    // JS tick latency is variable, maintain rolling average of past ticks
+    const curTick = Date.now();
+    if (lastTick >= 0) {
+      const elapsedMS = curTick - lastTick;
+      this.avgTickMS = (this.avgTickMS * 0.9) + (elapsedMS * 0.1);
+    }
+    lastTick = curTick;
     const fadingSource = getFadingSource();
     if (fadingSource) {
       fadingSource.tick(false);
