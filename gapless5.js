@@ -1076,9 +1076,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   // volume is normalized between 0 and 1
   this.setVolume = (volume) => {
-    this.volume = volume;
+    this.volume = Math.min(Math.max(volume, 0), 1);
     if (this.hasGUI) {
-      getElement('volume').value = scrubSize * volume;
+      getElement('volume').value = scrubSize * this.volume;
     }
   };
 
