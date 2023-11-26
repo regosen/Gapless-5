@@ -3,21 +3,21 @@
 A gapless JavaScript audio player using HTML5 and WebAudio.
 
 <!-- vscode-markdown-toc -->
-* 1. [Demos](#Demos)
-* 2. [Features](#Features)
-	* 2.1. [Browser Support](#BrowserSupport)
-* 3. [Installation](#Installation)
-	* 3.1. [Using npm](#Usingnpm)
-	* 3.2. [Using direct HTML](#UsingdirectHTML)
-* 4. [Usage](#Usage)
-	* 4.1. [Options](#Options)
-	* 4.2. [Functions](#Functions)
-		* 4.2.1. [Parameterized Functions](#ParameterizedFunctions)
-		* 4.2.2. [Accessors](#Accessors)
-		* 4.2.3. [Actions](#Actions)
-	* 4.3. [Callbacks](#Callbacks)
-	* 4.4. [GUI Customization](#GUICustomization)
-* 5. [License](#License)
+* 1. [Demos](#1-demos)
+* 2. [Features](#2-features)
+	* 2.1. [Browser Support](#21-browser-support)
+* 3. [Installation](#3-installation)
+	* 3.1. [Using npm](#31-using-npm)
+	* 3.2. [Using direct HTML](#32-using-direct-html)
+* 4. [Usage](#4-usage)
+	* 4.1. [Options](#41-options)
+	* 4.2. [Functions](#42-functions)
+		* 4.2.1. [Parameterized Functions](#421-parameterized-functions)
+		* 4.2.2. [Accessors](#422-accessors)
+		* 4.2.3. [Actions](#423-actions)
+	* 4.3. [Callbacks](#43-callbacks)
+	* 4.4. [GUI Customization](#44-gui-customization)
+* 5. [License](#5-license)
 
 <!-- vscode-markdown-toc-config
 	numbering=true
@@ -34,7 +34,7 @@ A gapless JavaScript audio player using HTML5 and WebAudio.
 
 - If WebAudio hasn't fully loaded yet, it begins playback with HTML5 Audio, then seamlessly switches to WebAudio once loaded.
 
-##  1. <a name='Demos'></a>Demos
+##  1. Demos
 
 The following sites utilize Gapless 5.  If you'd like to be featured here, please contact the repo owner or start a new issue!
 
@@ -48,7 +48,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 
 - [This is Nerdpop](http://www.zenfingerpainting.com): Interactive listening page for Zen Finger Painting's indie pop album.
 
-##  2. <a name='Features'></a>Features
+##  2. Features
 
 - Players can have multiple tracks
 - Pages can have multiple players
@@ -60,7 +60,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 - Track shuffling during playback
 - Optional built-in UI
 
-###  2.1. <a name='BrowserSupport'></a>Browser Support
+###  2.1. Browser Support
 
 - Safari (including iOS)
 - Chrome (including Android)
@@ -69,9 +69,9 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 
 *NOTE for Boostrap users: Bootstrap's CSS will mess up the optional built-in UI.  If you don't need Bootstrap in its entirety, try using Twitter customize to get just the subset of rules you need.*
 
-##  3. <a name='Installation'></a>Installation
+##  3. Installation
 
-###  3.1. <a name='Usingnpm'></a>Using npm
+###  3.1. Using npm
 
 1. Install the [npm package](https://www.npmjs.com/package/@regosen/gapless-5):
 ```shell
@@ -83,7 +83,7 @@ $ npm install @regosen/gapless-5
 const { Gapless5 } = require('@regosen/gapless-5');
 ```
 
-###  3.2. <a name='UsingdirectHTML'></a>Using direct HTML
+###  3.2. Using direct HTML
 
 A. If not using built-in UI, just add and reference `Gapless5.js` from your HTML head.
 ```html
@@ -100,7 +100,7 @@ B. If using the built-in UI, add and reference `Gapless5.js` and `Gapless5.css`.
 <div id="gapless5-player-id" />
 ```
 
-##  4. <a name='Usage'></a>Usage
+##  4. Usage
 
 1. Create a `Gapless5` object with an optional parameter object
     - If you want the built-in UI, pass in the element ID as `guiId` under options.
@@ -133,7 +133,7 @@ _If you want the user to upload tracks from a file loader, here's an example of 
 </form>
 ```
 
-###  4.1. <a name='Options'></a>Options
+###  4.1. Options
 These can be passed into a `Gapless5` constructor, or (with the exception of `tracks` and `guiId`) set later on the object.
 
 - **guiId**
@@ -203,10 +203,10 @@ const player = new Gapless5({
 
 _NOTE: if you set `loadLimit` with `useWebAudio` set to false, Safari on iOS may fail to play subsequent tracks.  This is due to user interaction requirements, and JS console will show a warning if this happens._
 
-###  4.2. <a name='Functions'></a>Functions
+###  4.2. Functions
 You can call these functions on `Gapless5` objects.
 
-####  4.2.1. <a name='ParameterizedFunctions'></a>Parameterized Functions
+####  4.2.1. Parameterized Functions
 - **addTrack(audioPath)**
   - adds track to end of playlist
   - `audioPath`: path to audio file(s) or blob URL(s), see examples above
@@ -238,7 +238,7 @@ You can call these functions on `Gapless5` objects.
   - pressing specified key (case-insensitive) will trigger any Action function listed below.
   - `jsonMapping` maps an action to a key, see example code below
 
-####  4.2.2. <a name='Accessors'></a>Accessors
+####  4.2.2. Accessors
 - **isShuffled()**
   - returns true if shuffled
 - **getTracks()**
@@ -255,7 +255,7 @@ You can call these functions on `Gapless5` objects.
 - **findTrack(audioPath)**
   - returns index of track in playlist
 
-####  4.2.3. <a name='Actions'></a>Actions
+####  4.2.3. Actions
 
 All actions can be mapped to keys via `mapKeys`.
 
@@ -294,7 +294,7 @@ player.removeTrack(2);
 player.removeTrack('audio/transition.wav'); // can also remove track by path
 player.removeAllTracks();
 ```
-###  4.3. <a name='Callbacks'></a>Callbacks
+###  4.3. Callbacks
 You can set these on a `Gapless5` object.  All callbacks include the affected track's audio path except where indicated.
 
 ```ts
@@ -353,7 +353,7 @@ player.onnext = nextCallback;
 player.onplay = function (track_path) { console.log(`Now playing ${track_path}`); };
 ```
 
-###  4.4. <a name='GUICustomization'></a>GUI Customization
+###  4.4. GUI Customization
 
 While Gapless provides its own GUI, you can also customize it in CSS, or even create your own spans of text controlled by Gapless5.
 - `.g5positionbar` by class will affect the entire text above all Gapless5 players on your page
@@ -380,6 +380,6 @@ and then create your own elements to be controlled by Gapless5:
 ```
 See an example of customized player text [here](http://www.zenfingerpainting.com).
 
-##  5. <a name='License'></a>License
+##  5. License
 
 Licensed under the MIT License.
