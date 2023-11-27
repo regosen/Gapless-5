@@ -245,7 +245,7 @@ You can call these functions on `Gapless5` objects.
   - returns list of audioPaths in play order
   - if shuffled, the shuffled order will be reflected here
 - **getTrack()**
-  - returns current track's audioPath (None if unavailable)
+  - returns current track's audioPath ('' if unavailable)
 - **getIndex()**
   - returns current index in the playlist (-1 if unavailable)
 - **getPosition()**
