@@ -1031,6 +1031,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   const isValidIndex = (index) => index >= 0 && index < this.playlist.numTracks();
 
   // (PUBLIC) ACTIONS
+  /**
+   * @returns {number}
+   */
   this.totalTracks = () => {
     // FileList object must be initiated
     if (this.playlist !== null) {
@@ -1039,8 +1042,14 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return 0;
   };
 
+  /**
+   * @returns {boolean}
+   */
   this.isSingleLoop = () => this.loop && (this.singleMode || this.totalTracks() === 1);
 
+  /**
+   * @param {Record<string, string>} keyOptions - key is the Action, value is the key to press
+   */
   this.mapKeys = (keyOptions) => {
     for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
@@ -1061,6 +1070,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     });
   };
 
+  /**
+   * @returns {number}
+   */
   this.getPosition = () => {
     if (this.currentSource()) {
       return this.currentSource().getPosition();
@@ -1068,13 +1080,18 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return 0;
   };
 
+  /**
+   * @param {number} position - in milliseconds
+   */
   this.setPosition = (position) => {
     if (this.currentSource()) {
       this.currentSource().setPosition(position, true);
     }
   };
 
-  // volume is normalized between 0 and 1
+  /**
+   * @param {number} volume - normalized between 0 and 1
+   */
   this.setVolume = (volume) => {
     this.volume = Math.min(Math.max(volume, 0), 1);
     if (this.hasGUI) {
@@ -1101,6 +1118,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {number} percent - between 0 and 1
+   */
   this.setLoadedSpan = (percent) => {
     if (this.hasGUI && statusUI.percent !== percent) {
       statusUI.percent = percent;
@@ -1172,12 +1192,19 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.addTrack = (audioPath) => {
     const nextTrack = this.playlist.numTracks();
     this.playlist.add(nextTrack, audioPath);
     this.uiDirty = true;
   };
 
+  /**
+   * @param {number} point - playlist index where to insert track
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.insertTrack = (point, audioPath) => {
     const numTracks = this.totalTracks();
     const safePoint = Math.min(Math.max(point, 0), numTracks);
@@ -1189,12 +1216,25 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @returns {string[]}
+   */
   this.getTracks = () => this.playlist.getTracks();
 
+  /**
+   * @returns {string[]} - audio path for current track, '' if none
+   */
   this.getTrack = () => this.currentSource() ? this.currentSource().audioPath : '';
 
+  /**
+   * @param {string} path - audio path for track to find
+   * @returns {number} - index in playlist, -1 if not found
+   */
   this.findTrack = (path) => this.playlist.findTrack(path);
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index
+   */
   this.removeTrack = (pointOrPath) => {
     const point = this.playlist.indexFromTrack(pointOrPath);
     if (!isValidIndex(point)) {
@@ -1228,6 +1268,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @param {number} point - playlist index where to replace track
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.replaceTrack = (point, audioPath) => {
     this.removeTrack(point);
     this.insertTrack(point, audioPath);
@@ -1238,9 +1282,15 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @returns {boolean}
+   */
   this.isShuffled = () => this.playlist.isShuffled();
 
   // shuffles, re-shuffling if previously shuffled
+  /**
+   * @param {boolean} preserveCurrent - true to keep current playing track in place
+   */
   this.shuffle = (preserveCurrent = true) => {
     if (!this.canShuffle()) {
       return;
@@ -1263,12 +1313,18 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.currentLength = () => this.currentSource() ? this.currentSource().getLength() : 0;
   this.currentPosition = () => this.currentSource() ? this.currentSource().getPosition() : 0;
 
+  /**
+   * @param {number} rate - default = 1.0, higher = plays faster, lower = plays slower
+   */
   this.setPlaybackRate = (rate) => {
     tick(); // tick once here before changing the playback rate, to maintain correct position
     this.playbackRate = rate;
     this.playlist.setPlaybackRate(rate);
   };
 
+  /**
+   * @param {number} duration - in milliseconds
+   */
   this.setCrossfade = (duration) => {
     this.crossfade = duration;
     if (this.isPlaying()) {
@@ -1277,10 +1333,16 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {CrossfadeShape} shape - sets the crossfade curve shape
+   */
   this.setCrossfadeShape = (shape) => {
     this.crossfadeShape = shape;
   };
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index to play next
+   */
   this.queueTrack = (pointOrPath) => {
     if (!isValidIndex(this.playlist.indexFromTrack(pointOrPath))) {
       log.error(`Cannot queue missing track: ${pointOrPath}`);
@@ -1290,6 +1352,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index to play
+   * @param {boolean} forcePlay - true to start playing even if player was stopped
+   * @param {boolean} allowOverride - internal use only
+   * @param {boolean} crossfadeEnabled - internal use only
+   */
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false, crossfadeEnabled = false) => {
     if (!isValidIndex(this.playlist.indexFromTrack(pointOrPath))) {
       log.error(`Cannot go to missing track: ${pointOrPath}`);
