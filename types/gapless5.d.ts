@@ -1,6 +1,52 @@
-export function Gapless5(options?: {}, deprecated?: {}): void;
+/**
+  * optional parameters:
+  *   guiId (string): id of existing HTML element where UI should be rendered
+  *   tracks (string | string[]): path of file (or array of music file paths)
+  *   useWebAudio (default = true)
+  *   useHTML5Audio (default = true)
+  *   startingTrack (number or "random", default = 0)
+  *   loadLimit (max number of tracks loaded at one time, default = -1, no limit)
+  *   logLevel (default = LogLevel.Info) minimum logging level
+  *   shuffle (true or false): start the jukebox in shuffle mode
+  *   shuffleButton (default = true): whether shuffle button appears or not in UI
+  *   loop (default = false): whether to return to first track after end of playlist
+  *   singleMode (default = false): whether to treat single track as playlist
+  *   playbackRate (default = 1.0): higher number = faster playback
+  *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *
+  * @param {Object.<string, string>} [options] - see description
+  * @param {Object.<string, string>} [deprecated] - do not use
+  */
+export function Gapless5(options?: {
+    [x: string]: string;
+}, deprecated?: {
+    [x: string]: string;
+}): void;
 export class Gapless5 {
-    constructor(options?: {}, deprecated?: {});
+    /**
+      * optional parameters:
+      *   guiId (string): id of existing HTML element where UI should be rendered
+      *   tracks (string | string[]): path of file (or array of music file paths)
+      *   useWebAudio (default = true)
+      *   useHTML5Audio (default = true)
+      *   startingTrack (number or "random", default = 0)
+      *   loadLimit (max number of tracks loaded at one time, default = -1, no limit)
+      *   logLevel (default = LogLevel.Info) minimum logging level
+      *   shuffle (true or false): start the jukebox in shuffle mode
+      *   shuffleButton (default = true): whether shuffle button appears or not in UI
+      *   loop (default = false): whether to return to first track after end of playlist
+      *   singleMode (default = false): whether to treat single track as playlist
+      *   playbackRate (default = 1.0): higher number = faster playback
+      *   exclusive (default = false): whether to stop other gapless players when this is playing
+      *
+      * @param {Object.<string, string>} [options] - see description
+      * @param {Object.<string, string>} [deprecated] - do not use
+      */
+    constructor(options?: {
+        [x: string]: string;
+    }, deprecated?: {
+        [x: string]: string;
+    });
     hasGUI: boolean;
     scrubWidth: string | number;
     scrubPosition: number;
@@ -10,19 +56,19 @@ export class Gapless5 {
     initialized: boolean;
     uiDirty: boolean;
     playlist: Gapless5FileList;
-    loop: any;
-    singleMode: any;
-    exclusive: any;
+    loop: string | boolean;
+    singleMode: string | boolean;
+    exclusive: string | boolean;
     queuedTrack: string | number;
-    fadingTrack: any;
-    volume: any;
-    crossfade: any;
-    crossfadeShape: any;
+    fadingTrack: number;
+    volume: string | number;
+    crossfade: string | number;
+    crossfadeShape: string | number;
     onPlayAllowed: () => void;
     useWebAudio: boolean;
     useHTML5Audio: boolean;
-    playbackRate: any;
-    id: any;
+    playbackRate: string | number;
+    id: string | number;
     context: any;
     keyMappings: {};
     onprev: () => void;
@@ -37,7 +83,11 @@ export class Gapless5 {
     onunload: () => void;
     onfinishedtrack: () => void;
     onfinishedall: () => void;
-    getIndex: (sourceIndex?: boolean) => any;
+    /**
+     * @param {boolean} [sourceIndex] - if true and shuffle is on, value will be different
+     * @returns {number} - -1 if not found
+     */
+    getIndex: (sourceIndex?: boolean) => number;
     /**
      * @returns {number}
      */
@@ -47,9 +97,13 @@ export class Gapless5 {
      */
     isSingleLoop: () => boolean;
     /**
-     * @param {Record<string, string>} keyOptions - key is the Action, value is the key to press
+     * See 'Actions' section in README for supported Actions
+     *
+     * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
      */
-    mapKeys: (keyOptions: Record<string, string>) => void;
+    mapKeys: (keyOptions: {
+        [x: string]: string;
+    }) => void;
     /**
      * @returns {number}
      */
@@ -68,6 +122,9 @@ export class Gapless5 {
      * @param {number} percent - between 0 and 1
      */
     setLoadedSpan: (percent: number) => void;
+    /**
+     * @returns {number} - between 0 and 1
+     */
     getSeekablePercent: () => number;
     onEndedCallback: () => void;
     onStartedScrubbing: () => void;
@@ -109,7 +166,7 @@ export class Gapless5 {
      */
     isShuffled: () => boolean;
     /**
-     * @param {boolean} preserveCurrent - true to keep current playing track in place
+     * @param {boolean} [preserveCurrent] - true to keep current playing track in place
      */
     shuffle: (preserveCurrent?: boolean) => void;
     toggleShuffle: () => void;
@@ -139,11 +196,11 @@ export class Gapless5 {
     queueTrack: (pointOrPath: number | string) => void;
     /**
      * @param {number | string} pointOrPath - audio path or playlist index to play
-     * @param {boolean} forcePlay - true to start playing even if player was stopped
-     * @param {boolean} allowOverride - internal use only
-     * @param {boolean} crossfadeEnabled - internal use only
+     * @param {boolean} [forcePlay] - true to start playing even if player was stopped
+     * @param {boolean} [allowOverride] - internal use only
+     * @param {boolean} [crossfadeEnabled] - internal use only
      */
-    gotoTrack: (pointOrPath: number | string, forcePlay: boolean, allowOverride?: boolean, crossfadeEnabled?: boolean) => void;
+    gotoTrack: (pointOrPath: number | string, forcePlay?: boolean, allowOverride?: boolean, crossfadeEnabled?: boolean) => void;
     prevtrack: () => void;
     prev: (uiEvent: any, forceReset: any) => void;
     next: (_uiEvent: any, forcePlay: any, crossfadeEnabled: any) => void;
@@ -154,7 +211,7 @@ export class Gapless5 {
     stop: () => void;
     isPlaying: () => boolean;
     canShuffle: () => boolean;
-    startingTrack: string | number;
+    startingTrack: string;
 }
 export namespace LogLevel {
     let Debug: number;

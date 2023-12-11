@@ -834,21 +834,25 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   }
 }
 
-// parameters are optional.
-//   options:
-//     guiId: id of existing HTML element where UI should be rendered
-//     tracks: path of file (or array of music file paths)
-//     useWebAudio (default = true)
-//     useHTML5Audio (default = true)
-//     startingTrack (number or "random", default = 0)
-//     loadLimit (max number of tracks loaded at one time, default = -1, no limit)
-//     logLevel (default = LogLevel.Info) minimum logging level
-//     shuffle (true or false): start the jukebox in shuffle mode
-//     shuffleButton (default = true): whether shuffle button appears or not in UI
-//     loop (default = false): whether to return to first track after end of playlist
-//     singleMode (default = false): whether to treat single track as playlist
-//     playbackRate (default = 1.0): higher number = faster playback
-//     exclusive (default = false): whether to stop other gapless players when this is playing
+/**
+  * optional parameters:
+  *   guiId (string): id of existing HTML element where UI should be rendered
+  *   tracks (string | string[]): path of file (or array of music file paths)
+  *   useWebAudio (default = true)
+  *   useHTML5Audio (default = true)
+  *   startingTrack (number or "random", default = 0)
+  *   loadLimit (max number of tracks loaded at one time, default = -1, no limit)
+  *   logLevel (default = LogLevel.Info) minimum logging level
+  *   shuffle (true or false): start the jukebox in shuffle mode
+  *   shuffleButton (default = true): whether shuffle button appears or not in UI
+  *   loop (default = false): whether to return to first track after end of playlist
+  *   singleMode (default = false): whether to treat single track as playlist
+  *   playbackRate (default = 1.0): higher number = faster playback
+  *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *
+  * @param {Object.<string, string>} [options] - see description
+  * @param {Object.<string, string>} [deprecated] - do not use
+  */
 function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unused-vars
   // Backwards-compatibility with deprecated API
   if (typeof options === 'string') {
@@ -971,7 +975,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   const getSoundPos = (uiPosition) => ((uiPosition / scrubSize) * this.currentLength());
 
-  // Current index (if sourceIndex = true and shuffle is on, value will be different)
+  /**
+   * @param {boolean} [sourceIndex] - if true and shuffle is on, value will be different
+   * @returns {number} - -1 if not found
+   */
   this.getIndex = (sourceIndex = false) => {
     // FileList object must be initiated
     if (this.playlist !== null) {
@@ -1048,7 +1055,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.isSingleLoop = () => this.loop && (this.singleMode || this.totalTracks() === 1);
 
   /**
-   * @param {Record<string, string>} keyOptions - key is the Action, value is the key to press
+   * See 'Actions' section in README for supported Actions
+   *
+   * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
    */
   this.mapKeys = (keyOptions) => {
     for (const key in keyOptions) {
@@ -1131,6 +1140,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @returns {number} - between 0 and 1
+   */
   this.getSeekablePercent = () => {
     const source = this.currentSource();
     return source ? source.getSeekablePercent() : 0;
@@ -1289,7 +1301,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   // shuffles, re-shuffling if previously shuffled
   /**
-   * @param {boolean} preserveCurrent - true to keep current playing track in place
+   * @param {boolean} [preserveCurrent] - true to keep current playing track in place
    */
   this.shuffle = (preserveCurrent = true) => {
     if (!this.canShuffle()) {
@@ -1354,9 +1366,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   /**
    * @param {number | string} pointOrPath - audio path or playlist index to play
-   * @param {boolean} forcePlay - true to start playing even if player was stopped
-   * @param {boolean} allowOverride - internal use only
-   * @param {boolean} crossfadeEnabled - internal use only
+   * @param {boolean} [forcePlay] - true to start playing even if player was stopped
+   * @param {boolean} [allowOverride] - internal use only
+   * @param {boolean} [crossfadeEnabled] - internal use only
    */
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false, crossfadeEnabled = false) => {
     if (!isValidIndex(this.playlist.indexFromTrack(pointOrPath))) {
