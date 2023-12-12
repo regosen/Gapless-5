@@ -14,13 +14,13 @@
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
   *
-  * @param {Object.<string, string>} [options] - see description
-  * @param {Object.<string, string>} [deprecated] - do not use
+  * @param {Object.<string, any>} [options] - see description
+  * @param {Object.<string, any>} [deprecated] - do not use
   */
 export function Gapless5(options?: {
-    [x: string]: string;
+    [x: string]: any;
 }, deprecated?: {
-    [x: string]: string;
+    [x: string]: any;
 }): void;
 export class Gapless5 {
     /**
@@ -39,13 +39,13 @@ export class Gapless5 {
       *   playbackRate (default = 1.0): higher number = faster playback
       *   exclusive (default = false): whether to stop other gapless players when this is playing
       *
-      * @param {Object.<string, string>} [options] - see description
-      * @param {Object.<string, string>} [deprecated] - do not use
+      * @param {Object.<string, any>} [options] - see description
+      * @param {Object.<string, any>} [deprecated] - do not use
       */
     constructor(options?: {
-        [x: string]: string;
+        [x: string]: any;
     }, deprecated?: {
-        [x: string]: string;
+        [x: string]: any;
     });
     hasGUI: boolean;
     scrubWidth: string | number;
@@ -56,19 +56,19 @@ export class Gapless5 {
     initialized: boolean;
     uiDirty: boolean;
     playlist: Gapless5FileList;
-    loop: string | boolean;
-    singleMode: string | boolean;
-    exclusive: string | boolean;
+    loop: any;
+    singleMode: any;
+    exclusive: any;
     queuedTrack: string | number;
     fadingTrack: number;
-    volume: string | number;
-    crossfade: string | number;
-    crossfadeShape: string | number;
+    volume: any;
+    crossfade: any;
+    crossfadeShape: any;
     onPlayAllowed: () => void;
     useWebAudio: boolean;
     useHTML5Audio: boolean;
-    playbackRate: string | number;
-    id: string | number;
+    playbackRate: any;
+    id: any;
     context: any;
     keyMappings: {};
     /**
@@ -262,7 +262,7 @@ export class Gapless5 {
     stop: () => void;
     isPlaying: () => boolean;
     canShuffle: () => boolean;
-    startingTrack: string;
+    startingTrack: string | number;
 }
 export namespace LogLevel {
     let Debug: number;

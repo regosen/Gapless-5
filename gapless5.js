@@ -850,8 +850,8 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
   *
-  * @param {Object.<string, string>} [options] - see description
-  * @param {Object.<string, string>} [deprecated] - do not use
+  * @param {Object.<string, any>} [options] - see description
+  * @param {Object.<string, any>} [deprecated] - do not use
   */
 function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unused-vars
   // Backwards-compatibility with deprecated API
