@@ -71,17 +71,68 @@ export class Gapless5 {
     id: string | number;
     context: any;
     keyMappings: {};
-    onprev: () => void;
-    onplayrequest: () => void;
-    onplay: () => void;
-    onpause: () => void;
-    onstop: () => void;
-    onnext: () => void;
-    onerror: () => void;
-    onloadstart: () => void;
-    onload: () => void;
-    onunload: () => void;
-    onfinishedtrack: () => void;
+    /**
+     * @param {string} from_track - track that we're switching from
+     * @param {string} to_track - track that we're switching to
+     */
+    onprev: (from_track: string, to_track: string) => void;
+    /**
+     * play requested by user
+     *
+     * @param {string} track_path - track to be played
+     */
+    onplayrequest: (track_path: string) => void;
+    /**
+     * play actually starts
+     *
+     * @param {string} track_path - track being played
+     */
+    onplay: (track_path: string) => void;
+    /**
+     * @param {string} track_path - track to pause
+     */
+    onpause: (track_path: string) => void;
+    /**
+     * @param {string} track_path - track to stop
+     */
+    onstop: (track_path: string) => void;
+    /**
+     * @param {string} from_track - track that we're switching from
+     * @param {string} to_track - track that we're switching to
+     */
+    onnext: (from_track: string, to_track: string) => void;
+    /**
+     * @param {number} current_track_time - current time offset of active track 0 if unavailable
+     */
+    ontimeupdate: (current_track_time: number) => void;
+    /**
+     * @param {string} track_path - track that failed to load or play
+     * @param {Error | string} [error] - error object or message
+     */
+    onerror: (track_path: string, error?: Error | string) => void;
+    /**
+     * @param {string} track_path - track being loaded
+     */
+    onloadstart: (track_path: string) => void;
+    /**
+     * Load completed
+     * NOTE: this triggers twice per track when both WebAudio and HTML5 are enabled
+     * *
+     * @param {string} track_path - track being loaded
+     * @param {boolean} fully_loaded - true for WebAudio data, false for HTML5 Audio data
+     */
+    onload: (track_path: string, fully_loaded: boolean) => void;
+    /**
+     * @param {string} track_path - track that unloaded
+     */
+    onunload: (track_path: string) => void;
+    /**
+     * @param {string} track_path - track that finished playing
+     */
+    onfinishedtrack: (track_path: string) => void;
+    /**
+     * Entire playlist finished playing
+     */
     onfinishedall: () => void;
     /**
      * @param {boolean} [sourceIndex] - if true and shuffle is on, value will be different

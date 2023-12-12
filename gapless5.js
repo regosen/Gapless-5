@@ -949,19 +949,83 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.keyMappings = {};
 
   // Callbacks
-  this.onprev = () => {};
-  this.onplayrequest = () => {}; // play requested by user
-  this.onplay = () => {}; // play actually starts
-  this.onpause = () => {};
-  this.onstop = () => {};
-  this.onnext = () => {};
+  /* eslint-disable no-unused-vars, camelcase */
+  /**
+   * @param {string} from_track - track that we're switching from
+   * @param {string} to_track - track that we're switching to
+   */
+  this.onprev = (from_track, to_track) => {};
 
-  this.onerror = () => {};
-  this.onloadstart = () => {}; // load started
-  this.onload = () => {}; // load completed
-  this.onunload = () => {};
-  this.onfinishedtrack = () => {};
+  /**
+   * play requested by user
+   *
+   * @param {string} track_path - track to be played
+   */
+  this.onplayrequest = (track_path) => {};
+
+  /**
+   * play actually starts
+   *
+   * @param {string} track_path - track being played
+   */
+  this.onplay = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track to pause
+   */
+  this.onpause = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track to stop
+   */
+  this.onstop = (track_path) => {};
+
+  /**
+   * @param {string} from_track - track that we're switching from
+   * @param {string} to_track - track that we're switching to
+   */
+  this.onnext = (from_track, to_track) => {};
+
+  /**
+   * @param {number} current_track_time - current time offset of active track 0 if unavailable
+   */
+  this.ontimeupdate = (current_track_time) => {};
+
+  /**
+   * @param {string} track_path - track that failed to load or play
+   * @param {Error | string} [error] - error object or message
+   */
+  this.onerror = (track_path, error) => {};
+
+  /**
+   * @param {string} track_path - track being loaded
+   */
+  this.onloadstart = (track_path) => {};
+
+  /**
+   * Load completed
+   * NOTE: this triggers twice per track when both WebAudio and HTML5 are enabled
+   * *
+   * @param {string} track_path - track being loaded
+   * @param {boolean} fully_loaded - true for WebAudio data, false for HTML5 Audio data
+   */
+  this.onload = (track_path, fully_loaded) => {};
+
+  /**
+   * @param {string} track_path - track that unloaded
+   */
+  this.onunload = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track that finished playing
+   */
+  this.onfinishedtrack = (track_path) => {};
+
+  /**
+   * Entire playlist finished playing
+   */
   this.onfinishedall = () => {};
+  /* eslint-enable no-unused-vars, camelcase */
 
   // INTERNAL HELPERS
   const getUIPos = () => {
@@ -1614,6 +1678,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
         }
       }
     }
+    this.ontimeupdate(this.getPosition());
     if (tickCallback) {
       window.clearTimeout(tickCallback);
     }
