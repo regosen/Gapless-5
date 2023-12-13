@@ -193,6 +193,10 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     player.uiDirty = true;
   };
 
+  const onLoadedHTML5Metadata = () => {
+    endpos = audio.duration * 1000;
+  };
+
   const onLoadedHTML5Audio = () => {
     if (state !== Gapless5State.Loading) {
       return;
@@ -489,6 +493,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         audioObj.preservesPitch = false;
         audioObj.mozPreservesPitch = false;
         audioObj.webkitPreservesPitch = false;
+        audioObj.addEventListener('loadedmetadata', onLoadedHTML5Metadata, false);
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
         audioObj.addEventListener('error', onError, false);
         // TODO: switch to audio.networkState, now that it's universally supported
@@ -1672,13 +1677,13 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
           // playing track, update bar position
           soundPos = this.scrubPosition;
         }
+        this.ontimeupdate(soundPos);
         if (this.hasGUI) {
           getElement('transportbar').value = getUIPos();
           setElementText('position', getFormattedTime(soundPos));
         }
       }
     }
-    this.ontimeupdate(this.getPosition());
     if (tickCallback) {
       window.clearTimeout(tickCallback);
     }
