@@ -102,9 +102,12 @@ export class Gapless5 {
      */
     onnext: (from_track: string, to_track: string) => void;
     /**
+     * Triggered when sound position has changed
+     *
      * @param {number} current_track_time - current time offset of active track 0 if unavailable
+     * @param {number} current_track_index - current track index in playlist
      */
-    ontimeupdate: (current_track_time: number) => void;
+    ontimeupdate: (current_track_time: number, current_track_index: number) => void;
     /**
      * @param {string} track_path - track that failed to load or play
      * @param {Error | string} [error] - error object or message
