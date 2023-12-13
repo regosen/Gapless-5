@@ -298,8 +298,8 @@ player.removeAllTracks();
 You can set these on a `Gapless5` object.  All callbacks include the affected track's audio path except where indicated.
 
 ```ts
-// current position of active track (0 if none)
-ontimeupdate = (current_track_time: number) => void
+// audio position has changed
+ontimeupdate = (current_track_time: number, current_track_index: number) => void
 
 // play requested by user
 onplayrequest = (track_path: string) => void

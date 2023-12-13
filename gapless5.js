@@ -992,9 +992,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.onnext = (from_track, to_track) => {};
 
   /**
+   * Triggered when sound position has changed
+   *
    * @param {number} current_track_time - current time offset of active track 0 if unavailable
+   * @param {number} current_track_index - current track index in playlist
    */
-  this.ontimeupdate = (current_track_time) => {};
+  this.ontimeupdate = (current_track_time, current_track_index) => {};
 
   /**
    * @param {string} track_path - track that failed to load or play
@@ -1650,15 +1653,19 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return null;
   };
 
-  let lastTick = -1;
+  const prevTick = {
+    time: -1,
+    index: -1,
+    position: -1,
+  };
   const tick = () => {
     // JS tick latency is variable, maintain rolling average of past ticks
-    const curTick = Date.now();
-    if (lastTick >= 0) {
-      const elapsedMS = curTick - lastTick;
+    const curTime = Date.now();
+    if (prevTick.time >= 0) {
+      const elapsedMS = curTime - prevTick.time;
       this.avgTickMS = (this.avgTickMS * 0.9) + (elapsedMS * 0.1);
     }
-    lastTick = curTick;
+    prevTick.time = curTime;
     const fadingSource = getFadingSource();
     if (fadingSource) {
       fadingSource.tick(false);
@@ -1677,12 +1684,18 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
           // playing track, update bar position
           soundPos = this.scrubPosition;
         }
-        this.ontimeupdate(soundPos);
         if (this.hasGUI) {
           getElement('transportbar').value = getUIPos();
           setElementText('position', getFormattedTime(soundPos));
         }
       }
+    }
+    const curIndex = this.getIndex();
+    const curPosition = this.getPosition();
+    if (prevTick.index !== curIndex || prevTick.position !== curPosition) {
+      prevTick.index = curIndex;
+      prevTick.position = curPosition;
+      this.ontimeupdate(curPosition, curIndex);
     }
     if (tickCallback) {
       window.clearTimeout(tickCallback);
