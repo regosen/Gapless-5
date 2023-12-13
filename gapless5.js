@@ -193,6 +193,10 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     player.uiDirty = true;
   };
 
+  const onLoadedHTML5Metadata = () => {
+    endpos = audio.duration * 1000;
+  };
+
   const onLoadedHTML5Audio = () => {
     if (state !== Gapless5State.Loading) {
       return;
@@ -489,6 +493,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         audioObj.preservesPitch = false;
         audioObj.mozPreservesPitch = false;
         audioObj.webkitPreservesPitch = false;
+        audioObj.addEventListener('loadedmetadata', onLoadedHTML5Metadata, false);
         audioObj.addEventListener('canplaythrough', onLoadedHTML5Audio, false);
         audioObj.addEventListener('error', onError, false);
         // TODO: switch to audio.networkState, now that it's universally supported
@@ -834,21 +839,25 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   }
 }
 
-// parameters are optional.
-//   options:
-//     guiId: id of existing HTML element where UI should be rendered
-//     tracks: path of file (or array of music file paths)
-//     useWebAudio (default = true)
-//     useHTML5Audio (default = true)
-//     startingTrack (number or "random", default = 0)
-//     loadLimit (max number of tracks loaded at one time, default = -1, no limit)
-//     logLevel (default = LogLevel.Info) minimum logging level
-//     shuffle (true or false): start the jukebox in shuffle mode
-//     shuffleButton (default = true): whether shuffle button appears or not in UI
-//     loop (default = false): whether to return to first track after end of playlist
-//     singleMode (default = false): whether to treat single track as playlist
-//     playbackRate (default = 1.0): higher number = faster playback
-//     exclusive (default = false): whether to stop other gapless players when this is playing
+/**
+  * optional parameters:
+  *   guiId (string): id of existing HTML element where UI should be rendered
+  *   tracks (string | string[]): path of file (or array of music file paths)
+  *   useWebAudio (default = true)
+  *   useHTML5Audio (default = true)
+  *   startingTrack (number or "random", default = 0)
+  *   loadLimit (max number of tracks loaded at one time, default = -1, no limit)
+  *   logLevel (default = LogLevel.Info) minimum logging level
+  *   shuffle (true or false): start the jukebox in shuffle mode
+  *   shuffleButton (default = true): whether shuffle button appears or not in UI
+  *   loop (default = false): whether to return to first track after end of playlist
+  *   singleMode (default = false): whether to treat single track as playlist
+  *   playbackRate (default = 1.0): higher number = faster playback
+  *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *
+  * @param {Object.<string, any>} [options] - see description
+  * @param {Object.<string, any>} [deprecated] - do not use
+  */
 function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unused-vars
   // Backwards-compatibility with deprecated API
   if (typeof options === 'string') {
@@ -945,19 +954,86 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.keyMappings = {};
 
   // Callbacks
-  this.onprev = () => {};
-  this.onplayrequest = () => {}; // play requested by user
-  this.onplay = () => {}; // play actually starts
-  this.onpause = () => {};
-  this.onstop = () => {};
-  this.onnext = () => {};
+  /* eslint-disable no-unused-vars, camelcase */
+  /**
+   * @param {string} from_track - track that we're switching from
+   * @param {string} to_track - track that we're switching to
+   */
+  this.onprev = (from_track, to_track) => {};
 
-  this.onerror = () => {};
-  this.onloadstart = () => {}; // load started
-  this.onload = () => {}; // load completed
-  this.onunload = () => {};
-  this.onfinishedtrack = () => {};
+  /**
+   * play requested by user
+   *
+   * @param {string} track_path - track to be played
+   */
+  this.onplayrequest = (track_path) => {};
+
+  /**
+   * play actually starts
+   *
+   * @param {string} track_path - track being played
+   */
+  this.onplay = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track to pause
+   */
+  this.onpause = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track to stop
+   */
+  this.onstop = (track_path) => {};
+
+  /**
+   * @param {string} from_track - track that we're switching from
+   * @param {string} to_track - track that we're switching to
+   */
+  this.onnext = (from_track, to_track) => {};
+
+  /**
+   * Triggered when sound position has changed
+   *
+   * @param {number} current_track_time - current time offset of active track 0 if unavailable
+   * @param {number} current_track_index - current track index in playlist
+   */
+  this.ontimeupdate = (current_track_time, current_track_index) => {};
+
+  /**
+   * @param {string} track_path - track that failed to load or play
+   * @param {Error | string} [error] - error object or message
+   */
+  this.onerror = (track_path, error) => {};
+
+  /**
+   * @param {string} track_path - track being loaded
+   */
+  this.onloadstart = (track_path) => {};
+
+  /**
+   * Load completed
+   * NOTE: this triggers twice per track when both WebAudio and HTML5 are enabled
+   * *
+   * @param {string} track_path - track being loaded
+   * @param {boolean} fully_loaded - true for WebAudio data, false for HTML5 Audio data
+   */
+  this.onload = (track_path, fully_loaded) => {};
+
+  /**
+   * @param {string} track_path - track that unloaded
+   */
+  this.onunload = (track_path) => {};
+
+  /**
+   * @param {string} track_path - track that finished playing
+   */
+  this.onfinishedtrack = (track_path) => {};
+
+  /**
+   * Entire playlist finished playing
+   */
   this.onfinishedall = () => {};
+  /* eslint-enable no-unused-vars, camelcase */
 
   // INTERNAL HELPERS
   const getUIPos = () => {
@@ -971,7 +1047,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
   const getSoundPos = (uiPosition) => ((uiPosition / scrubSize) * this.currentLength());
 
-  // Current index (if sourceIndex = true and shuffle is on, value will be different)
+  /**
+   * @param {boolean} [sourceIndex] - if true and shuffle is on, value will be different
+   * @returns {number} - -1 if not found
+   */
   this.getIndex = (sourceIndex = false) => {
     // FileList object must be initiated
     if (this.playlist !== null) {
@@ -1031,6 +1110,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   const isValidIndex = (index) => index >= 0 && index < this.playlist.numTracks();
 
   // (PUBLIC) ACTIONS
+  /**
+   * @returns {number}
+   */
   this.totalTracks = () => {
     // FileList object must be initiated
     if (this.playlist !== null) {
@@ -1039,8 +1121,16 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return 0;
   };
 
+  /**
+   * @returns {boolean}
+   */
   this.isSingleLoop = () => this.loop && (this.singleMode || this.totalTracks() === 1);
 
+  /**
+   * See 'Actions' section in README for supported Actions
+   *
+   * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
+   */
   this.mapKeys = (keyOptions) => {
     for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
@@ -1061,6 +1151,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     });
   };
 
+  /**
+   * @returns {number}
+   */
   this.getPosition = () => {
     if (this.currentSource()) {
       return this.currentSource().getPosition();
@@ -1068,13 +1161,18 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return 0;
   };
 
+  /**
+   * @param {number} position - in milliseconds
+   */
   this.setPosition = (position) => {
     if (this.currentSource()) {
       this.currentSource().setPosition(position, true);
     }
   };
 
-  // volume is normalized between 0 and 1
+  /**
+   * @param {number} volume - normalized between 0 and 1
+   */
   this.setVolume = (volume) => {
     this.volume = Math.min(Math.max(volume, 0), 1);
     if (this.hasGUI) {
@@ -1101,6 +1199,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {number} percent - between 0 and 1
+   */
   this.setLoadedSpan = (percent) => {
     if (this.hasGUI && statusUI.percent !== percent) {
       statusUI.percent = percent;
@@ -1111,6 +1212,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @returns {number} - between 0 and 1
+   */
   this.getSeekablePercent = () => {
     const source = this.currentSource();
     return source ? source.getSeekablePercent() : 0;
@@ -1172,12 +1276,19 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.addTrack = (audioPath) => {
     const nextTrack = this.playlist.numTracks();
     this.playlist.add(nextTrack, audioPath);
     this.uiDirty = true;
   };
 
+  /**
+   * @param {number} point - playlist index where to insert track
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.insertTrack = (point, audioPath) => {
     const numTracks = this.totalTracks();
     const safePoint = Math.min(Math.max(point, 0), numTracks);
@@ -1189,12 +1300,25 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @returns {string[]}
+   */
   this.getTracks = () => this.playlist.getTracks();
 
+  /**
+   * @returns {string} - audio path for current track, '' if none
+   */
   this.getTrack = () => this.currentSource() ? this.currentSource().audioPath : '';
 
+  /**
+   * @param {string} path - audio path for track to find
+   * @returns {number} - index in playlist, -1 if not found
+   */
   this.findTrack = (path) => this.playlist.findTrack(path);
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index
+   */
   this.removeTrack = (pointOrPath) => {
     const point = this.playlist.indexFromTrack(pointOrPath);
     if (!isValidIndex(point)) {
@@ -1228,6 +1352,10 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @param {number} point - playlist index where to replace track
+   * @param {string} audioPath - path to audio file(s) or blob URL(s)
+   */
   this.replaceTrack = (point, audioPath) => {
     this.removeTrack(point);
     this.insertTrack(point, audioPath);
@@ -1238,9 +1366,15 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.uiDirty = true;
   };
 
+  /**
+   * @returns {boolean}
+   */
   this.isShuffled = () => this.playlist.isShuffled();
 
   // shuffles, re-shuffling if previously shuffled
+  /**
+   * @param {boolean} [preserveCurrent] - true to keep current playing track in place
+   */
   this.shuffle = (preserveCurrent = true) => {
     if (!this.canShuffle()) {
       return;
@@ -1263,12 +1397,18 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.currentLength = () => this.currentSource() ? this.currentSource().getLength() : 0;
   this.currentPosition = () => this.currentSource() ? this.currentSource().getPosition() : 0;
 
+  /**
+   * @param {number} rate - default = 1.0, higher = plays faster, lower = plays slower
+   */
   this.setPlaybackRate = (rate) => {
     tick(); // tick once here before changing the playback rate, to maintain correct position
     this.playbackRate = rate;
     this.playlist.setPlaybackRate(rate);
   };
 
+  /**
+   * @param {number} duration - in milliseconds
+   */
   this.setCrossfade = (duration) => {
     this.crossfade = duration;
     if (this.isPlaying()) {
@@ -1277,10 +1417,16 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {CrossfadeShape} shape - sets the crossfade curve shape
+   */
   this.setCrossfadeShape = (shape) => {
     this.crossfadeShape = shape;
   };
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index to play next
+   */
   this.queueTrack = (pointOrPath) => {
     if (!isValidIndex(this.playlist.indexFromTrack(pointOrPath))) {
       log.error(`Cannot queue missing track: ${pointOrPath}`);
@@ -1290,6 +1436,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
   };
 
+  /**
+   * @param {number | string} pointOrPath - audio path or playlist index to play
+   * @param {boolean} [forcePlay] - true to start playing even if player was stopped
+   * @param {boolean} [allowOverride] - internal use only
+   * @param {boolean} [crossfadeEnabled] - internal use only
+   */
   this.gotoTrack = (pointOrPath, forcePlay, allowOverride = false, crossfadeEnabled = false) => {
     if (!isValidIndex(this.playlist.indexFromTrack(pointOrPath))) {
       log.error(`Cannot go to missing track: ${pointOrPath}`);
@@ -1501,15 +1653,19 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     return null;
   };
 
-  let lastTick = -1;
+  const prevTick = {
+    time: -1,
+    index: -1,
+    position: -1,
+  };
   const tick = () => {
     // JS tick latency is variable, maintain rolling average of past ticks
-    const curTick = Date.now();
-    if (lastTick >= 0) {
-      const elapsedMS = curTick - lastTick;
+    const curTime = Date.now();
+    if (prevTick.time >= 0) {
+      const elapsedMS = curTime - prevTick.time;
       this.avgTickMS = (this.avgTickMS * 0.9) + (elapsedMS * 0.1);
     }
-    lastTick = curTick;
+    prevTick.time = curTime;
     const fadingSource = getFadingSource();
     if (fadingSource) {
       fadingSource.tick(false);
@@ -1533,6 +1689,13 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
           setElementText('position', getFormattedTime(soundPos));
         }
       }
+    }
+    const curIndex = this.getIndex();
+    const curPosition = this.getPosition();
+    if (prevTick.index !== curIndex || prevTick.position !== curPosition) {
+      prevTick.index = curIndex;
+      prevTick.position = curPosition;
+      this.ontimeupdate(curPosition, curIndex);
     }
     if (tickCallback) {
       window.clearTimeout(tickCallback);
