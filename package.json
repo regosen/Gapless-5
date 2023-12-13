@@ -1,11 +1,12 @@
 {
   "name": "@regosen/gapless-5",
-  "version": "1.4.5",
+  "version": "1.5.0",
   "description": "A gapless JavaScript audio player for HTML5",
   "main": "gapless5.js",
   "style": "gapless5.css",
   "types": "./types/gapless5.d.ts",
   "scripts": {
+    "gen-types": "npx -p typescript tsc gapless5.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "lint": "eslint *.js",
     "test": "jest --runInBand"
   },
@@ -23,6 +24,7 @@
     "transition",
     "crossfade",
     "cross-fade",
+    "typescript",
     "loop"
   ],
   "author": "Regaip Sen",

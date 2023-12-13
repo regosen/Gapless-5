@@ -1298,7 +1298,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.getTracks = () => this.playlist.getTracks();
 
   /**
-   * @returns {string[]} - audio path for current track, '' if none
+   * @returns {string} - audio path for current track, '' if none
    */
   this.getTrack = () => this.currentSource() ? this.currentSource().audioPath : '';
 

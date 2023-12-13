@@ -194,9 +194,9 @@ export class Gapless5 {
      */
     getTracks: () => string[];
     /**
-     * @returns {string[]} - audio path for current track, '' if none
+     * @returns {string} - audio path for current track, '' if none
      */
-    getTrack: () => string[];
+    getTrack: () => string;
     /**
      * @param {string} path - audio path for track to find
      * @returns {number} - index in playlist, -1 if not found
