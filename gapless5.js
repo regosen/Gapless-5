@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.4.4
+ * Version 1.5.1
  * Copyright 2014 Rego Sen
  *
 */
@@ -1132,10 +1132,14 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
    */
   this.mapKeys = (keyOptions) => {
+    if (!(gapless5Players && this.id in gapless5Players)) {
+      log.error('Gapless5 mapKeys() called before player initialized');
+      return;
+    }
+    const player = gapless5Players[this.id];
     for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
       const lowercode = keyOptions[key].toLowerCase().charCodeAt(0);
-      const player = gapless5Players[this.id];
       if (Gapless5.prototype.hasOwnProperty.call(player, key)) {
         this.keyMappings[uppercode] = player[key];
         this.keyMappings[lowercode] = player[key];
@@ -1530,7 +1534,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
     this.playlist.setCrossfade(0, this.crossfade);
     source.play();
-    if (this.exclusive) {
+    if (this.exclusive && gapless5Players) {
       const { id } = this;
       for (const otherId in gapless5Players) {
         if (otherId !== id.toString()) {
@@ -1747,8 +1751,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   const guiElement = options.guiId ? document.getElementById(options.guiId) : null;
   if (guiElement) {
     this.hasGUI = true;
-    guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players['${this.id}']`));
-
+    if (gapless5Players && this.id in gapless5Players) {
+      guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players['${this.id}']`));
+    }
     const onMouseDown = (elementId, cb) => {
       const elem = getElement(elementId);
       if (elem) {
