@@ -13,7 +13,10 @@
 // SOLUTION: Use both!
 // If WebAudio hasn't loaded yet, start playback with HTML5 Audio.  Then seamlessly switch to WebAudio once it's loaded.
 
-window.gapless5Players = {};
+if (window.gapless5Players === undefined) {
+  window.gapless5Players = {};
+}
+
 const Gapless5State = {
   None     : 0,
   Loading  : 1,
