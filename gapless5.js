@@ -13,7 +13,7 @@
 // SOLUTION: Use both!
 // If WebAudio hasn't loaded yet, start playback with HTML5 Audio.  Then seamlessly switch to WebAudio once it's loaded.
 
-const gapless5Players = {};
+window.gapless5Players = {};
 const Gapless5State = {
   None     : 0,
   Loading  : 1,
@@ -939,7 +939,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.useHTML5Audio = options.useHTML5Audio !== false;
   this.playbackRate = options.playbackRate || 1.0;
   this.id = options.guiId || Math.floor((1 + Math.random()) * 0x10000);
-  gapless5Players[this.id] = this;
+  window.gapless5Players[this.id] = this;
 
   // There can be only one AudioContext per window, so to have multiple players we must define this outside the player scope
   if (window.gapless5AudioContext === undefined) {
@@ -1132,11 +1132,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
    */
   this.mapKeys = (keyOptions) => {
-    if (!(gapless5Players && this.id in gapless5Players)) {
+    if (!(window.gapless5Players && this.id in window.gapless5Players)) {
       log.error('Gapless5 mapKeys() called before player initialized');
       return;
     }
-    const player = gapless5Players[this.id];
+    const player = window.gapless5Players[this.id];
     for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
       const lowercode = keyOptions[key].toLowerCase().charCodeAt(0);
@@ -1534,11 +1534,11 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
     this.playlist.setCrossfade(0, this.crossfade);
     source.play();
-    if (this.exclusive && gapless5Players) {
+    if (this.exclusive && window.gapless5Players) {
       const { id } = this;
-      for (const otherId in gapless5Players) {
+      for (const otherId in window.gapless5Players) {
         if (otherId !== id.toString()) {
-          gapless5Players[otherId].stop();
+          window.gapless5Players[otherId].stop();
         }
       }
     }
@@ -1751,8 +1751,8 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   const guiElement = options.guiId ? document.getElementById(options.guiId) : null;
   if (guiElement) {
     this.hasGUI = true;
-    if (gapless5Players && this.id in gapless5Players) {
-      guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players['${this.id}']`));
+    if (window.gapless5Players && this.id in window.gapless5Players) {
+      guiElement.insertAdjacentHTML('beforeend', createGUI(`window.gapless5Players['${this.id}']`));
     }
     const onMouseDown = (elementId, cb) => {
       const elem = getElement(elementId);
