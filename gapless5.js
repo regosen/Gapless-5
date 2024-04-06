@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.5.1
+ * Version 1.5.2
  * Copyright 2014 Rego Sen
  *
 */
@@ -186,7 +186,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
       setState(Gapless5State.Stop);
-      this.play(true);
+      this.play(true, true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -265,7 +265,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     return position;
   };
 
-  const playAudioFile = (syncPosition) => {
+  const playAudioFile = (syncPosition, skipCallback) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -296,7 +296,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
-          player.onplay(this.audioPath);
+          if (!skipCallback) {
+            player.onplay(this.audioPath);
+          }
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
             audio.pause();
@@ -319,7 +321,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
-          player.onplay(this.audioPath);
+          if (!skipCallback) {
+            player.onplay(this.audioPath);
+          }
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
           // in case stop was requested while awaiting promise
@@ -346,13 +350,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition) => {
+  this.play = (syncPosition, skipCallback) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(syncPosition); // play immediately
+      playAudioFile(syncPosition, skipCallback); // play immediately
     }
   };
 
