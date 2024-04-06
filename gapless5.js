@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.4.4
+ * Version 1.5.3
  * Copyright 2014 Rego Sen
  *
 */
@@ -183,7 +183,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
       setState(Gapless5State.Stop);
-      this.play(true);
+      this.play(true, true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -262,7 +262,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     return position;
   };
 
-  const playAudioFile = (syncPosition) => {
+  const playAudioFile = (syncPosition, skipCallback) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -293,7 +293,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
-          player.onplay(this.audioPath);
+          if (!skipCallback) {
+            player.onplay(this.audioPath);
+          }
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
             audio.pause();
@@ -316,7 +318,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
-          player.onplay(this.audioPath);
+          if (!skipCallback) {
+            player.onplay(this.audioPath);
+          }
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
           // in case stop was requested while awaiting promise
@@ -343,13 +347,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition) => {
+  this.play = (syncPosition, skipCallback) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(syncPosition); // play immediately
+      playAudioFile(syncPosition, skipCallback); // play immediately
     }
   };
 
@@ -1132,10 +1136,14 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * @param {Object.<string, string>} keyOptions - key is the Action, value is the key to press
    */
   this.mapKeys = (keyOptions) => {
+    if (!(gapless5Players && this.id in gapless5Players)) {
+      log.error('Gapless5 mapKeys() called before player initialized');
+      return;
+    }
+    const player = gapless5Players[this.id];
     for (const key in keyOptions) {
       const uppercode = keyOptions[key].toUpperCase().charCodeAt(0);
       const lowercode = keyOptions[key].toLowerCase().charCodeAt(0);
-      const player = gapless5Players[this.id];
       if (Gapless5.prototype.hasOwnProperty.call(player, key)) {
         this.keyMappings[uppercode] = player[key];
         this.keyMappings[lowercode] = player[key];
@@ -1530,7 +1538,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     }
     this.playlist.setCrossfade(0, this.crossfade);
     source.play();
-    if (this.exclusive) {
+    if (this.exclusive && gapless5Players) {
       const { id } = this;
       for (const otherId in gapless5Players) {
         if (otherId !== id.toString()) {
@@ -1747,8 +1755,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   const guiElement = options.guiId ? document.getElementById(options.guiId) : null;
   if (guiElement) {
     this.hasGUI = true;
-    guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players['${this.id}']`));
-
+    if (gapless5Players && this.id in gapless5Players) {
+      guiElement.insertAdjacentHTML('beforeend', createGUI(`gapless5Players['${this.id}']`));
+    }
     const onMouseDown = (elementId, cb) => {
       const elem = getElement(elementId);
       if (elem) {
