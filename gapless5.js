@@ -2,7 +2,7 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.5.2
+ * Version 1.5.4
  * Copyright 2014 Rego Sen
  *
 */
