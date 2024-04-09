@@ -1,35 +1,33 @@
-const { Gapless5, LogLevel } = require('./gapless5.js');
+const xhrMockClass = () => ({
+  open            : jest.fn(),
+  send            : jest.fn(),
+  setRequestHeader: jest.fn(),
+  abort           : jest.fn(),
+});
+XMLHttpRequest = jest.fn().mockImplementation(xhrMockClass);
 
-const mockAPIs = () => {
-  const xhrMockClass = () => ({
-    open            : jest.fn(),
-    send            : jest.fn(),
-    setRequestHeader: jest.fn(),
-    abort           : jest.fn(),
-  });
-  XMLHttpRequest = jest.fn().mockImplementation(xhrMockClass);
+const audioMockClass = () => ({
+  addEventListener: jest.fn(),
+  load: jest.fn(),
+  pause: jest.fn(),
+  play: jest.fn(() => Promise.resolve(jest.fn())),
+});
+Audio = jest.fn().mockImplementation(audioMockClass);
 
-  const audioMockClass = () => ({
-    addEventListener: jest.fn(),
-    load: jest.fn(),
-    pause: jest.fn(),
-    play: jest.fn(() => Promise.resolve(jest.fn())),
-  });
-  Audio = jest.fn().mockImplementation(audioMockClass);
+const audioContextMockClass = () => ({
+  createGain: () => ({
+    gain: { value: 1 },
+    connect: jest.fn(),
+  }),
+});
 
-  const audioContextMockClass = () => ({
-    createGain: () => ({
-      gain: { value: 1 },
-      connect: jest.fn(),
-    }),
-  });
-
-  window = {
-    clearTimeout     : jest.fn(),
-    setTimeout       : jest.fn(),
-    AudioContext     : jest.fn().mockImplementation(audioContextMockClass),
-  };
+window = {
+  clearTimeout     : jest.fn(),
+  setTimeout       : jest.fn(),
+  AudioContext     : jest.fn().mockImplementation(audioContextMockClass),
 };
+
+const { Gapless5, LogLevel } = require('./gapless5.js');
 
 /** test data **/
 
@@ -44,10 +42,6 @@ const INIT_OPTIONS = {
 
 describe('Gapless-5 object', () => {
   let player = null;
-
-  beforeAll(() => {
-    mockAPIs();
-  });
 
   beforeEach(() => {
     player = new Gapless5(INIT_OPTIONS);
@@ -84,10 +78,6 @@ describe('Gapless-5 object', () => {
 
 describe('Gapless-5 object with tracklist', () => {
   let player = null;
-
-  beforeAll(() => {
-    mockAPIs();
-  });
 
   beforeEach(() => {
     player = new Gapless5({
@@ -165,10 +155,6 @@ describe('Gapless-5 object with tracklist', () => {
 });
 
 describe('Gapless-5 object with load limit', () => {
-  beforeAll(() => {
-    mockAPIs();
-  });
-
   it('obeys load limit', () => {
     const player = new Gapless5({
       ...INIT_OPTIONS,
