@@ -201,7 +201,9 @@ const player = new Gapless5({
 });
 ```
 
-_NOTE: if you set `loadLimit` with `useWebAudio` set to false, Safari on iOS may fail to play subsequent tracks.  This is due to user interaction requirements, and JS console will show a warning if this happens._
+_NOTE 1: if you need audio to keep playing on iOS with Safari in the background, set `useWebAudio` to `false`._
+
+_NOTE 2: if you use `loadLimit` with `useWebAudio` set to `false`, Safari on iOS may fail to play subsequent tracks.  This is due to user interaction requirements, and JS console will show a warning if this happens._
 
 ###  4.2. Functions
 You can call these functions on `Gapless5` objects.
