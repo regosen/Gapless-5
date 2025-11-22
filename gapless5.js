@@ -186,7 +186,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
       setState(Gapless5State.Stop);
-      this.play(true, true);
+      this.play(true, false, true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -265,7 +265,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     return position;
   };
 
-  const playAudioFile = (syncPosition, skipCallback) => {
+  const playAudioFile = (syncPosition, skipCallback, webAudioSwitched) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -290,14 +290,21 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.buffer = buffer;
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
-          source.connect(gainNode);
+          
+          const songAnalyser = player.context.createAnalyser();
+          songAnalyser.fftSize = player.fftPrecision;
+          source.connect(songAnalyser);
+          songAnalyser.connect(gainNode);
 
           const offsetSec = getStartOffsetMS(syncPosition, player.context.baseLatency) / 1000;
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
           if (!skipCallback) {
-            player.onplay(this.audioPath);
+            if(webAudioSwitched)
+              player.onswitchtowebaudio(this.audioPath, songAnalyser);
+            else
+              player.onplay(this.audioPath, true, songAnalyser);
           }
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
@@ -322,7 +329,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
           if (!skipCallback) {
-            player.onplay(this.audioPath);
+            player.onplay(this.audioPath, false);
           }
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
@@ -350,13 +357,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition, skipCallback) => {
+  this.play = (syncPosition, skipCallback, webAudioSwitched=false) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(syncPosition, skipCallback); // play immediately
+      playAudioFile(syncPosition, skipCallback, webAudioSwitched); // play immediately
     }
   };
 
@@ -861,6 +868,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *	  analyserPrecision (default = 256): the precision you'd like to use to analyse songs' frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
@@ -923,6 +931,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.volume = options.volume !== undefined ? options.volume : 1.0;
   this.crossfade = options.crossfade || 0;
   this.crossfadeShape = options.crossfadeShape || CrossfadeShape.None;
+  this.fftPrecision = options.analyserPrecision || 256;
 
   // This is a hack to activate WebAudio on certain iOS versions
   const silenceWavData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
