@@ -56,6 +56,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 - Seamless transitions between tracks
   - Pre-loading of subsequent tracks
   - Files don't need to be fully loaded to start playback
+  - Once fully loaded, the song can be analyzed in real-time using [webaudio api and AnalyserNode object](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode)
 - Cross-fade support
 - Track shuffling during playback
 - Optional built-in UI
@@ -189,6 +190,10 @@ These can be passed into a `Gapless5` constructor, or (with the exception of `tr
 - **logLevel**
   - minimum logging level (default = `LogLevel.Info`)
   - set this to `LogLevel.Debug` for more verbose logging
+- **analyserPrecision**
+  - default = 256
+  - only work with webaudio enabled. 
+  - sets precision for real-time frequency and time-domain analysis of the song playing.
 
 Example:
 
@@ -307,7 +312,7 @@ ontimeupdate = (current_track_time: number, current_track_index: number) => void
 onplayrequest = (track_path: string) => void
 
 // play actually starts
-onplay = (track_path: string) => void 
+onplay = (track_path: string, analyser_node: object) => void 
 
 // play is paused
 onpause = (track_path: string) => void
@@ -344,6 +349,9 @@ onfinishedtrack = (track_path: string) => void
 
 // entire playlist finished playing
 onfinishedall = () => void
+
+// engine switched from html5 to webaudio API during songplay
+onswitchtowebaudio = () => (analyser_node: object)
 ```
 
 Example:

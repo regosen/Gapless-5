@@ -5,7 +5,7 @@
  * Version 1.5.5
  * Copyright 2014 Rego Sen
  *
-*/
+ */
 
 // PROBLEM: We have 2 APIs for playing audio through the web, and both of them have problems:
 //  - HTML5 Audio: the last chunk of audio gets cut off, making gapless transitions impossible
@@ -186,7 +186,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     } else if ((audio !== null) && (queuedState === Gapless5State.None) && this.inPlayState(true)) {
       log.debug(`Switching from HTML5 to WebAudio: ${this.audioPath}`);
       setState(Gapless5State.Stop);
-      this.play(true, false, true);
+      this.play(true, true);
     }
     if (state === Gapless5State.Loading) {
       state = Gapless5State.Stop;
@@ -265,7 +265,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     return position;
   };
 
-  const playAudioFile = (syncPosition, skipCallback, webAudioSwitched) => {
+  const playAudioFile = (syncPosition, webAudioSwitched) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -290,7 +290,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.buffer = buffer;
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
-          
+
           const songAnalyser = player.context.createAnalyser();
           songAnalyser.fftSize = player.fftPrecision;
           source.connect(songAnalyser);
@@ -300,12 +300,12 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
-          if (!skipCallback) {
-            if(webAudioSwitched)
-              player.onswitchtowebaudio(this.audioPath, songAnalyser);
-            else
-              player.onplay(this.audioPath, true, songAnalyser);
-          }
+
+          if(webAudioSwitched)
+            player.onswitchtowebaudio(this.audioPath, songAnalyser);
+          else
+            player.onplay(this.audioPath, songAnalyser);
+
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
             audio.pause();
@@ -328,9 +328,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
-          if (!skipCallback) {
-            player.onplay(this.audioPath, false);
-          }
+          player.onplay(this.audioPath);
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
           // in case stop was requested while awaiting promise
@@ -357,13 +355,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition, skipCallback, webAudioSwitched=false) => {
+  this.play = (syncPosition, webAudioSwitched=false) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(syncPosition, skipCallback, webAudioSwitched); // play immediately
+      playAudioFile(syncPosition, webAudioSwitched); // play immediately
     }
   };
 
@@ -835,10 +833,12 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
       this.trackNumber = this.trackNumber - 1;
       log.debug(`Decrementing track number to ${this.trackNumber}`);
     }
+
     if (this.isShuffled && !player.canShuffle()) {
       this.setShuffle(false);
       player.uiDirty = true;
     }
+
     this.updateLoading();
   };
 
@@ -868,7 +868,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
-  *	  analyserPrecision (default = 256): the precision you'd like to use to analyse songs' frequencies (range: [32, 32768])
+  *   analyserPrecision (default = 256): the precision you'd like to use to analyse songs' frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
@@ -988,8 +988,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * play actually starts
    *
    * @param {string} track_path - track being played
+   * @param {object} analyser_node - webaudio api object which gives information on current track
    */
-  this.onplay = (track_path) => {};
+  this.onplay = (track_path, analyser_node) => {};
 
   /**
    * @param {string} track_path - track to pause
@@ -1049,6 +1050,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * Entire playlist finished playing
    */
   this.onfinishedall = () => {};
+
+  /**
+   * @param {object} analyser_node - webaudio api object which gives information on current track
+   */
+  this.onswitchtowebaudio = (analyser_node) => {};
+
   /* eslint-enable no-unused-vars, camelcase */
 
   // INTERNAL HELPERS
