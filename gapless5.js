@@ -291,10 +291,14 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
 
-          const songAnalyser = player.context.createAnalyser();
-          songAnalyser.fftSize = player.fftPrecision;
-          source.connect(songAnalyser);
-          songAnalyser.connect(gainNode);
+          let songAnalyser = null;
+          if(player.analyserPrecision){
+            songAnalyser = player.context.createAnalyser();
+            songAnalyser.fftSize = player.analyserPrecision;
+            source.connect(songAnalyser);
+            songAnalyser.connect(gainNode);
+          }else
+            source.connect(gainNode);
 
           const offsetSec = getStartOffsetMS(syncPosition, player.context.baseLatency) / 1000;
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
@@ -870,7 +874,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
-  *   analyserPrecision (default = 256): the precision you'd like to use to analyse songs' frequencies (range: [32, 32768])
+  *   analyserPrecision (default = null): disabled if null. The number fixes the precision to use to analyse the frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
@@ -933,7 +937,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.volume = options.volume !== undefined ? options.volume : 1.0;
   this.crossfade = options.crossfade || 0;
   this.crossfadeShape = options.crossfadeShape || CrossfadeShape.None;
-  this.fftPrecision = options.analyserPrecision || 256;
+  this.analyserPrecision = options.analyserPrecision || null;
 
   // This is a hack to activate WebAudio on certain iOS versions
   const silenceWavData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
