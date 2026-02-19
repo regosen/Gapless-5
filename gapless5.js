@@ -328,7 +328,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
+        if (!webAudioSwitched) {
           player.onplay(this.audioPath);
+        }
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
           // in case stop was requested while awaiting promise
