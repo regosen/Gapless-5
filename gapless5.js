@@ -292,23 +292,25 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.loop = looped;
 
           let songAnalyser = null;
-          if(player.analyserPrecision){
+          if (player.analyserPrecision) {
             songAnalyser = player.context.createAnalyser();
             songAnalyser.fftSize = player.analyserPrecision;
             source.connect(songAnalyser);
             songAnalyser.connect(gainNode);
-          }else
+          } else {
             source.connect(gainNode);
+          }
 
           const offsetSec = getStartOffsetMS(syncPosition, player.context.baseLatency) / 1000;
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
 
-          if(webAudioSwitched)
+          if (webAudioSwitched) {
             player.onswitchtowebaudio(this.audioPath, songAnalyser);
-          else
+          } else {
             player.onplay(this.audioPath, songAnalyser);
+          }
 
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
@@ -332,9 +334,9 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
-        if (!webAudioSwitched) {
-          player.onplay(this.audioPath);
-        }
+          if (!webAudioSwitched) {
+            player.onplay(this.audioPath);
+          }
           setEndedCallbackTime(audio.duration - offsetSec);
         } else if (audio) {
           // in case stop was requested while awaiting promise
@@ -361,7 +363,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition, webAudioSwitched=false) => {
+  this.play = (syncPosition, webAudioSwitched = false) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
@@ -874,7 +876,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
-  *   analyserPrecision (default = null): disabled if null. The number fixes the precision to use to analyse the frequencies (range: [32, 32768])
+  *   analyserPrecision (default = null): disabled if null. Precision to analyse songs frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
