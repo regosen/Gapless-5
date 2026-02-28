@@ -13,6 +13,7 @@
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *   analyserPrecision (default = null): disabled if null. Precision to analyse audio frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
@@ -38,6 +39,7 @@ export class Gapless5 {
       *   singleMode (default = false): whether to treat single track as playlist
       *   playbackRate (default = 1.0): higher number = faster playback
       *   exclusive (default = false): whether to stop other gapless players when this is playing
+      *   analyserPrecision (default = null): disabled if null. Precision to analyse audio frequencies (range: [32, 32768])
       *
       * @param {Object.<string, any>} [options] - see description
       * @param {Object.<string, any>} [deprecated] - do not use
@@ -64,6 +66,7 @@ export class Gapless5 {
     volume: any;
     crossfade: any;
     crossfadeShape: any;
+    analyserPrecision: any;
     onPlayAllowed: () => void;
     useWebAudio: boolean;
     useHTML5Audio: boolean;
@@ -86,8 +89,9 @@ export class Gapless5 {
      * play actually starts
      *
      * @param {string} track_path - track being played
+     * @param {object} analyser_node - webaudio api object which gives information on current track
      */
-    onplay: (track_path: string) => void;
+    onplay: (track_path: string, analyser_node: object) => void;
     /**
      * @param {string} track_path - track to pause
      */
@@ -137,6 +141,10 @@ export class Gapless5 {
      * Entire playlist finished playing
      */
     onfinishedall: () => void;
+    /**
+     * @param {object} analyser_node - webaudio api object which gives information on current track
+     */
+    onswitchtowebaudio: (analyser_node: object) => void;
     /**
      * @param {boolean} [sourceIndex] - if true and shuffle is on, value will be different
      * @returns {number} - -1 if not found
@@ -331,7 +339,7 @@ declare class Gapless5Source {
     isPlayActive: (checkStarting: any) => boolean;
     getPosition: () => number;
     getLength: () => number;
-    play: (syncPosition: any) => void;
+    play: (syncPosition: any, webAudioSwitched?: boolean) => void;
     setPlaybackRate: (rate: any) => void;
     tick: (updateLoopState: any) => number;
     getSeekablePercent: () => number;
