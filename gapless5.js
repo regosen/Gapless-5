@@ -2,7 +2,6 @@
  *
  * Gapless 5: Gapless JavaScript/CSS audio player for HTML5
  *
- * Version 1.5.5
  * Copyright 2014 Rego Sen
  *
  */
@@ -876,7 +875,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
-  *   analyserPrecision (default = null): disabled if null. Precision to analyse songs frequencies (range: [32, 32768])
+  *   analyserPrecision (default = null): disabled if null. Precision to analyse audio frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use

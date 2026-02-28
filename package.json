@@ -1,6 +1,6 @@
 {
   "name": "@regosen/gapless-5",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "description": "A gapless JavaScript audio player for HTML5",
   "main": "gapless5.js",
   "style": "gapless5.css",
@@ -23,6 +23,7 @@
     "seamless",
     "transition",
     "crossfade",
+    "analyze",
     "cross-fade",
     "typescript",
     "loop"

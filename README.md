@@ -56,7 +56,7 @@ The following sites utilize Gapless 5.  If you'd like to be featured here, pleas
 - Seamless transitions between tracks
   - Pre-loading of subsequent tracks
   - Files don't need to be fully loaded to start playback
-  - Once fully loaded, the song can be analyzed in real-time using [webaudio api and AnalyserNode object](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode)
+  - Once fully loaded, the audio can be analyzed in real-time using [webaudio api and AnalyserNode object](https://developer.mozilla.org/en-US/docs/Web/API/AnalyserNode)
 - Cross-fade support
 - Track shuffling during playback
 - Optional built-in UI
