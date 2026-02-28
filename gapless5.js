@@ -5,7 +5,7 @@
  * Version 1.5.5
  * Copyright 2014 Rego Sen
  *
-*/
+ */
 
 // PROBLEM: We have 2 APIs for playing audio through the web, and both of them have problems:
 //  - HTML5 Audio: the last chunk of audio gets cut off, making gapless transitions impossible
@@ -265,7 +265,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
     return position;
   };
 
-  const playAudioFile = (syncPosition, skipCallback) => {
+  const playAudioFile = (syncPosition, webAudioSwitched) => {
     if (this.inPlayState(true)) {
       return;
     }
@@ -290,15 +290,28 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
           source.buffer = buffer;
           source.playbackRate.value = player.playbackRate;
           source.loop = looped;
-          source.connect(gainNode);
+
+          let songAnalyser = null;
+          if (player.analyserPrecision) {
+            songAnalyser = player.context.createAnalyser();
+            songAnalyser.fftSize = player.analyserPrecision;
+            source.connect(songAnalyser);
+            songAnalyser.connect(gainNode);
+          } else {
+            source.connect(gainNode);
+          }
 
           const offsetSec = getStartOffsetMS(syncPosition, player.context.baseLatency) / 1000;
           log.debug(`Playing WebAudio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           source.start(0, offsetSec);
           setState(Gapless5State.Play);
-          if (!skipCallback) {
-            player.onplay(this.audioPath);
+
+          if (webAudioSwitched) {
+            player.onswitchtowebaudio(this.audioPath, songAnalyser);
+          } else {
+            player.onplay(this.audioPath, songAnalyser);
           }
+
           setEndedCallbackTime(source.buffer.duration - offsetSec);
           if (audio) {
             audio.pause();
@@ -321,7 +334,7 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
         if (state === Gapless5State.Starting) {
           log.debug(`Playing HTML5 Audio${looped ? ' (looped)' : ''}: ${this.audioPath} at ${offsetSec.toFixed(2)} sec`);
           setState(Gapless5State.Play);
-          if (!skipCallback) {
+          if (!webAudioSwitched) {
             player.onplay(this.audioPath);
           }
           setEndedCallbackTime(audio.duration - offsetSec);
@@ -350,13 +363,13 @@ function Gapless5Source(parentPlayer, parentLog, inAudioPath) {
 
   this.getLength = () => endpos;
 
-  this.play = (syncPosition, skipCallback) => {
+  this.play = (syncPosition, webAudioSwitched = false) => {
     player.onPlayAllowed();
     if (state === Gapless5State.Loading) {
       log.debug(`Loading ${this.audioPath}`);
       queuedState = Gapless5State.Play;
     } else {
-      playAudioFile(syncPosition, skipCallback); // play immediately
+      playAudioFile(syncPosition, webAudioSwitched); // play immediately
     }
   };
 
@@ -828,10 +841,12 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
       this.trackNumber = this.trackNumber - 1;
       log.debug(`Decrementing track number to ${this.trackNumber}`);
     }
+
     if (this.isShuffled && !player.canShuffle()) {
       this.setShuffle(false);
       player.uiDirty = true;
     }
+
     this.updateLoading();
   };
 
@@ -861,6 +876,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
   *   singleMode (default = false): whether to treat single track as playlist
   *   playbackRate (default = 1.0): higher number = faster playback
   *   exclusive (default = false): whether to stop other gapless players when this is playing
+  *   analyserPrecision (default = null): disabled if null. Precision to analyse songs frequencies (range: [32, 32768])
   *
   * @param {Object.<string, any>} [options] - see description
   * @param {Object.<string, any>} [deprecated] - do not use
@@ -923,6 +939,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
   this.volume = options.volume !== undefined ? options.volume : 1.0;
   this.crossfade = options.crossfade || 0;
   this.crossfadeShape = options.crossfadeShape || CrossfadeShape.None;
+  this.analyserPrecision = options.analyserPrecision || null;
 
   // This is a hack to activate WebAudio on certain iOS versions
   const silenceWavData = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
@@ -979,8 +996,9 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * play actually starts
    *
    * @param {string} track_path - track being played
+   * @param {object} analyser_node - webaudio api object which gives information on current track
    */
-  this.onplay = (track_path) => {};
+  this.onplay = (track_path, analyser_node) => {};
 
   /**
    * @param {string} track_path - track to pause
@@ -1040,6 +1058,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
    * Entire playlist finished playing
    */
   this.onfinishedall = () => {};
+
+  /**
+   * @param {object} analyser_node - webaudio api object which gives information on current track
+   */
+  this.onswitchtowebaudio = (analyser_node) => {};
+
   /* eslint-enable no-unused-vars, camelcase */
 
   // INTERNAL HELPERS
