@@ -1377,6 +1377,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     if (!curSource) {
       return;
     }
+    const deletedPath = curSource.audioPath;
     let wasPlaying = false;
 
     if (curSource.state === Gapless5State.Loading) {
@@ -1389,11 +1390,15 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     this.playlist.remove(point);
 
     // playlist.remove() already advanced trackNumber to the track that
-    // slid into this slot (or the new last track / -1 if empty), so we
-    // just need to resume playback on the new current track if we were
-    // playing before removal.
-    if (deletedPlaying && wasPlaying && this.playlist.numTracks() > 0) {
-      this.play();
+    // slid into this slot (or the new last track / -1 if empty). Notify
+    // listeners that the current track silently changed, and resume
+    // playback on the new current track if we were playing before.
+    if (deletedPlaying && this.playlist.numTracks() > 0) {
+      const newSource = this.currentSource();
+      this.onnext(deletedPath, newSource ? newSource.audioPath : '');
+      if (wasPlaying) {
+        this.play();
+      }
     }
 
     this.uiDirty = true;

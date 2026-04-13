@@ -279,5 +279,3 @@ describe('Gapless-5 object with load limit', () => {
     expect(loadedTracks.size).toBe(0);
   });
 });
-
-
