@@ -833,20 +833,32 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
       }
     }
 
-    // Stay at the same song index, unless trackNumber is after the
-    // removed index, or was removed at the edge of the list
-    if (this.trackNumber > 0 &&
-      ((index < this.trackNumber) || (index >= this.numTracks() - 2))) {
+    const newLength = this.numTracks();
+    if (newLength === 0) {
+      this.trackNumber = -1;
+    } else if (index < this.trackNumber) {
+      // Removed a track before the current one — current shifts left.
       this.trackNumber = this.trackNumber - 1;
       log.debug(`Decrementing track number to ${this.trackNumber}`);
+    } else if (index === this.trackNumber && this.trackNumber >= newLength) {
+      // Removed the current track AND it was the last in the list —
+      // clamp to the new last track.
+      this.trackNumber = newLength - 1;
+      log.debug(`Clamping track number to ${this.trackNumber}`);
     }
+    // Otherwise trackNumber is unchanged: either the next track slid
+    // into the removed slot (auto-advance when removing current), or
+    // we removed a track after current (current still points at the
+    // same source).
 
     if (this.isShuffled && !player.canShuffle()) {
       this.setShuffle(false);
       player.uiDirty = true;
     }
 
-    this.updateLoading();
+    if (newLength > 0) {
+      this.updateLoading();
+    }
   };
 
   // process inputs from constructor
@@ -1376,11 +1388,12 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
 
     this.playlist.remove(point);
 
-    if (deletedPlaying) {
-      this.next(); // Don't stop after a delete
-      if (wasPlaying) {
-        this.play();
-      }
+    // playlist.remove() already advanced trackNumber to the track that
+    // slid into this slot (or the new last track / -1 if empty), so we
+    // just need to resume playback on the new current track if we were
+    // playing before removal.
+    if (deletedPlaying && wasPlaying && this.playlist.numTracks() > 0) {
+      this.play();
     }
 
     this.uiDirty = true;

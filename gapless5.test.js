@@ -152,6 +152,106 @@ describe('Gapless-5 object with tracklist', () => {
     player.stop();
     expect(player.onstop).toHaveBeenCalledWith(TRACKS[0]);
   });
+
+  it('regression: maintains correct index when removing tracks that come after the currently playing track', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Verify initial state
+    expect(player.getIndex()).toBe(0);
+    expect(player.getTracks()).toStrictEqual(testTracks);
+
+    // Move to track 1
+    player.gotoTrack(1);
+    expect(player.getIndex()).toBe(1);
+
+    // Remove track at index 2
+    player.removeTrack(2);
+
+    // Check index is still 1 and track list is updated
+    expect(player.getIndex()).toBe(1);
+    expect(player.getTracks()).toStrictEqual(['track1.mp3', 'track2.mp3']);
+  });
+
+  it('regression: maintains correct index when removing the currently playing track', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Verify initial state
+    expect(player.getIndex()).toBe(0);
+    expect(player.getTracks()).toStrictEqual(testTracks);
+
+    // Move to track 1
+    player.gotoTrack(1);
+    expect(player.getIndex()).toBe(1);
+    player.play();
+
+    // Remove the currently playing track
+    player.removeTrack(1);
+
+    // Check index is still 1 and track list is updated, therefore we move to the next available track
+    expect(player.getIndex()).toBe(1);
+    expect(player.getTracks()).toStrictEqual(['track1.mp3', 'track3.mp3']);
+
+    player.play();
+
+    // Remove the currently playing track
+    player.removeTrack(1);
+
+    // Check index is still 0 and track list is updated, therefore we move to the next available track
+    expect(player.getIndex()).toBe(0);
+    expect(player.getTracks()).toStrictEqual(['track1.mp3']);
+
+    player.play();
+
+    // Remove the only remaining track — list is empty, index resets to -1
+    player.removeTrack(0);
+    expect(player.getIndex()).toBe(-1);
+    expect(player.getTracks()).toStrictEqual([]);
+  });
+
+  it('regression: removing a track does not wipe shuffledIndices', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    player.shuffle();
+    player.next(); // commit the shuffle
+    expect(player.isShuffled()).toBe(true);
+    expect(player.playlist.shuffledIndices.length).toBe(testTracks.length);
+
+    player.removeTrack(0);
+
+    // Shuffle order should still be intact (one fewer entry, still shuffled)
+    expect(player.isShuffled()).toBe(true);
+    expect(player.playlist.shuffledIndices.length).toBe(testTracks.length - 1);
+    expect(player.getTracks().length).toBe(testTracks.length - 1);
+  });
+
+  it('regression: removing currently-playing track repeatedly until empty does not crash', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Walk the list down to zero by always removing the current track
+    // This reproduces a crash in the pre-PR code where updateLoading()
+    // would dereference an undefined source after the list went empty.
+    while (player.getTracks().length > 0) {
+      player.removeTrack(player.getIndex());
+    }
+    expect(player.getTracks()).toStrictEqual([]);
+    expect(player.getIndex()).toBe(-1);
+  });
 });
 
 describe('Gapless-5 object with load limit', () => {
@@ -179,3 +279,5 @@ describe('Gapless-5 object with load limit', () => {
     expect(loadedTracks.size).toBe(0);
   });
 });
+
+
