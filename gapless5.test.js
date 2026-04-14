@@ -252,6 +252,61 @@ describe('Gapless-5 object with tracklist', () => {
     expect(player.getTracks()).toStrictEqual([]);
     expect(player.getIndex()).toBe(-1);
   });
+
+  it('regression: removing current-at-tail with loop=true wraps to start and resumes', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+      loop: true,
+    });
+
+    player.gotoTrack(2);
+    expect(player.getIndex()).toBe(2);
+
+    // Force the tail source to report as playing so removeTrack takes the
+    // wasPlaying branch (the mock audio env never transitions real state).
+    player.playlist.sources[2].inPlayState = () => true;
+
+    player.onnext = jest.fn();
+    player.onplayrequest = jest.fn();
+
+    player.removeTrack(2);
+
+    expect(player.getIndex()).toBe(0);
+    expect(player.getTracks()).toStrictEqual(['track1.mp3', 'track2.mp3']);
+    expect(player.onnext).toHaveBeenCalledWith('track3.mp3', 'track1.mp3');
+    expect(player.onplayrequest).toHaveBeenCalledTimes(1);
+    expect(player.onplayrequest).toHaveBeenCalledWith('track1.mp3');
+  });
+
+  it('regression: removing current-at-tail with loop=false clamps and always pauses', () => {
+    const testTracks = ['track1.mp3', 'track2.mp3', 'track3.mp3'];
+    const player = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+      loop: false,
+    });
+
+    player.gotoTrack(2);
+    expect(player.getIndex()).toBe(2);
+
+    // Force the tail source to report as playing so removeTrack takes the
+    // wasPlaying branch — this is the scenario where the old code would
+    // have auto-resumed on the clamped-to-last track.
+    player.playlist.sources[2].inPlayState = () => true;
+
+    player.onnext = jest.fn();
+    player.onplayrequest = jest.fn();
+
+    player.removeTrack(2);
+
+    expect(player.getIndex()).toBe(1);
+    expect(player.getTracks()).toStrictEqual(['track1.mp3', 'track2.mp3']);
+    expect(player.onnext).toHaveBeenCalledWith('track3.mp3', 'track2.mp3');
+    expect(player.onplayrequest).not.toHaveBeenCalled();
+  });
+
 });
 
 describe('Gapless-5 object with load limit', () => {

@@ -1372,6 +1372,7 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
       return;
     }
     const deletedPlaying = point === this.playlist.trackNumber;
+    const removedCurrentAtTail = deletedPlaying && point === this.playlist.numTracks() - 1;
 
     const { source: curSource } = this.playlist.getSourceIndexed(point);
     if (!curSource) {
@@ -1394,9 +1395,23 @@ function Gapless5(options = {}, deprecated = {}) { // eslint-disable-line no-unu
     // listeners that the current track silently changed, and resume
     // playback on the new current track if we were playing before.
     if (deletedPlaying && this.playlist.numTracks() > 0) {
+      // Removing the currently-playing track when it was the tail has
+      // special semantics:
+      //   - loop on:  wrap to start of playlist, resume playback
+      //   - loop off: clamp to new last, always pause
+      let shouldResume = wasPlaying;
+      if (removedCurrentAtTail) {
+        if (this.loop) {
+          this.playlist.trackNumber = 0;
+          this.playlist.updateLoading();
+        } else {
+          shouldResume = false;
+        }
+      }
+
       const newSource = this.currentSource();
       this.onnext(deletedPath, newSource ? newSource.audioPath : '');
-      if (wasPlaying) {
+      if (shouldResume) {
         this.play();
       }
     }
