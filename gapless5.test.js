@@ -306,6 +306,25 @@ describe('Gapless-5 object with tracklist', () => {
     expect(testPlayer.onnext).toHaveBeenCalledWith('track3.mp3', 'track2.mp3');
     expect(testPlayer.onplayrequest).not.toHaveBeenCalled();
   });
+
+  it('regression: removing a track does not spuriously disable shuffle when never shuffled', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    expect(testPlayer.isShuffled()).toBe(false);
+    const setShuffleSpy = jest.spyOn(testPlayer.playlist, 'setShuffle');
+
+    // Drop to 2 tracks — previously tripped the shuffle-disable path
+    // because `this.isShuffled` (a function reference) was always truthy.
+    testPlayer.removeTrack(0);
+
+    expect(testPlayer.isShuffled()).toBe(false);
+    expect(setShuffleSpy).not.toHaveBeenCalled();
+    setShuffleSpy.mockRestore();
+  });
 });
 
 describe('Gapless-5 object with load limit', () => {

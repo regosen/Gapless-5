@@ -851,7 +851,7 @@ function Gapless5FileList(parentPlayer, parentLog, inShuffle, inLoadLimit = -1, 
     // we removed a track after current (current still points at the
     // same source).
 
-    if (this.isShuffled && !player.canShuffle()) {
+    if (this.isShuffled() && !player.canShuffle()) {
       this.setShuffle(false);
       player.uiDirty = true;
     }
