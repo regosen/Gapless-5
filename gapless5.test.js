@@ -152,6 +152,179 @@ describe('Gapless-5 object with tracklist', () => {
     player.stop();
     expect(player.onstop).toHaveBeenCalledWith(TRACKS[0]);
   });
+
+  it('regression: maintains correct index when removing tracks that come after the currently playing track', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Verify initial state
+    expect(testPlayer.getIndex()).toBe(0);
+    expect(testPlayer.getTracks()).toStrictEqual(testTracks);
+
+    // Move to track 1
+    testPlayer.gotoTrack(1);
+    expect(testPlayer.getIndex()).toBe(1);
+
+    // Remove track at index 2
+    testPlayer.removeTrack(2);
+
+    // Check index is still 1 and track list is updated
+    expect(testPlayer.getIndex()).toBe(1);
+    expect(testPlayer.getTracks()).toStrictEqual([ 'track1.mp3', 'track2.mp3' ]);
+  });
+
+  it('regression: maintains correct index when removing the currently playing track', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Verify initial state
+    expect(testPlayer.getIndex()).toBe(0);
+    expect(testPlayer.getTracks()).toStrictEqual(testTracks);
+
+    // Move to track 1
+    testPlayer.gotoTrack(1);
+    expect(testPlayer.getIndex()).toBe(1);
+    testPlayer.play();
+
+    // Remove the currently playing track
+    testPlayer.removeTrack(1);
+
+    // Check index is still 1 and track list is updated, therefore we move to the next available track
+    expect(testPlayer.getIndex()).toBe(1);
+    expect(testPlayer.getTracks()).toStrictEqual([ 'track1.mp3', 'track3.mp3' ]);
+
+    testPlayer.play();
+
+    // Remove the currently playing track
+    testPlayer.removeTrack(1);
+
+    // Check index is still 0 and track list is updated, therefore we move to the next available track
+    expect(testPlayer.getIndex()).toBe(0);
+    expect(testPlayer.getTracks()).toStrictEqual([ 'track1.mp3' ]);
+
+    testPlayer.play();
+
+    // Remove the only remaining track — list is empty, index resets to -1
+    testPlayer.removeTrack(0);
+    expect(testPlayer.getIndex()).toBe(-1);
+    expect(testPlayer.getTracks()).toStrictEqual([]);
+  });
+
+  it('regression: removing a track does not wipe shuffledIndices', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3', 'track4.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    testPlayer.shuffle();
+    testPlayer.next(); // commit the shuffle
+    expect(testPlayer.isShuffled()).toBe(true);
+    expect(testPlayer.playlist.shuffledIndices.length).toBe(testTracks.length);
+
+    testPlayer.removeTrack(0);
+
+    // Shuffle order should still be intact (one fewer entry, still shuffled)
+    expect(testPlayer.isShuffled()).toBe(true);
+    expect(testPlayer.playlist.shuffledIndices.length).toBe(testTracks.length - 1);
+    expect(testPlayer.getTracks().length).toBe(testTracks.length - 1);
+  });
+
+  it('regression: removing currently-playing track repeatedly until empty does not crash', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    // Walk the list down to zero by always removing the current track
+    // This reproduces a crash in the pre-PR code where updateLoading()
+    // would dereference an undefined source after the list went empty.
+    while (testPlayer.getTracks().length > 0) {
+      testPlayer.removeTrack(testPlayer.getIndex());
+    }
+    expect(testPlayer.getTracks()).toStrictEqual([]);
+    expect(testPlayer.getIndex()).toBe(-1);
+  });
+
+  it('regression: removing current-at-tail with loop=true wraps to start and resumes', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+      loop: true,
+    });
+
+    testPlayer.gotoTrack(2);
+    expect(testPlayer.getIndex()).toBe(2);
+
+    // Force the tail source to report as playing so removeTrack takes the
+    // wasPlaying branch (the mock audio env never transitions real state).
+    testPlayer.playlist.sources[2].inPlayState = () => true;
+
+    testPlayer.onnext = jest.fn();
+    testPlayer.onplayrequest = jest.fn();
+
+    testPlayer.removeTrack(2);
+
+    expect(testPlayer.getIndex()).toBe(0);
+    expect(testPlayer.getTracks()).toStrictEqual([ 'track1.mp3', 'track2.mp3' ]);
+    expect(testPlayer.onnext).toHaveBeenCalledWith('track3.mp3', 'track1.mp3');
+    expect(testPlayer.onplayrequest).toHaveBeenCalledTimes(1);
+    expect(testPlayer.onplayrequest).toHaveBeenCalledWith('track1.mp3');
+  });
+
+  it('regression: removing current-at-tail with loop=false clamps and always pauses', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+      loop: false,
+    });
+
+    testPlayer.gotoTrack(2);
+    expect(testPlayer.getIndex()).toBe(2);
+
+    // Force the tail source to report as playing so removeTrack takes the
+    // wasPlaying branch — this is the scenario where the old code would
+    // have auto-resumed on the clamped-to-last track.
+    testPlayer.playlist.sources[2].inPlayState = () => true;
+
+    testPlayer.onnext = jest.fn();
+    testPlayer.onplayrequest = jest.fn();
+
+    testPlayer.removeTrack(2);
+
+    expect(testPlayer.getIndex()).toBe(1);
+    expect(testPlayer.getTracks()).toStrictEqual([ 'track1.mp3', 'track2.mp3' ]);
+    expect(testPlayer.onnext).toHaveBeenCalledWith('track3.mp3', 'track2.mp3');
+    expect(testPlayer.onplayrequest).not.toHaveBeenCalled();
+  });
+
+  it('regression: removing a track does not spuriously disable shuffle when never shuffled', () => {
+    const testTracks = [ 'track1.mp3', 'track2.mp3', 'track3.mp3' ];
+    const testPlayer = new Gapless5({
+      ...INIT_OPTIONS,
+      tracks: testTracks,
+    });
+
+    expect(testPlayer.isShuffled()).toBe(false);
+    const setShuffleSpy = jest.spyOn(testPlayer.playlist, 'setShuffle');
+
+    // Drop to 2 tracks — previously tripped the shuffle-disable path
+    // because `this.isShuffled` (a function reference) was always truthy.
+    testPlayer.removeTrack(0);
+
+    expect(testPlayer.isShuffled()).toBe(false);
+    expect(setShuffleSpy).not.toHaveBeenCalled();
+    setShuffleSpy.mockRestore();
+  });
 });
 
 describe('Gapless-5 object with load limit', () => {
